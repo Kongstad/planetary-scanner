@@ -1,0 +1,47 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+coverage.xml
+htmlcov/
+
+# JavaScript
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Generated data; retain small, reproducible samples under data/
+data/cache/
+data/downloads/
+data/derived/
+data/models/
+
+# Local design handoff archives; runtime assets live under frontend/public/
+visual_design/
+
+# Private agent guidance
+AGENTS.md
+AGENTS/
+
+# Private working documentation
+docs/
+
+# Logs and editor state
+*.log
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

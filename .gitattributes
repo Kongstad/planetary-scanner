@@ -1,0 +1,8 @@
+# Store text files with LF line endings across development platforms.
+* text=auto eol=lf
+
+# Binary assets must not undergo text conversion.
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.svg text eol=lf
