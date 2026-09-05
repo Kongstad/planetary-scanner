@@ -48,6 +48,7 @@
 .data-grid div { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; background: oklch(0.155 0.014 250); }
 .data-grid span, .index-count span { color: var(--muted); font-family: var(--mono); font-size: 9px; letter-spacing: 0.13em; }
 .data-grid strong { color: oklch(0.9 0.01 240); font-family: var(--mono); font-size: 12px; font-weight: 400; letter-spacing: 0.03em; }
+.magnetic-shield-grid strong { font-size: 10px; }
 .biosphere-metrics { background: transparent; gap: 7px 12px; }.biosphere-metrics div { display: block; min-width: 0; padding: 0; background: transparent; }.biosphere-metrics span, .biosphere-metrics strong { display: block; white-space: nowrap; }.biosphere-metrics strong { margin-top: 3px; font-size: 11px; }
 .data-list { margin: -4px 0 0; }
 .data-list div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid oklch(0.23 0.016 250); }
@@ -57,7 +58,8 @@
 .bar-list div { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; align-items: center; font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; }
 .bar-list strong { color: oklch(0.68 0.02 250); font-weight: 400; }
 .bar-list i { grid-column: span 2; height: 4px; overflow: hidden; background: oklch(0.24 0.016 250); }
-.bar-list b { display: block; height: 100%; background: var(--cyan); }
+.bar-list b { display: block; min-width: 1px; height: 100%; background: var(--cyan); }
+.co2-reference { margin-top: 12px; padding-top: 9px; border-top: 1px solid oklch(0.24 0.016 250); }.co2-reference__heading { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-family: var(--mono); font-size: 8px; letter-spacing: 0.11em; }.co2-reference__heading strong { color: oklch(0.88 0.11 70); font-size: 10px; font-weight: 400; letter-spacing: 0.04em; }.co2-scale { position: relative; display: grid; grid-template-columns: 7fr 5fr 5fr 5fr; height: 29px; margin-top: 7px; border: 1px solid oklch(0.3 0.024 250); }.co2-scale__band { display: flex; flex-direction: column; justify-content: center; padding: 3px 4px; border-right: 1px solid oklch(0.13 0.014 250); color: oklch(0.76 0.02 250); font-family: var(--mono); font-size: 7px; line-height: 1.15; letter-spacing: 0.05em; }.co2-scale__band small { margin-top: 2px; color: oklch(0.59 0.018 250); font-size: 7px; letter-spacing: 0.03em; }.co2-scale__band--preindustrial { background: oklch(0.22 0.045 155); }.co2-scale__band--elevated { background: oklch(0.24 0.045 105); }.co2-scale__band--forcing { background: oklch(0.27 0.06 65); }.co2-scale__band--extreme { border-right: 0; background: oklch(0.25 0.065 28); }.co2-scale__marker { position: absolute; top: -4px; bottom: -4px; width: 2px; transform: translateX(-1px); background: oklch(0.95 0.02 95); box-shadow: 0 0 0 1px oklch(0.15 0.014 250); }.co2-reference p { margin: 7px 0 0; color: var(--muted); font-family: var(--mono); font-size: 7px; letter-spacing: 0.08em; }
 .composition b { background: oklch(0.68 0.06 250); }
 .note { margin-top: 9px !important; padding-top: 9px; border-top: 1px solid oklch(0.24 0.016 250); font-size: 10px !important; }
 .index-count { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }

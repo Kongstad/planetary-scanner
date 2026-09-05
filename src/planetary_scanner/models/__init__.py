@@ -1,0 +1,1 @@
+"""Validated persisted data models."""

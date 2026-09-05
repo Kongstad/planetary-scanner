@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "sources": [
+    {
+      "source_id": "nasa-earth-facts-2025",
+      "publisher": "NASA Science",
+      "title": "Earth",
+      "url": "https://science.nasa.gov/earth/facts/",
+      "published_or_updated": "2025-12-05",
+      "retrieved_on": "2026-09-04",
+      "usage_note": "Public NASA reference page; individual facts identify their supporting section."
+    },
+    {
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "publisher": "NASA Jet Propulsion Laboratory Solar System Dynamics",
+      "title": "Planetary Physical Parameters",
+      "url": "https://ssd.jpl.nasa.gov/planets/phys_par.html",
+      "published_or_updated": "2019-12-12",
+      "retrieved_on": "2026-09-04",
+      "usage_note": "NASA JPL table of selected planetary physical characteristics; use its stated parameter definitions and Earth-row values."
+    },
+    {
+      "source_id": "jpl-approximate-planetary-positions",
+      "publisher": "NASA Jet Propulsion Laboratory Solar System Dynamics",
+      "title": "Approximate Positions of the Planets",
+      "url": "https://ssd.jpl.nasa.gov/planets/approx_pos.html",
+      "published_or_updated": "1992-01-01",
+      "retrieved_on": "2026-09-04",
+      "usage_note": "JPL-published J2000 Keplerian elements and rates. Values here describe the Earth-Moon barycenter and are valid from 1800 through 2050."
+    },
+    {
+      "source_id": "celestrak-satcat-2026-09-04",
+      "publisher": "CelesTrak",
+      "title": "Satellite Catalog: Latest Orbital Statistics for Earth Orbit",
+      "url": "https://celestrak.org/satcat/",
+      "published_or_updated": "2026-09-04",
+      "retrieved_on": "2026-09-04",
+      "usage_note": "Public SATCAT statistics snapshot. CelesTrak reports its source-data currency and distinguishes 18 SDS GP data from supplemental and analyst catalogs. Values must be refreshed as a dated snapshot."
+    },
+    {
+      "source_id": "nasa-earth-magnetosphere-2023",
+      "publisher": "NASA Science",
+      "title": "Earth's Magnetosphere",
+      "url": "https://science.nasa.gov/heliophysics/focus-areas/earths-magnetosphere/",
+      "published_or_updated": "2023-05-22",
+      "retrieved_on": "2026-09-04",
+      "usage_note": "NASA explanatory article on the magnetosphere's interaction with solar material and its role in atmospheric retention."
+    },
+    {
+      "source_id": "noaa-gml-global-co2-2026-08",
+      "publisher": "NOAA Global Monitoring Laboratory",
+      "title": "Trends in Globally Averaged CO2",
+      "url": "https://gml.noaa.gov/webdata/ccgg/trends/co2/co2_mm_gl.txt",
+      "published_or_updated": "2026-08-05",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Globally averaged marine-surface monthly mean CO2 record. Recent values are provisional and may be recalibrated by NOAA."
+    }
+  ]
+}

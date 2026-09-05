@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import './App.css'
 
 type PanelProps = {
@@ -18,30 +19,46 @@ function Panel({ title, qualifier, children }: PanelProps) {
   )
 }
 
-const vitalStatistics = [
-  ['MEAN RADIUS', '6 371.0 km'],
-  ['MASS', '5.972e24 kg'],
-  ['SURF. GRAVITY', '9.807 m/s²'],
-  ['ROTATION', '23h 56m 04s'],
-  ['BOND ALBEDO', '0.306'],
-  ['SATELLITES', '1'],
+type ReferenceFact = {
+  field: string
+  value: number | string
+  unit: string | null
+}
+
+type ReferenceDataset = {
+  facts: ReferenceFact[]
+}
+
+const vitalStatistics: [label: string, value: string, field?: string][] = [
+  ['MEAN RADIUS', 'LOADING', 'mean_radius'],
+  ['MASS', 'LOADING', 'mass'],
+  ['EQUAT. GRAVITY', 'LOADING', 'equatorial_surface_gravity'],
+  ['ROTATION', 'LOADING', 'rotation_period'],
+  ['GEOM. ALBEDO', 'LOADING', 'geometric_albedo'],
+  ['SATELLITES', 'LOADING', 'natural_satellite_count'],
 ]
 
-const orbitalElements = [
-  ['Semi-major axis', '1.0000 AU'],
-  ['Eccentricity', '0.0167'],
-  ['Orbital period', '365.256 d'],
-  ['Inclination', '0.000°'],
-  ['Axial tilt', '23.44°'],
-  ['Orbital velocity', '29.78 km/s'],
+const orbitalElements: [label: string, value: string, field?: string][] = [
+  ['Semi-major axis', 'LOADING', 'semi_major_axis'],
+  ['Eccentricity', 'LOADING', 'orbital_eccentricity'],
+  ['Orbital period', 'LOADING', 'orbital_period'],
+  ['Inclination', 'LOADING', 'orbital_inclination'],
+  ['Axial tilt', 'LOADING', 'axial_tilt'],
+  ['Escape velocity', 'LOADING', 'equatorial_escape_velocity'],
 ]
 
-const atmosphere = [
-  ['NITROGEN N₂', '78.08%', 78],
-  ['OXYGEN O₂', '20.95%', 21],
-  ['ARGON Ar', '0.93%', 8],
-  ['WATER H₂O', '0.25%', 6],
-  ['CARBON DIOXIDE', '424 ppm', 4],
+const orbitalEnvironment: [label: string, field: string][] = [
+  ['CATALOGUED OBJECTS', 'orbital_catalog_object_count'],
+  ['ACTIVE SATELLITES', 'active_satellite_count'],
+  ['ROCKET BODIES', 'orbital_rocket_body_count'],
+  ['TRACKED DEBRIS', 'orbital_debris_count'],
+]
+
+const atmosphere: [label: string, fallback: string, width: number, field: string][] = [
+  ['NITROGEN N₂', 'LOADING', 78, 'atmospheric_nitrogen_fraction'],
+  ['OXYGEN O₂', 'LOADING', 21, 'atmospheric_oxygen_fraction'],
+  ['OTHER GASES', 'LOADING', 1, 'atmospheric_other_gases_fraction'],
+  ['GLOBAL CO₂', 'LOADING', 0.043, 'global_marine_surface_carbon_dioxide'],
 ]
 
 const composition = [
@@ -68,6 +85,44 @@ const volatileInventory = [
 ]
 
 function App() {
+  const [referenceFacts, setReferenceFacts] = useState<ReferenceFact[]>([])
+
+  useEffect(() => {
+    void fetch('/reference/bodies/earth')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Reference API returned ${response.status}`)
+        }
+        return response.json() as Promise<ReferenceDataset>
+      })
+      .then((dataset) => setReferenceFacts(dataset.facts))
+      .catch(() => setReferenceFacts([]))
+  }, [])
+
+  function getReferenceValue(field: string | undefined, fallback: string): string {
+    const fact = referenceFacts.find((candidate) => candidate.field === field)
+    if (!fact) {
+      return fallback
+    }
+    if (!fact.unit || fact.unit === '1' || fact.unit === 'count') {
+      return String(fact.value)
+    }
+    return `${fact.value} ${fact.unit}`
+  }
+
+  function getPercentageReferenceValue(field: string, fallback: string): string {
+    const fact = referenceFacts.find((candidate) => candidate.field === field)
+    return fact && typeof fact.value === 'number' ? `${fact.value * 100}%` : fallback
+  }
+
+  function getCo2ScalePosition(): string {
+    const fact = referenceFacts.find((candidate) => candidate.field === 'global_marine_surface_carbon_dioxide')
+    if (!fact || typeof fact.value !== 'number') {
+      return '0%'
+    }
+    return `${Math.min(100, Math.max(0, ((fact.value - 280) / 220) * 100))}%`
+  }
+
   return (
     <main className="console">
       <header className="console__header">
@@ -96,25 +151,35 @@ function App() {
             <h1>EARTH</h1>
             <p className="designation">SOL III · TERRESTRIAL / SILICATE</p>
             <div className="data-grid">
-              {vitalStatistics.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+              {vitalStatistics.map(([label, value, field]) => <div key={label}><span>{label}</span><strong>{getReferenceValue(field, value)}</strong></div>)}
             </div>
           </Panel>
           <Panel title="02 · ORBITAL ELEMENTS" qualifier="J2000">
             <dl className="data-list">
-              {orbitalElements.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+              {orbitalElements.map(([label, value, field]) => <div key={label}><dt>{label}</dt><dd>{getReferenceValue(field, value)}</dd></div>)}
             </dl>
           </Panel>
           <div className="rail-block">ENVIRONMENT<i /></div>
-          <Panel title="03 · ORBITAL ENVIRONMENT" qualifier="">
-            <div className="data-grid compact-grid"><div><span>CATALOGUED OBJECTS</span><strong>40 000+</strong></div><div><span>ACTIVE PAYLOADS</span><strong>11 000+</strong></div><div><span>ROCKET BODIES</span><strong>2 500+</strong></div><div><span>TRACKED DEBRIS</span><strong>26 000+</strong></div></div>
+          <Panel title="03 · ORBITAL ENVIRONMENT" qualifier="SATCAT · 2026-09-04">
+            <div className="data-grid compact-grid">{orbitalEnvironment.map(([label, field]) => <div key={field}><span>{label}</span><strong>{getReferenceValue(field, 'LOADING')}</strong></div>)}</div>
           </Panel>
           <Panel title="04 · MAGNETIC SHIELD" qualifier="GEOMAGNETIC">
-            <div className="state-line"><span>GLOBAL DIPOLE</span><b className="status-chip">SHIELDED</b></div>
-            <div className="data-grid compact-grid"><div><span>SURFACE FIELD</span><strong>25–65 µT</strong></div><div><span>SURFACE DOSE</span><strong>0.6 mSv/yr</strong></div><div><span>INNER BELT ALT.</span><strong>1 000–12 000 km</strong></div><div><span>INNER BELT</span><strong>PROTONS · HIGH</strong></div><div><span>OUTER BELT ALT.</span><strong>13 000–60 000 km</strong></div><div><span>OUTER BELT</span><strong>ELECTRONS · VAR.</strong></div></div>
+            <div className="data-grid compact-grid magnetic-shield-grid"><div><span>FIELD ORIGIN</span><strong>{getReferenceValue('magnetic_field_origin', 'LOADING')}</strong></div><div><span>SOLAR WIND</span><strong>{getReferenceValue('solar_wind_deflection', 'LOADING')}</strong></div><div><span>ATMOSPHERE</span><strong>{getReferenceValue('atmospheric_retention_role', 'LOADING')}</strong></div><div><span>AURORAL RESPONSE</span><strong>{getReferenceValue('auroral_response', 'LOADING')}</strong></div></div>
           </Panel>
-          <Panel title="05 · ATMOSPHERE" qualifier="1013 hPa">
+          <Panel title="05 · ATMOSPHERE" qualifier="NEAR SURFACE">
             <div className="bar-list">
-              {atmosphere.map(([label, value, weight]) => <div key={label}><span>{label}</span><strong>{value}</strong><i><b style={{ width: `${weight}%` }} /></i></div>)}
+              {atmosphere.map(([label, fallback, weight, field]) => <div key={label}><span>{label}</span><strong>{field === 'global_marine_surface_carbon_dioxide' ? getReferenceValue(field, fallback) : getPercentageReferenceValue(field, fallback)}</strong><i><b style={{ width: `${weight}%` }} /></i></div>)}
+            </div>
+            <div className="co2-reference">
+              <div className="co2-reference__heading"><span>CO₂ CLIMATE REFERENCE</span><strong>{getReferenceValue('global_marine_surface_carbon_dioxide', 'LOADING')}</strong></div>
+              <div className="co2-scale" aria-label="Atmospheric carbon dioxide climate reference scale from 280 to 500 parts per million">
+                <div className="co2-scale__band co2-scale__band--preindustrial">PRE-IND.<small>280–350</small></div>
+                <div className="co2-scale__band co2-scale__band--elevated">ELEVATED<small>350–400</small></div>
+                <div className="co2-scale__band co2-scale__band--forcing">HIGH FORCING<small>400–450</small></div>
+                <div className="co2-scale__band co2-scale__band--extreme">EXTREME<small>450+</small></div>
+                <i className="co2-scale__marker" style={{ left: getCo2ScalePosition() }} aria-hidden="true" />
+              </div>
+              <p>GLOBAL MARINE SURFACE · MAY 2026 · NOAA GML</p>
             </div>
           </Panel>
           <div className="rail-block">LIFE<i /></div>

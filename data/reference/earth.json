@@ -1,0 +1,276 @@
+{
+  "schema_version": "1.0",
+  "body_id": "earth",
+  "facts": [
+    {
+      "fact_id": "earth-mean-radius",
+      "field": "mean_radius",
+      "value": 6371.0084,
+      "unit": "km",
+      "scope": "volume_equivalent_sphere",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Earth row, Mean Radius"
+    },
+    {
+      "fact_id": "earth-mass",
+      "field": "mass",
+      "value": 5.97217e+24,
+      "unit": "kg",
+      "scope": "total_mass",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Earth row, Mass"
+    },
+    {
+      "fact_id": "earth-equatorial-surface-gravity",
+      "field": "equatorial_surface_gravity",
+      "value": 9.8,
+      "unit": "m/s²",
+      "scope": "equatorial_surface",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Earth row, Equatorial Gravity"
+    },
+    {
+      "fact_id": "earth-geometric-albedo",
+      "field": "geometric_albedo",
+      "value": 0.367,
+      "unit": "1",
+      "scope": "disk_integrated_visible_light",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Earth row, Geometric Albedo"
+    },
+    {
+      "fact_id": "earth-semi-major-axis-j2000",
+      "field": "semi_major_axis",
+      "value": 1.00000261,
+      "unit": "AU",
+      "scope": "earth_moon_barycenter_mean_ecliptic_equinox_j2000",
+      "as_of": "2000-01-01",
+      "source_id": "jpl-approximate-planetary-positions",
+      "source_locator": "Table 1, EM Bary, semi-major axis"
+    },
+    {
+      "fact_id": "earth-orbital-eccentricity-j2000",
+      "field": "orbital_eccentricity",
+      "value": 0.01671123,
+      "unit": "1",
+      "scope": "earth_moon_barycenter_mean_ecliptic_equinox_j2000",
+      "as_of": "2000-01-01",
+      "source_id": "jpl-approximate-planetary-positions",
+      "source_locator": "Table 1, EM Bary, eccentricity"
+    },
+    {
+      "fact_id": "earth-orbital-inclination-j2000",
+      "field": "orbital_inclination",
+      "value": -0.00001531,
+      "unit": "deg",
+      "scope": "earth_moon_barycenter_mean_ecliptic_equinox_j2000",
+      "as_of": "2000-01-01",
+      "source_id": "jpl-approximate-planetary-positions",
+      "source_locator": "Table 1, EM Bary, inclination"
+    },
+    {
+      "fact_id": "earth-axial-tilt",
+      "field": "axial_tilt",
+      "value": 23.4,
+      "unit": "deg",
+      "scope": "rotation_axis_relative_to_orbital_plane",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Orbit and Rotation"
+    },
+    {
+      "fact_id": "earth-equatorial-escape-velocity",
+      "field": "equatorial_escape_velocity",
+      "value": 11.19,
+      "unit": "km/s",
+      "scope": "equatorial_surface",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Earth row, Escape Velocity"
+    },
+    {
+      "fact_id": "earth-orbital-catalog-object-count-2026-09-04",
+      "field": "orbital_catalog_object_count",
+      "value": 34735,
+      "unit": "count",
+      "scope": "celestrak_satcat_all_earth_orbit_objects",
+      "as_of": "2026-09-04",
+      "source_id": "celestrak-satcat-2026-09-04",
+      "source_locator": "Latest Orbital Statistics for Earth Orbit, All Objects total"
+    },
+    {
+      "fact_id": "earth-active-satellite-count-2026-09-04",
+      "field": "active_satellite_count",
+      "value": 16952,
+      "unit": "count",
+      "scope": "celestrak_satcat_active_satellites_all_catalogs",
+      "as_of": "2026-09-04",
+      "source_id": "celestrak-satcat-2026-09-04",
+      "source_locator": "Latest Orbital Statistics for Earth Orbit, Active Satellites total"
+    },
+    {
+      "fact_id": "earth-orbital-rocket-body-count-2026-09-04",
+      "field": "orbital_rocket_body_count",
+      "value": 2295,
+      "unit": "count",
+      "scope": "celestrak_satcat_rocket_bodies_all_catalogs",
+      "as_of": "2026-09-04",
+      "source_id": "celestrak-satcat-2026-09-04",
+      "source_locator": "Latest Orbital Statistics for Earth Orbit, Rocket Bodies total"
+    },
+    {
+      "fact_id": "earth-orbital-debris-count-2026-09-04",
+      "field": "orbital_debris_count",
+      "value": 12523,
+      "unit": "count",
+      "scope": "celestrak_satcat_debris_all_catalogs",
+      "as_of": "2026-09-04",
+      "source_id": "celestrak-satcat-2026-09-04",
+      "source_locator": "Latest Orbital Statistics for Earth Orbit, Debris total"
+    },
+    {
+      "fact_id": "earth-magnetic-field-origin",
+      "field": "magnetic_field_origin",
+      "kind": "statement",
+      "value": "ROTATING MOLTEN NICKEL-IRON CORE",
+      "scope": "global_magnetic_field_generation",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Magnetosphere"
+    },
+    {
+      "fact_id": "earth-solar-wind-deflection",
+      "field": "solar_wind_deflection",
+      "kind": "statement",
+      "value": "MOST SOLAR MATERIAL DEFLECTED",
+      "scope": "magnetosphere_solar_wind_interaction",
+      "as_of": "2023-05-22",
+      "source_id": "nasa-earth-magnetosphere-2023",
+      "source_locator": "Article introduction"
+    },
+    {
+      "fact_id": "earth-atmospheric-retention-role",
+      "field": "atmospheric_retention_role",
+      "kind": "statement",
+      "value": "ATMOSPHERIC RETENTION SUPPORTED",
+      "scope": "long_term_magnetospheric_role",
+      "as_of": "2023-05-22",
+      "source_id": "nasa-earth-magnetosphere-2023",
+      "source_locator": "Article introduction and Earth-Mars comparison"
+    },
+    {
+      "fact_id": "earth-auroral-response",
+      "field": "auroral_response",
+      "kind": "statement",
+      "value": "AURORAE AT MAGNETIC POLES",
+      "scope": "solar_particle_magnetic_field_interaction",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Magnetosphere"
+    },
+    {
+      "fact_id": "earth-equatorial-diameter",
+      "field": "equatorial_diameter",
+      "value": 12756,
+      "unit": "km",
+      "scope": "equatorial",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Size and Distance"
+    },
+    {
+      "fact_id": "earth-rotation-period",
+      "field": "rotation_period",
+      "value": 23.9,
+      "unit": "h",
+      "scope": "sidereal_rotation_approximation",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Quick Facts"
+    },
+    {
+      "fact_id": "earth-orbital-period",
+      "field": "orbital_period",
+      "value": 365.256,
+      "unit": "d",
+      "scope": "sidereal_orbital_period",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Earth row, Sidereal Orbital Period (1.0000174 Julian years)"
+    },
+    {
+      "fact_id": "earth-natural-satellite-count",
+      "field": "natural_satellite_count",
+      "value": 1,
+      "unit": "count",
+      "scope": "permanent_natural_satellites",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Moons"
+    },
+    {
+      "fact_id": "earth-surface-water-fraction",
+      "field": "surface_water_fraction",
+      "value": 0.71,
+      "unit": "1",
+      "scope": "global_surface_area",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Surface"
+    },
+    {
+      "fact_id": "earth-atmospheric-nitrogen-fraction",
+      "field": "atmospheric_nitrogen_fraction",
+      "value": 0.78,
+      "unit": "1",
+      "scope": "near_surface_dry_air_approximation",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Atmosphere"
+    },
+    {
+      "fact_id": "earth-atmospheric-oxygen-fraction",
+      "field": "atmospheric_oxygen_fraction",
+      "value": 0.21,
+      "unit": "1",
+      "scope": "near_surface_dry_air_approximation",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Atmosphere"
+    },
+    {
+      "fact_id": "earth-atmospheric-other-gases-fraction",
+      "field": "atmospheric_other_gases_fraction",
+      "value": 0.01,
+      "unit": "1",
+      "scope": "near_surface_dry_air_approximation",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Atmosphere"
+    },
+    {
+      "fact_id": "earth-global-marine-surface-carbon-dioxide-2026-05",
+      "field": "global_marine_surface_carbon_dioxide",
+      "value": 428.73,
+      "unit": "ppm",
+      "scope": "globally_averaged_marine_surface_dry_air_monthly_mean_provisional",
+      "as_of": "2026-05-01",
+      "source_id": "noaa-gml-global-co2-2026-08",
+      "source_locator": "2026-05 row, average column"
+    },
+    {
+      "fact_id": "earth-inner-core-radius",
+      "field": "inner_core_radius",
+      "value": 1221,
+      "unit": "km",
+      "scope": "global_mean",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Structure"
+    }
+  ]
+}
