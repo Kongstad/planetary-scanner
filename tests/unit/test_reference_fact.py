@@ -7,8 +7,11 @@ from pydantic import ValidationError
 from planetary_scanner.models.reference import (
     ReferenceFact,
     ReferenceSource,
+    build_reference_rag_corpus,
     load_validated_reference_dataset,
+    load_validated_retrieval_evaluation_set,
     reference_fact_to_rag_document,
+    write_reference_rag_documents,
 )
 
 VALID_FACT = {
@@ -65,6 +68,7 @@ def test_reference_fact_converts_to_provenance_preserving_rag_document() -> None
     assert "Locator: Size and Distance" in document.content
     assert document.metadata["source_id"] == "nasa-earth-facts-2025"
     assert document.metadata["scope"] == "equatorial"
+    assert document.metadata["unit"] == "km"
 
 
 @pytest.mark.parametrize("required_field", ["unit", "scope", "as_of", "source_id", "source_locator"])
@@ -86,6 +90,84 @@ def test_earth_reference_dataset_has_registered_sources() -> None:
 
     assert dataset.body_id == "earth"
     assert len(dataset.facts) == 74
+
+
+def test_reference_rag_corpus_preserves_fact_provenance() -> None:
+    project_root = Path(__file__).parents[2]
+
+    documents = build_reference_rag_corpus(
+        project_root / "data" / "reference" / "earth.json",
+        project_root / "data" / "reference" / "sources.json",
+    )
+    mean_radius = next(document for document in documents if document.metadata["field"] == "mean_radius")
+
+    assert len(documents) == 74
+    assert mean_radius.metadata["source_id"] == "jpl-planetary-physical-parameters-2019"
+    assert "Locator: Earth row, Mean Radius" in mean_radius.content
+
+
+def test_reference_rag_documents_are_written_as_deterministic_jsonl(tmp_path: Path) -> None:
+    project_root = Path(__file__).parents[2]
+    documents = build_reference_rag_corpus(
+        project_root / "data" / "reference" / "earth.json",
+        project_root / "data" / "reference" / "sources.json",
+    )
+    first_output_path = tmp_path / "earth-reference-records.jsonl"
+    second_output_path = tmp_path / "repeat" / "earth-reference-records.jsonl"
+
+    write_reference_rag_documents(first_output_path, documents)
+    write_reference_rag_documents(second_output_path, documents)
+
+    first_record = json.loads(first_output_path.read_text(encoding="utf-8").splitlines()[0])
+    assert first_output_path.read_bytes() == second_output_path.read_bytes()
+    assert len(first_output_path.read_text(encoding="utf-8").splitlines()) == 74
+    assert first_record["document_id"] == "reference-fact-earth-mean-radius"
+    assert first_record["metadata"]["source_url"] == "https://ssd.jpl.nasa.gov/planets/phys_par.html"
+
+
+def test_retrieval_evaluation_set_references_known_documents() -> None:
+    project_root = Path(__file__).parents[2]
+    documents = build_reference_rag_corpus(
+        project_root / "data" / "reference" / "earth.json",
+        project_root / "data" / "reference" / "sources.json",
+    )
+
+    evaluation_set = load_validated_retrieval_evaluation_set(
+        project_root / "data" / "evaluation" / "earth-reference-retrieval.json",
+        documents,
+    )
+
+    assert evaluation_set.body_id == "earth"
+    assert [case.case_id for case in evaluation_set.cases] == [
+        "earth-mean-radius",
+        "earth-mass",
+        "earth-axis-tilt",
+        "earth-atmospheric-carbon-dioxide",
+        "earth-global-heat-flow",
+    ]
+
+
+def test_retrieval_evaluation_set_rejects_unknown_document_ids(tmp_path: Path) -> None:
+    evaluation_path = tmp_path / "evaluation.json"
+    evaluation_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "body_id": "earth",
+                "cases": [
+                    {
+                        "case_id": "invalid-document",
+                        "question": "Does this record exist?",
+                        "expected_document_ids": ["reference-fact-earth-unknown"],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="Evaluation cases reference unknown document IDs"):
+        load_validated_retrieval_evaluation_set(evaluation_path, [])
 
 
 def test_dataset_with_unregistered_source_is_rejected(tmp_path: Path) -> None:

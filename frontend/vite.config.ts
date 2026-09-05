@@ -7,6 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/reference': 'http://127.0.0.1:8000',
+      '/retrieval': 'http://127.0.0.1:8000',
+      '/answers': 'http://127.0.0.1:8000',
     },
   },
 })

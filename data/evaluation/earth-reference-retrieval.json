@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "body_id": "earth",
+  "cases": [
+    {
+      "case_id": "earth-mean-radius",
+      "question": "What is Earth's mean radius?",
+      "expected_document_ids": ["reference-fact-earth-mean-radius"]
+    },
+    {
+      "case_id": "earth-mass",
+      "question": "How much does Earth weigh?",
+      "expected_document_ids": ["reference-fact-earth-mass"]
+    },
+    {
+      "case_id": "earth-axis-tilt",
+      "question": "What is the tilt of Earth's axis?",
+      "expected_document_ids": ["reference-fact-earth-axial-tilt"]
+    },
+    {
+      "case_id": "earth-atmospheric-carbon-dioxide",
+      "question": "What is the current global atmospheric carbon dioxide concentration?",
+      "expected_document_ids": ["reference-fact-earth-global-marine-surface-carbon-dioxide-2026-05"]
+    },
+    {
+      "case_id": "earth-global-heat-flow",
+      "question": "How much heat flows from Earth's interior?",
+      "expected_document_ids": ["reference-fact-earth-global-heat-flow"]
+    }
+  ]
+}

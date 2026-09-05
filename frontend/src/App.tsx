@@ -29,6 +29,28 @@ type ReferenceDataset = {
   facts: ReferenceFact[]
 }
 
+type RetrievedReferenceRecord = {
+  document: {
+    document_id: string
+    content: string
+    metadata: {
+      field: string
+      value: number | string
+      unit?: string
+      scope: string
+      source_id: string
+      source_url: string
+    }
+  }
+  score: number
+}
+
+type GroundedAnswer = {
+  answer: string
+  insufficient_evidence: boolean
+  citations: RetrievedReferenceRecord[]
+}
+
 const vitalStatistics: [label: string, value: string, field?: string][] = [
   ['MEAN RADIUS', 'LOADING', 'mean_radius'],
   ['MASS', 'LOADING', 'mass'],
@@ -108,6 +130,11 @@ const volatileInventory = [
 function App() {
   const [referenceFacts, setReferenceFacts] = useState<ReferenceFact[]>([])
   const [isReferenceApiOnline, setIsReferenceApiOnline] = useState(false)
+  const [query, setQuery] = useState('')
+  const [retrievalResults, setRetrievalResults] = useState<RetrievedReferenceRecord[]>([])
+  const [retrievalStatus, setRetrievalStatus] = useState('Enter a question to generate a grounded answer from cited reference records.')
+  const [groundedAnswer, setGroundedAnswer] = useState<string | null>(null)
+  const [isRetrieving, setIsRetrieving] = useState(false)
 
   useEffect(() => {
     void fetch('/reference/bodies/earth')
@@ -152,6 +179,38 @@ function App() {
       return '0%'
     }
     return `${Math.min(100, Math.max(0, ((fact.value - 280) / 220) * 100))}%`
+  }
+
+  function submitQuery(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const question = query.trim()
+    if (!question) {
+      setRetrievalStatus('Enter a question before querying the Science Computer.')
+      return
+    }
+    setIsRetrieving(true)
+    setGroundedAnswer(null)
+    setRetrievalStatus('Retrieving cited records and generating a grounded answer...')
+    void fetch(`/answers/reference?${new URLSearchParams({ question, limit: '3' })}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Answer API returned ${response.status}`)
+        }
+        return response.json() as Promise<GroundedAnswer>
+      })
+      .then((response) => {
+        setGroundedAnswer(response.answer)
+        setRetrievalResults(response.citations)
+        setRetrievalStatus(response.insufficient_evidence
+          ? 'The local model found insufficient evidence in the retrieved records.'
+          : `${response.citations.length} cited reference record${response.citations.length === 1 ? '' : 's'} supplied to the local model.`)
+      })
+      .catch(() => {
+        setRetrievalResults([])
+        setGroundedAnswer(null)
+        setRetrievalStatus('Grounded answering is unavailable. Start the local API and Ollama, then try again.')
+      })
+      .finally(() => setIsRetrieving(false))
   }
 
   return (
@@ -244,11 +303,20 @@ function App() {
               <span>PHASE ANGLE<strong>38.00°</strong></span><span>SUB-SPACECRAFT<strong>17.02° / −59.12°</strong></span><span>DOWNLINK<strong>UNAVAILABLE</strong></span><span>SOLAR ILLUM.<strong>72%</strong></span><span>SCAN COVERAGE<strong>NOT INITIALIZED</strong></span>
             </footer>
           </section>
-          <Panel title="SCIENCE COMPUTER" qualifier="REFERENCE CORPUS · 18 402 DOCUMENTS">
+          <Panel title="SCIENCE COMPUTER" qualifier="LOCAL RETRIEVAL · 74 RECORDS">
             <div className="science-computer">
-              <div className="message"><span>COMPUTER</span><p>Sensor lock acquired. Reference corpus is not initialized. Reference panels are provisional display fixtures.</p></div>
+              <div className="message"><span>RETRIEVAL</span><p>{retrievalStatus}</p></div>
+              {groundedAnswer && <div className="grounded-answer"><span>ANSWER</span><p>{groundedAnswer}</p></div>}
+              {retrievalResults.length > 0 && <ol className="retrieval-results">
+                {retrievalResults.map(({ document, score }) => <li key={document.document_id}>
+                  <strong>{document.metadata.field.replaceAll('_', ' ')}</strong>
+                  <span>{String(document.metadata.value)}{document.metadata.unit && document.metadata.unit !== '1' && document.metadata.unit !== 'count' ? ` ${document.metadata.unit}` : ''} · {document.metadata.scope}</span>
+                  <a href={document.metadata.source_url} target="_blank" rel="noreferrer">{document.metadata.source_id}</a>
+                  <em>{score.toFixed(3)}</em>
+                </li>)}
+              </ol>}
             </div>
-            <form className="query-form" onSubmit={(event) => event.preventDefault()}><label htmlFor="query">&gt;</label><input id="query" placeholder="Query the science computer about Earth..." /><button type="submit">QUERY</button></form>
+            <form className="query-form" onSubmit={submitQuery}><label htmlFor="query">&gt;</label><input id="query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Query the science computer about Earth..." /><button type="submit" disabled={isRetrieving}>{isRetrieving ? 'SEARCHING' : 'QUERY'}</button></form>
           </Panel>
         </section>
         <aside className="rail">

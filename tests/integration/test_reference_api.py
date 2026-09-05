@@ -21,3 +21,15 @@ def test_unknown_reference_body_returns_not_found() -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Reference body not found: mars"}
+
+
+def test_retrieve_reference_records() -> None:
+    response = client.get(
+        "/retrieval/reference",
+        params={"question": "What is Earth's mean radius?", "limit": 1},
+    )
+
+    assert response.status_code == 200
+    result = response.json()[0]
+    assert result["document"]["document_id"] == "reference-fact-earth-mean-radius"
+    assert result["document"]["metadata"]["source_id"] == "jpl-planetary-physical-parameters-2019"
