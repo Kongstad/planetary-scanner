@@ -215,7 +215,7 @@
     {
       "fact_id": "earth-surface-water-fraction",
       "field": "surface_water_fraction",
-      "value": 0.71,
+      "value": 0.711,
       "unit": "1",
       "scope": "global_surface_area",
       "as_of": "2025-12-05",
@@ -261,6 +261,476 @@
       "as_of": "2026-05-01",
       "source_id": "noaa-gml-global-co2-2026-08",
       "source_locator": "2026-05 row, average column"
+    },
+    {
+      "fact_id": "earth-life-abundance",
+      "field": "life_abundance",
+      "kind": "statement",
+      "value": "LIFE ABUNDANT",
+      "scope": "global_surface_and_ocean_biosphere",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Potential for Life"
+    },
+    {
+      "fact_id": "earth-global-forest-area-2020",
+      "field": "global_forest_area",
+      "value": 4.06,
+      "unit": "billion ha",
+      "scope": "global_forest_area",
+      "as_of": "2020-01-01",
+      "source_id": "fao-global-forest-resources-assessment-2020",
+      "source_locator": "Forests around the world"
+    },
+    {
+      "fact_id": "earth-global-primary-forest-area-2020",
+      "field": "global_primary_forest_area",
+      "value": 1.11,
+      "unit": "billion ha",
+      "scope": "global_primary_forest_area",
+      "as_of": "2020-01-01",
+      "source_id": "fao-global-forest-resources-assessment-2020",
+      "source_locator": "Primary forests cover about one billion hectares"
+    },
+    {
+      "fact_id": "earth-global-deforestation-rate-2015-2020",
+      "field": "global_deforestation_rate",
+      "value": 10,
+      "unit": "million ha/yr",
+      "scope": "annual_global_deforestation_rate_2015_2020",
+      "as_of": "2020-01-01",
+      "source_id": "fao-global-forest-resources-assessment-2020",
+      "source_locator": "Deforestation continues, but at a lower rate"
+    },
+    {
+      "fact_id": "earth-global-marine-surface-methane-2026-04",
+      "field": "global_marine_surface_methane",
+      "value": 1937.59,
+      "unit": "ppb",
+      "scope": "globally_averaged_marine_surface_dry_air_monthly_mean_provisional",
+      "as_of": "2026-04-01",
+      "source_id": "noaa-gml-global-ch4-2026-08",
+      "source_locator": "2026-04 row, average column"
+    },
+    {
+      "fact_id": "earth-global-marine-surface-nitrous-oxide-2026-04",
+      "field": "global_marine_surface_nitrous_oxide",
+      "value": 339.78,
+      "unit": "ppb",
+      "scope": "globally_averaged_marine_surface_dry_air_monthly_mean_provisional",
+      "as_of": "2026-04-01",
+      "source_id": "noaa-gml-global-n2o-2026-08",
+      "source_locator": "2026-04 row, average column"
+    },
+    {
+      "fact_id": "earth-ocean-net-primary-production-1998",
+      "field": "ocean_net_primary_production",
+      "value": 48.5,
+      "unit": "Pg C/yr",
+      "scope": "global_annual_satellite_model_estimate",
+      "as_of": "1998-01-01",
+      "source_id": "field-et-al-global-npp-1998",
+      "source_locator": "Oceanic net primary production estimate"
+    },
+    {
+      "fact_id": "earth-global-human-population-2025",
+      "field": "global_human_population",
+      "value": 8.2,
+      "unit": "B",
+      "scope": "rounded_global_population_estimate",
+      "as_of": "2025-07-01",
+      "source_id": "un-world-population-prospects-2024",
+      "source_locator": "World total, 2025 estimate"
+    },
+    {
+      "fact_id": "earth-catalogued-eukaryotic-species-2026",
+      "field": "catalogued_eukaryotic_species",
+      "value": 2.440722,
+      "unit": "M",
+      "scope": "catalogue_of_life_eukaryota_entries",
+      "as_of": "2026-08-26",
+      "source_id": "catalogue-of-life-2026-08",
+      "source_locator": "Eukaryota taxon count"
+    },
+    {
+      "fact_id": "earth-estimated-eukaryotic-species-2011",
+      "field": "estimated_eukaryotic_species",
+      "value": 8.7,
+      "unit": "M",
+      "scope": "global_eukaryotic_species_model_estimate_plus_minus_1_3_million",
+      "as_of": "2011-08-23",
+      "source_id": "mora-et-al-eukaryotic-species-2011",
+      "source_locator": "Abstract and Table 2"
+    },
+    {
+      "fact_id": "earth-lifeform-taxonomy-2026",
+      "field": "lifeform_type",
+      "kind": "statement",
+      "value": "CARBON-BASED · MULTICELLULAR",
+      "scope": "terrestrial_life_biochemistry_and_homo_sapiens_organismal_form",
+      "as_of": "2026-09-05",
+      "source_id": "openstax-biology-2e-2018",
+      "source_locator": "The Chemical Foundation of Life"
+    },
+    {
+      "fact_id": "earth-technological-species-2026",
+      "field": "technological_species",
+      "kind": "statement",
+      "value": "HOMO SAPIENS",
+      "scope": "known_extant_terrestrial_technological_species",
+      "as_of": "2026-09-05",
+      "source_id": "ncbi-taxonomy-homo-sapiens-2026",
+      "source_locator": "Taxonomy ID 9606"
+    },
+    {
+      "fact_id": "earth-kardashev-scale-estimate-1973",
+      "field": "kardashev_scale_estimate",
+      "kind": "statement",
+      "value": "TYPE 0.7 ESTIMATE",
+      "scope": "sagan_energy_use_interpretation_of_kardashev_scale",
+      "as_of": "1973-01-01",
+      "source_id": "sagan-cosmic-connection-1973",
+      "source_locator": "Kardashev scale discussion"
+    },
+    {
+      "fact_id": "earth-global-mean-surface-temperature",
+      "field": "global_mean_surface_temperature",
+      "value": 15,
+      "unit": "°C",
+      "scope": "global_mean_surface_temperature_reference",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Earth row, Mean Temperature (288 K)"
+    },
+    {
+      "fact_id": "earth-global-mean-sea-surface-temperature-climatology",
+      "field": "global_mean_sea_surface_temperature",
+      "value": 17,
+      "unit": "°C",
+      "scope": "annual_global_sea_surface_temperature_climatology",
+      "as_of": "2023-01-01",
+      "source_id": "noaa-ncei-global-sst-climatology",
+      "source_locator": "World Ocean Atlas temperature climatology"
+    },
+    {
+      "fact_id": "earth-global-temperature-anomaly-2026-07",
+      "field": "global_temperature_anomaly",
+      "value": 1.23,
+      "unit": "°C",
+      "scope": "global_land_ocean_temperature_index_relative_to_1951_1980",
+      "as_of": "2026-07-01",
+      "source_id": "nasa-gistemp-v4-2026-07",
+      "source_locator": "2026 row, July column (123 hundredths of degrees Celsius)"
+    },
+    {
+      "fact_id": "earth-maximum-near-surface-air-temperature-1913",
+      "field": "maximum_near_surface_air_temperature",
+      "value": 56.7,
+      "unit": "°C",
+      "scope": "world_record_near_surface_air_temperature_furnace_creek_california_united_states",
+      "as_of": "1913-07-10",
+      "source_id": "wmo-weather-climate-extremes-2025",
+      "source_locator": "World highest temperature, Furnace Creek (Greenland Ranch), California, United States"
+    },
+    {
+      "fact_id": "earth-minimum-near-surface-air-temperature-1983",
+      "field": "minimum_near_surface_air_temperature",
+      "value": -89.2,
+      "unit": "°C",
+      "scope": "world_record_near_surface_air_temperature_vostok_station_antarctica",
+      "as_of": "1983-07-21",
+      "source_id": "wmo-weather-climate-extremes-2025",
+      "source_locator": "World lowest temperature, Vostok Station, Antarctica"
+    },
+    {
+      "fact_id": "earth-arctic-sea-ice-extent-2026-08",
+      "field": "arctic_sea_ice_extent",
+      "value": 5.56,
+      "unit": "million km²",
+      "scope": "monthly_mean_arctic_sea_ice_extent",
+      "as_of": "2026-08-01",
+      "source_id": "nsidc-sea-ice-today-2026-09",
+      "source_locator": "August 2026 Arctic monthly average extent"
+    },
+    {
+      "fact_id": "earth-polar-ice-sheet-mass-loss-rate-2002-2025",
+      "field": "polar_ice_sheet_mass_loss_rate",
+      "value": 399,
+      "unit": "Gt/yr",
+      "scope": "combined_antarctica_135_and_greenland_264_gigatonnes_per_year_2002_2025",
+      "as_of": "2025-12-31",
+      "source_id": "nasa-ice-sheets-2026",
+      "source_locator": "Antarctica and Greenland mass variation since 2002"
+    },
+    {
+      "fact_id": "earth-atmospheric-water-volume",
+      "field": "atmospheric_water_volume",
+      "value": 12900,
+      "unit": "km³",
+      "scope": "estimated_total_water_in_earth_atmosphere",
+      "as_of": "2019-11-13",
+      "source_id": "usgs-earth-water-inventory-2019",
+      "source_locator": "Earth water distribution inventory"
+    },
+    {
+      "fact_id": "earth-surface-land-fraction",
+      "field": "surface_land_fraction",
+      "value": 0.289,
+      "unit": "1",
+      "scope": "global_surface_area_complement_of_ocean_coverage",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Surface (29% land implied by 71% ocean coverage)"
+    },
+    {
+      "fact_id": "earth-mean-ocean-depth",
+      "field": "mean_ocean_depth",
+      "value": 3600,
+      "unit": "m",
+      "scope": "global_ocean_mean_depth",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Surface"
+    },
+    {
+      "fact_id": "earth-highest-elevation-above-mean-sea-level",
+      "field": "highest_surface_elevation",
+      "value": 8848,
+      "unit": "m",
+      "scope": "maximum_elevation_above_global_mean_sea_level",
+      "as_of": "2024-06-16",
+      "source_id": "noaa-ocean-depth-and-elevation-2024",
+      "source_locator": "Highest point above global mean sea level"
+    },
+    {
+      "fact_id": "earth-deepest-ocean-depth",
+      "field": "deepest_ocean_depth",
+      "value": 10935,
+      "unit": "m",
+      "scope": "maximum_ocean_depth_below_sea_level",
+      "as_of": "2024-06-16",
+      "source_id": "noaa-ocean-depth-and-elevation-2024",
+      "source_locator": "Deepest known point in Earth's oceans"
+    },
+    {
+      "fact_id": "earth-total-surface-relief",
+      "field": "total_surface_relief",
+      "value": 19783,
+      "unit": "m",
+      "scope": "difference_between_highest_elevation_8848_m_and_deepest_ocean_depth_10935_m",
+      "as_of": "2024-06-16",
+      "source_id": "noaa-ocean-depth-and-elevation-2024",
+      "source_locator": "Derived from highest elevation and deepest ocean depth records"
+    },
+    {
+      "fact_id": "earth-carbon-reservoir-reference-total",
+      "field": "carbon_reservoir_reference_total",
+      "value": 110300,
+      "unit": "Gt C",
+      "scope": "compiled_reference_total_rocks_ocean_land_atmosphere_and_fossil_fuels",
+      "as_of": "2011-06-16",
+      "source_id": "nasa-carbon-cycle-2026",
+      "source_locator": "Carbon reservoir diagram and text"
+    },
+    {
+      "fact_id": "earth-carbon-rocks-and-sediments-fraction",
+      "field": "carbon_rocks_and_sediments_fraction",
+      "value": 0.594,
+      "unit": "1",
+      "scope": "65500_gigatonnes_carbon_in_rocks_and_sediments_divided_by_compiled_reference_total",
+      "as_of": "2011-06-16",
+      "source_id": "nasa-carbon-cycle-2026",
+      "source_locator": "Most of Earth's carbon, about 65,500 billion metric tons, is stored in rocks"
+    },
+    {
+      "fact_id": "earth-carbon-ocean-fraction",
+      "field": "carbon_ocean_fraction",
+      "value": 0.345,
+      "unit": "1",
+      "scope": "38000_gigatonnes_dissolved_inorganic_carbon_divided_by_compiled_reference_total",
+      "as_of": "2011-06-16",
+      "source_id": "nasa-carbon-cycle-2026",
+      "source_locator": "Carbon reservoir diagram, ocean inventory"
+    },
+    {
+      "fact_id": "earth-carbon-mobile-reservoirs-fraction",
+      "field": "carbon_mobile_reservoirs_fraction",
+      "value": 0.061,
+      "unit": "1",
+      "scope": "land_biosphere_soils_atmosphere_and_fossil_fuels_remainder_of_compiled_reference_total",
+      "as_of": "2011-06-16",
+      "source_id": "nasa-carbon-cycle-2026",
+      "source_locator": "Carbon reservoir diagram and text"
+    },
+    {
+      "fact_id": "earth-water-inventory-total",
+      "field": "water_inventory_total",
+      "value": 1.386,
+      "unit": "e21 kg",
+      "scope": "estimated_total_earth_water_inventory",
+      "as_of": "2019-11-13",
+      "source_id": "usgs-earth-water-inventory-2019",
+      "source_locator": "Earth water distribution inventory"
+    },
+    {
+      "fact_id": "earth-water-ocean-fraction",
+      "field": "water_ocean_fraction",
+      "value": 0.965,
+      "unit": "1",
+      "scope": "estimated_fraction_of_total_earth_water_in_oceans",
+      "as_of": "2019-11-13",
+      "source_id": "usgs-earth-water-inventory-2019",
+      "source_locator": "Earth water distribution inventory"
+    },
+    {
+      "fact_id": "earth-water-ice-fraction",
+      "field": "water_ice_fraction",
+      "value": 0.0174,
+      "unit": "1",
+      "scope": "estimated_fraction_of_total_earth_water_in_ice_caps_glaciers_and_permanent_snow",
+      "as_of": "2019-11-13",
+      "source_id": "usgs-earth-water-inventory-2019",
+      "source_locator": "Earth water distribution inventory"
+    },
+    {
+      "fact_id": "earth-water-nonocean-fraction",
+      "field": "water_nonocean_fraction",
+      "value": 0.0176,
+      "unit": "1",
+      "scope": "groundwater_lakes_soil_moisture_atmosphere_and_other_water_remainder",
+      "as_of": "2019-11-13",
+      "source_id": "usgs-earth-water-inventory-2019",
+      "source_locator": "Derived remainder of total water inventory"
+    },
+    {
+      "fact_id": "earth-core-state",
+      "field": "core_state",
+      "kind": "statement",
+      "value": "LIQUID OUTER / SOLID INNER",
+      "scope": "earth_core_physical_state",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Structure"
+    },
+    {
+      "fact_id": "earth-core-mantle-boundary-depth",
+      "field": "core_mantle_boundary_depth",
+      "value": 2900,
+      "unit": "km",
+      "scope": "approximate_depth_below_surface_at_base_of_mantle",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Structure (mantle thickness about 2,900 km)"
+    },
+    {
+      "fact_id": "earth-global-heat-flow",
+      "field": "global_heat_flow",
+      "value": 47,
+      "unit": "TW",
+      "scope": "total_solid_earth_surface_heat_loss_model_estimate",
+      "as_of": "2010-01-01",
+      "source_id": "davies-global-heat-flow-2010",
+      "source_locator": "Global total heat loss estimate"
+    },
+    {
+      "fact_id": "earth-radiogenic-heat",
+      "field": "radiogenic_heat",
+      "value": 20,
+      "unit": "TW",
+      "scope": "bulk_silicate_earth_radiogenic_power_model_estimate",
+      "as_of": "2013-12-01",
+      "source_id": "sramek-radiogenic-heat-2013",
+      "source_locator": "Bulk silicate Earth radiogenic power estimate"
+    },
+    {
+      "fact_id": "earth-geodynamo-status",
+      "field": "geodynamo_status",
+      "kind": "statement",
+      "value": "ACTIVE",
+      "scope": "present_earth_magnetic_field_generation",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Magnetosphere"
+    },
+    {
+      "fact_id": "earth-earthquake-rate-m25-to-m54",
+      "field": "earthquake_rate_m25_to_m54",
+      "value": 1370,
+      "unit": "/day",
+      "scope": "estimated_worldwide_annual_frequency_500000_magnitude_2_5_to_5_4_earthquakes_divided_by_365_days",
+      "as_of": "2025-01-01",
+      "source_id": "usgs-earthquake-frequency",
+      "source_locator": "Worldwide annual estimated frequency, magnitude 2.5-5.4"
+    },
+    {
+      "fact_id": "earth-tectonic-regime",
+      "field": "tectonic_regime",
+      "kind": "statement",
+      "value": "ACTIVE PLATE TECTONICS",
+      "scope": "global_lithosphere_plate_motion",
+      "as_of": "2025-12-05",
+      "source_id": "nasa-earth-facts-2025",
+      "source_locator": "Surface"
+    },
+    {
+      "fact_id": "earth-bulk-iron-mass-fraction",
+      "field": "bulk_earth_iron_mass_fraction",
+      "value": 0.321,
+      "unit": "1",
+      "scope": "bulk_earth_elemental_mass_fraction_model",
+      "as_of": "2003-01-01",
+      "source_id": "mcdonough-bulk-earth-composition-2003",
+      "source_locator": "Bulk Earth elemental composition table, Fe"
+    },
+    {
+      "fact_id": "earth-bulk-oxygen-mass-fraction",
+      "field": "bulk_earth_oxygen_mass_fraction",
+      "value": 0.301,
+      "unit": "1",
+      "scope": "bulk_earth_elemental_mass_fraction_model",
+      "as_of": "2003-01-01",
+      "source_id": "mcdonough-bulk-earth-composition-2003",
+      "source_locator": "Bulk Earth elemental composition table, O"
+    },
+    {
+      "fact_id": "earth-bulk-silicon-mass-fraction",
+      "field": "bulk_earth_silicon_mass_fraction",
+      "value": 0.151,
+      "unit": "1",
+      "scope": "bulk_earth_elemental_mass_fraction_model",
+      "as_of": "2003-01-01",
+      "source_id": "mcdonough-bulk-earth-composition-2003",
+      "source_locator": "Bulk Earth elemental composition table, Si"
+    },
+    {
+      "fact_id": "earth-bulk-magnesium-mass-fraction",
+      "field": "bulk_earth_magnesium_mass_fraction",
+      "value": 0.139,
+      "unit": "1",
+      "scope": "bulk_earth_elemental_mass_fraction_model",
+      "as_of": "2003-01-01",
+      "source_id": "mcdonough-bulk-earth-composition-2003",
+      "source_locator": "Bulk Earth elemental composition table, Mg"
+    },
+    {
+      "fact_id": "earth-bulk-sulfur-mass-fraction",
+      "field": "bulk_earth_sulfur_mass_fraction",
+      "value": 0.029,
+      "unit": "1",
+      "scope": "bulk_earth_elemental_mass_fraction_model",
+      "as_of": "2003-01-01",
+      "source_id": "mcdonough-bulk-earth-composition-2003",
+      "source_locator": "Bulk Earth elemental composition table, S"
+    },
+    {
+      "fact_id": "earth-bulk-other-elements-mass-fraction",
+      "field": "bulk_earth_other_elements_mass_fraction",
+      "value": 0.059,
+      "unit": "1",
+      "scope": "bulk_earth_elemental_mass_fraction_remainder_after_fe_o_si_mg_s",
+      "as_of": "2003-01-01",
+      "source_id": "mcdonough-bulk-earth-composition-2003",
+      "source_locator": "Derived remainder; named elemental fractions include Ni, Ca, Al, and minor elements"
     },
     {
       "fact_id": "earth-inner-core-radius",

@@ -31,6 +31,9 @@
 .status-online { color: var(--green); }
 .mission-status .status-online { color: var(--green); }
 .status-online i { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s ease-in-out infinite; }
+.status-offline { color: oklch(0.68 0.18 25); }
+.mission-status .status-offline { color: oklch(0.68 0.18 25); }
+.status-offline i { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: oklch(0.68 0.18 25); }
 .console__header > button, .query-form button { border: 1px solid oklch(0.45 0.06 205); background: oklch(0.2 0.03 205); color: oklch(0.86 0.11 205); font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; }
 .console__header > button { padding: 0 22px; }
 .console__main { grid-template-columns: 380px minmax(420px, 1fr) 400px; flex: 1; min-height: 0; }
@@ -49,6 +52,9 @@
 .data-grid span, .index-count span { color: var(--muted); font-family: var(--mono); font-size: 9px; letter-spacing: 0.13em; }
 .data-grid strong { color: oklch(0.9 0.01 240); font-family: var(--mono); font-size: 12px; font-weight: 400; letter-spacing: 0.03em; }
 .magnetic-shield-grid strong { font-size: 10px; }
+.biosphere-observations strong { font-size: 10px; }
+.planetary-interior strong { font-size: 10px; }
+.civilisation-scenario div:last-child { grid-column: span 2; }
 .biosphere-metrics { background: transparent; gap: 7px 12px; }.biosphere-metrics div { display: block; min-width: 0; padding: 0; background: transparent; }.biosphere-metrics span, .biosphere-metrics strong { display: block; white-space: nowrap; }.biosphere-metrics strong { margin-top: 3px; font-size: 11px; }
 .data-list { margin: -4px 0 0; }
 .data-list div { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid oklch(0.23 0.016 250); }

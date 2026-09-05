@@ -54,6 +54,204 @@
       "published_or_updated": "2026-08-05",
       "retrieved_on": "2026-09-05",
       "usage_note": "Globally averaged marine-surface monthly mean CO2 record. Recent values are provisional and may be recalibrated by NOAA."
+    },
+    {
+      "source_id": "fao-global-forest-resources-assessment-2020",
+      "publisher": "Food and Agriculture Organization of the United Nations",
+      "title": "Global Forest Resources Assessment 2020",
+      "url": "https://www.fao.org/interactive/forest-resources-assessment/2020/en/",
+      "published_or_updated": "2020-09-21",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Global forest assessment across 236 countries and territories for 1990-2020. Forest extent and change rates are assessment estimates, not real-time observations."
+    },
+    {
+      "source_id": "noaa-gml-global-ch4-2026-08",
+      "publisher": "NOAA Global Monitoring Laboratory",
+      "title": "Trends in Globally Averaged CH4",
+      "url": "https://gml.noaa.gov/webdata/ccgg/trends/ch4/ch4_mm_gl.txt",
+      "published_or_updated": "2026-08-05",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Globally averaged marine-surface monthly mean methane record. Recent values are provisional and may be recalibrated by NOAA."
+    },
+    {
+      "source_id": "noaa-gml-global-n2o-2026-08",
+      "publisher": "NOAA Global Monitoring Laboratory",
+      "title": "Trends in Globally Averaged N2O",
+      "url": "https://gml.noaa.gov/webdata/ccgg/trends/n2o/n2o_mm_gl.txt",
+      "published_or_updated": "2026-08-05",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Globally averaged marine-surface monthly mean nitrous-oxide record. Recent values are provisional and may be recalibrated by NOAA."
+    },
+    {
+      "source_id": "field-et-al-global-npp-1998",
+      "publisher": "Science",
+      "title": "Primary Production of the Biosphere: Integrating Terrestrial and Oceanic Components",
+      "url": "https://doi.org/10.1126/science.281.5374.237",
+      "published_or_updated": "1998-07-10",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Satellite-model global net primary production estimate. This historical benchmark is not a current annual satellite-product aggregation."
+    },
+    {
+      "source_id": "un-world-population-prospects-2024",
+      "publisher": "United Nations Department of Economic and Social Affairs, Population Division",
+      "title": "World Population Prospects 2024",
+      "url": "https://population.un.org/wpp/",
+      "published_or_updated": "2024-07-11",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Official UN global population estimates and projections. The displayed value is a rounded 2025 world estimate from the 2024 revision."
+    },
+    {
+      "source_id": "catalogue-of-life-2026-08",
+      "publisher": "Catalogue of Life",
+      "title": "Catalogue of Life Annual Release 2026",
+      "url": "https://www.catalogueoflife.org/",
+      "published_or_updated": "2026-08-26",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Current Catalogue of Life release. The catalogue notes that its coverage is incomplete and may contain errors."
+    },
+    {
+      "source_id": "mora-et-al-eukaryotic-species-2011",
+      "publisher": "PLOS Biology",
+      "title": "How Many Species Are There on Earth and in the Ocean?",
+      "url": "https://doi.org/10.1371/journal.pbio.1001127",
+      "published_or_updated": "2011-08-23",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Peer-reviewed model-based estimate of global eukaryotic species richness; it is an estimate with stated uncertainty, not a current inventory."
+    },
+    {
+      "source_id": "ncbi-taxonomy-homo-sapiens-2026",
+      "publisher": "National Center for Biotechnology Information",
+      "title": "Homo sapiens (human), Taxonomy ID 9606",
+      "url": "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=9606",
+      "published_or_updated": "2020-08-04",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Curated taxonomy record identifying Homo sapiens within Eukaryota and Metazoa."
+    },
+    {
+      "source_id": "openstax-biology-2e-2018",
+      "publisher": "OpenStax, Rice University",
+      "title": "Biology 2e: The Chemical Foundation of Life",
+      "url": "https://openstax.org/books/biology-2e/pages/2-introduction",
+      "published_or_updated": "2018-03-28",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Open biology textbook describing carbon as the foundation of Earth's organic biomolecules."
+    },
+    {
+      "source_id": "noaa-ncei-global-sst-climatology",
+      "publisher": "NOAA National Centers for Environmental Information",
+      "title": "World Ocean Atlas",
+      "url": "https://www.ncei.noaa.gov/products/world-ocean-atlas",
+      "published_or_updated": "2023-01-01",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Global ocean-temperature climatology. The displayed surface temperature is an annual climatological reference, not a live satellite retrieval."
+    },
+    {
+      "source_id": "nasa-gistemp-v4-2026-07",
+      "publisher": "NASA Goddard Institute for Space Studies",
+      "title": "GISS Surface Temperature Analysis version 4: Global Land-Ocean Temperature Index",
+      "url": "https://data.giss.nasa.gov/gistemp/tabledata_v4/GLB.Ts+dSST.txt",
+      "published_or_updated": "2026-08-10",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Monthly global land-ocean temperature change relative to the 1951-1980 baseline; incorporates GHCN v4 land stations and ERSST v5 ocean areas."
+    },
+    {
+      "source_id": "wmo-weather-climate-extremes-2025",
+      "publisher": "World Meteorological Organization",
+      "title": "Records of Weather and Climate Extremes Table",
+      "url": "https://wmo.int/files/records-of-weather-and-climate-extremes-table",
+      "published_or_updated": "2025-07-31",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "WMO archive of formally evaluated weather and climate records. Values are station observations of near-surface air temperature, not land or ocean skin temperature."
+    },
+    {
+      "source_id": "nsidc-sea-ice-today-2026-09",
+      "publisher": "National Snow and Ice Data Center",
+      "title": "Arctic zigs; Antarctic zags",
+      "url": "https://nsidc.org/sea-ice-today/analyses/arctic-zigs-antarctic-zags",
+      "published_or_updated": "2026-09-03",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "NSIDC monthly Arctic sea-ice extent analysis derived from the NOAA Sea Ice Index. This is a time-specific satellite-era observation, not a global annual mean."
+    },
+    {
+      "source_id": "nasa-ice-sheets-2026",
+      "publisher": "NASA Science",
+      "title": "Ice Sheets - Earth Indicator",
+      "url": "https://science.nasa.gov/earth/explore/earth-indicators/ice-sheets",
+      "published_or_updated": "2026-07-15",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "GRACE and GRACE Follow-On satellite measurements of Greenland and Antarctic ice-sheet mass variation."
+    },
+    {
+      "source_id": "usgs-earth-water-inventory-2019",
+      "publisher": "U.S. Geological Survey",
+      "title": "How Much Water is There on Earth?",
+      "url": "https://www.usgs.gov/special-topics/water-science-school/science/how-much-water-there-earth",
+      "published_or_updated": "2019-11-13",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Global water inventory estimate. Atmospheric water volume is an approximate inventory, not a real-time observation."
+    },
+    {
+      "source_id": "noaa-ocean-depth-and-elevation-2024",
+      "publisher": "NOAA National Ocean Service",
+      "title": "How deep is the ocean?",
+      "url": "https://oceanservice.noaa.gov/facts/oceandepth.html",
+      "published_or_updated": "2024-06-16",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "NOAA reference for global ocean depth and the deepest documented ocean location. Its companion elevation reference provides the highest elevation above mean sea level."
+    },
+    {
+      "source_id": "mcdonough-bulk-earth-composition-2003",
+      "publisher": "Elsevier, Treatise on Geochemistry",
+      "title": "Compositional Model for the Earth's Core",
+      "url": "https://doi.org/10.1016/B0-08-043751-6/03015-6",
+      "published_or_updated": "2003-01-01",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Bulk-Earth elemental mass-fraction model derived from cosmochemical and geochemical constraints. It includes the core, mantle, and crust; it is not a direct global measurement."
+    },
+    {
+      "source_id": "nasa-carbon-cycle-2026",
+      "publisher": "NASA Earth Observatory",
+      "title": "The Carbon Cycle",
+      "url": "https://science.nasa.gov/earth/earth-observatory/the-carbon-cycle/",
+      "published_or_updated": "2026-02-23",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Reference carbon reservoir estimates. Reservoir magnitudes are historical, approximate inventories expressed as gigatonnes of carbon, not current annual measurements."
+    },
+    {
+      "source_id": "davies-global-heat-flow-2010",
+      "publisher": "Physics of the Earth and Planetary Interiors",
+      "title": "Global map of solid Earth surface heat flow",
+      "url": "https://doi.org/10.1016/j.pepi.2009.10.008",
+      "published_or_updated": "2010-01-01",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Global conductive heat-flow compilation. The reported 47 TW is a model-derived estimate of total surface heat loss."
+    },
+    {
+      "source_id": "sramek-radiogenic-heat-2013",
+      "publisher": "Geochemistry, Geophysics, Geosystems",
+      "title": "Geophysical and geochemical constraints on geoneutrino fluxes from Earth's mantle",
+      "url": "https://doi.org/10.1002/ggge.20154",
+      "published_or_updated": "2013-12-01",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Earth radiogenic-power estimate constrained by geochemical and geophysical models. The display rounds the model estimate to 20 TW."
+    },
+    {
+      "source_id": "usgs-earthquake-frequency",
+      "publisher": "U.S. Geological Survey",
+      "title": "Earthquake Facts and Statistics",
+      "url": "https://www.usgs.gov/programs/earthquake-hazards/earthquake-facts-answers-questions",
+      "published_or_updated": "2025-01-01",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "USGS estimated worldwide annual frequency by magnitude class. The displayed daily rate is derived from the estimated 500,000 annual earthquakes of magnitude 2.5-5.4."
+    },
+    {
+      "source_id": "sagan-cosmic-connection-1973",
+      "publisher": "Anchor Press/Doubleday",
+      "title": "The Cosmic Connection: An Extraterrestrial Perspective",
+      "url": "https://archive.org/details/cosmicconnection00saga",
+      "published_or_updated": "1973-01-01",
+      "retrieved_on": "2026-09-05",
+      "usage_note": "Sagan's energy-use interpretation of the Kardashev scale. The Type 0.7 value is a historical estimate, not a measured planetary parameter."
     }
   ]
 }

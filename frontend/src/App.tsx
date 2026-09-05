@@ -61,31 +61,53 @@ const atmosphere: [label: string, fallback: string, width: number, field: string
   ['GLOBAL CO₂', 'LOADING', 0.043, 'global_marine_surface_carbon_dioxide'],
 ]
 
-const composition = [
-  ['SILICATES', '58%', 58],
-  ['CARBONATES', '17%', 17],
-  ['IRON OXIDES', '11%', 11],
-  ['CLAY GROUP', '9%', 9],
-  ['EVAPORITES', '5%', 5],
+const geochemistry: [label: string, field: string][] = [
+  ['IRON Fe', 'bulk_earth_iron_mass_fraction'],
+  ['OXYGEN O', 'bulk_earth_oxygen_mass_fraction'],
+  ['SILICON Si', 'bulk_earth_silicon_mass_fraction'],
+  ['MAGNESIUM Mg', 'bulk_earth_magnesium_mass_fraction'],
+  ['SULFUR S', 'bulk_earth_sulfur_mass_fraction'],
+  ['OTHER ELEMENTS', 'bulk_earth_other_elements_mass_fraction'],
 ]
 
-const geochemistry = [
-  ['OXYGEN O', '46.6%', 47], ['SILICON Si', '27.7%', 28], ['ALUMINIUM Al', '8.10%', 8],
-  ['IRON Fe', '5.00%', 5],
+const planetaryInterior: [label: string, field: string][] = [
+  ['CORE STATE', 'core_state'],
+  ['INNER CORE R.', 'inner_core_radius'],
+  ['CORE–MANTLE BOUNDARY', 'core_mantle_boundary_depth'],
+  ['GLOBAL HEAT FLOW', 'global_heat_flow'],
+  ['RADIOGENIC HEAT', 'radiogenic_heat'],
+  ['GEODYNAMO', 'geodynamo_status'],
+  ['QUAKES / DAY · M2.5–5.4', 'earthquake_rate_m25_to_m54'],
+  ['TECTONIC REGIME', 'tectonic_regime'],
 ]
 
-const biosignatures = [
-  ['O₂ + CH₄ PAIR', 'REDOX DISEQUILIBRIUM'], ['N₂O', '336 ppb ATMOSPHERIC'],
+const biosphereObservations: [label: string, field: string][] = [
+  ['FOREST AREA · 2020', 'global_forest_area'],
+  ['PRIMARY FOREST · 2020', 'global_primary_forest_area'],
+  ['DEFORESTATION · 2015–20', 'global_deforestation_rate'],
+  ['GLOBAL CH₄ · APR 2026', 'global_marine_surface_methane'],
+  ['GLOBAL N₂O · APR 2026', 'global_marine_surface_nitrous_oxide'],
+  ['OCEAN NPP', 'ocean_net_primary_production'],
+]
+
+const civilisationReference: [label: string, field: string][] = [
+  ['GLOBAL POPULATION · 2025', 'global_human_population'],
+  ['CATALOGUED EUK. · 2026', 'catalogued_eukaryotic_species'],
+  ['EST. EUK. SPECIES · 2011', 'estimated_eukaryotic_species'],
+  ['LIFEFORM TYPE · 2026', 'lifeform_type'],
+  ['DOMINANT TECH. SPECIES · 2026', 'technological_species'],
+  ['CIVILISATION SCALE · 1973', 'kardashev_scale_estimate'],
 ]
 
 const volatileInventory = [
-  { label: 'CARBON C', total: '1.85e20 kg', reservoirs: [{ name: 'CRUSTAL CARBONATE', percentage: 50, tone: 'soil' }, { name: 'OCEAN DIC', percentage: 45, tone: 'ocean' }, { name: 'BIOSPHERE', percentage: 5, tone: 'biosphere' }] },
-  { label: 'WATER H₂O', total: '1.386e21 kg', reservoirs: [{ name: 'OCEAN', percentage: 97, tone: 'ocean' }, { name: 'ICE SHEETS', percentage: 2, tone: 'ice' }, { name: 'ATMOSPHERE', percentage: 1, tone: 'atmosphere' }] },
-  { label: 'NITROGEN N', total: '4.00e18 kg', reservoirs: [{ name: 'ATMOSPHERE N₂', percentage: 99.6, tone: 'atmosphere' }, { name: 'FIXED NITRATE', percentage: 0.4, tone: 'nitrate' }] },
+  { label: 'CARBON C', totalField: 'carbon_reservoir_reference_total', reservoirs: [{ name: 'ROCKS + SEDIMENTS', field: 'carbon_rocks_and_sediments_fraction', tone: 'soil' }, { name: 'OCEAN DIC', field: 'carbon_ocean_fraction', tone: 'ocean' }, { name: 'MOBILE RESERVOIRS', field: 'carbon_mobile_reservoirs_fraction', tone: 'biosphere' }] },
+  { label: 'WATER H₂O', totalField: 'water_inventory_total', reservoirs: [{ name: 'OCEANS', field: 'water_ocean_fraction', tone: 'ocean' }, { name: 'ICE + GLACIERS', field: 'water_ice_fraction', tone: 'ice' }, { name: 'OTHER WATER', field: 'water_nonocean_fraction', tone: 'atmosphere' }] },
+  { label: 'DRY AIR', totalField: 'atmospheric_nitrogen_fraction', reservoirs: [{ name: 'N₂', field: 'atmospheric_nitrogen_fraction', tone: 'atmosphere' }, { name: 'O₂', field: 'atmospheric_oxygen_fraction', tone: 'ice' }, { name: 'TRACE GASES', field: 'atmospheric_other_gases_fraction', tone: 'nitrate' }] },
 ]
 
 function App() {
   const [referenceFacts, setReferenceFacts] = useState<ReferenceFact[]>([])
+  const [isReferenceApiOnline, setIsReferenceApiOnline] = useState(false)
 
   useEffect(() => {
     void fetch('/reference/bodies/earth')
@@ -95,24 +117,33 @@ function App() {
         }
         return response.json() as Promise<ReferenceDataset>
       })
-      .then((dataset) => setReferenceFacts(dataset.facts))
-      .catch(() => setReferenceFacts([]))
+      .then((dataset) => {
+        setReferenceFacts(dataset.facts)
+        setIsReferenceApiOnline(true)
+      })
+      .catch(() => {
+        setReferenceFacts([])
+        setIsReferenceApiOnline(false)
+      })
   }, [])
 
-  function getReferenceValue(field: string | undefined, fallback: string): string {
+  function getReferenceValue(field: string | undefined, fallback: string, fractionDigits?: number): string {
     const fact = referenceFacts.find((candidate) => candidate.field === field)
     if (!fact) {
       return fallback
     }
+    const value = typeof fact.value === 'number' && fractionDigits !== undefined
+      ? fact.value.toFixed(fractionDigits)
+      : String(fact.value)
     if (!fact.unit || fact.unit === '1' || fact.unit === 'count') {
-      return String(fact.value)
+      return value
     }
-    return `${fact.value} ${fact.unit}`
+    return `${value} ${fact.unit}`
   }
 
   function getPercentageReferenceValue(field: string, fallback: string): string {
     const fact = referenceFacts.find((candidate) => candidate.field === field)
-    return fact && typeof fact.value === 'number' ? `${fact.value * 100}%` : fallback
+    return fact && typeof fact.value === 'number' ? `${(fact.value * 100).toFixed(1)}%` : fallback
   }
 
   function getCo2ScalePosition(): string {
@@ -138,7 +169,7 @@ function App() {
           <button className="body-tab" type="button" disabled><span className="body-disc body-disc--mars" /><span>MARS<small>SOL IV</small></span></button>
           <button className="body-tab" type="button" disabled><span className="body-disc body-disc--luna" /><span>LUNA<small>SOL III-a</small></span></button>
           <div className="mission-status">
-            <div><span>SENSOR ARRAY</span><strong className="status-online"><i />ONLINE</strong></div>
+            <div><span>SENSOR ARRAY</span><strong className={isReferenceApiOnline ? 'status-online' : 'status-offline'}><i />{isReferenceApiOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
             <div><span>MISSION CLOCK</span><strong>00:22:00 UTC</strong></div>
           </div>
         </div>
@@ -183,15 +214,15 @@ function App() {
             </div>
           </Panel>
           <div className="rail-block">LIFE<i /></div>
-          <Panel title="06 · BIOSPHERE" qualifier="BIOSIGNATURE">
-            <div className="biosphere-status"><strong>CONFIRMED</strong><span>SURFACE + OCEAN · GLOBAL</span></div>
-            <h2 className="group-title">DETECTION</h2>
-            <div className="detection-list">{biosignatures.map(([label, detail]) => <div key={label}><span><strong>{label}</strong><small>{detail}</small></span><b className="status-chip">STRONG</b></div>)}</div>
-            <h2 className="group-title">STANDING STOCK</h2>
-            <div className="data-grid compact-grid biosphere-metrics"><div><span>TOTAL BIOMASS</span><strong>550 Gt C</strong></div><div><span>NET PRIMARY PROD.</span><strong>104 Gt C/yr</strong></div><div><span>OCEAN CHLOROPHYLL</span><strong>0.31 mg/m³</strong></div><div><span>TROPHIC DEPTH</span><strong>5 LEVELS</strong></div></div>
+          <Panel title="06 · BIOSPHERE" qualifier="GLOBAL OBSERVABLES">
+            <div className="biosphere-status"><strong>CONFIRMED</strong><span>FOREST + OCEAN + ATMOSPHERE</span></div>
+            <div className="data-grid compact-grid biosphere-observations">{biosphereObservations.map(([label, field]) => <div key={field}><span>{label}</span><strong>{field === 'ocean_net_primary_production' ? 'UNKNOWN' : getReferenceValue(field, 'LOADING')}</strong></div>)}</div>
           </Panel>
-          <Panel title="07 · CIVILISATION" qualifier="TECHNOSIGNATURE">
-            <div className="data-grid"><div><span>TECH. CIVILISATIONS</span><strong>1</strong></div><div><span>LIFEFORM TYPE</span><strong>CARBON · MULTICELL.</strong></div><div><span>DOMINANT LIFEFORM</span><strong>HOMO SAPIENS</strong></div><div><span>DOMINANT POPULATION</span><strong>~8.2 B</strong></div><div><span>CIVILISATION SCALE</span><strong>KARDASEV ~0.73</strong></div><div><span>SUSTAINABILITY</span><strong className="status-chip status-chip--undetermined">UNDETERMINED</strong></div><div><span>CONTACT POSTURE</span><strong className="status-chip status-chip--defensive">DEFENSIVE</strong></div><div><span>PRIME DIRECTIVE</span><strong>ACTIVE · AVOID CONTACT</strong></div><div><span>DESCRIBED SPECIES</span><strong>~2.2 M</strong></div><div><span>EST. EUK. SPECIES</span><strong>~8.7 M</strong></div></div>
+          <Panel title="07 · CIVILISATION" qualifier="REFERENCE + SCENARIO">
+            <h2 className="group-title">REFERENCE</h2>
+            <div className="data-grid compact-grid civilisation-reference">{civilisationReference.map(([label, field]) => <div key={field}><span>{label}</span><strong>{getReferenceValue(field, 'LOADING', field === 'catalogued_eukaryotic_species' ? 1 : undefined)}</strong></div>)}</div>
+            <h2 className="group-title">FICTIONAL SCENARIO</h2>
+            <div className="data-grid civilisation-scenario"><div><span>SUSTAINABILITY</span><strong className="status-chip status-chip--undetermined">UNDETERMINED</strong></div><div><span>CONTACT POSTURE</span><strong className="status-chip status-chip--defensive">DEFENSIVE</strong></div><div><span>PRIME DIRECTIVE</span><strong>ACTIVE · AVOID CONTACT</strong></div></div>
           </Panel>
         </aside>
         <section className="center-column">
@@ -222,16 +253,15 @@ function App() {
         </section>
         <aside className="rail">
           <div className="rail-block">SURFACE &amp; WATER<i /></div>
-          <Panel title="08 · SURFACE TEMPERATURE" qualifier="THERMAL IR"><div className="temperature"><strong>+15.0 °C</strong><span>± 0.2</span><small>MEAN · GLOBAL</small></div><div className="temperature-ramp"><i /></div><div className="range"><span>−89 °C</span><span>+57 °C</span></div><div className="data-grid compact-grid"><div><span>DAY SIDE</span><strong>+22.4 °C</strong></div><div><span>NIGHT SIDE</span><strong>+9.1 °C</strong></div><div><span>SEA SURFACE</span><strong>+17.5 °C</strong></div><div><span>ANOMALY</span><strong>+1.42 °C</strong></div></div></Panel>
-          <Panel title="09 · HYDROLOGY & ICE" qualifier="MICROWAVE"><div className="data-grid"><div><span>SURFACE WATER</span><strong>71.0%</strong></div><div><span>SEA ICE EXTENT</span><strong>13.1 M km²</strong></div><div><span>GLACIAL MASS</span><strong>2.15e19 kg</strong></div><div><span>ATMOS. WATER VAPOUR</span><strong>12 900 km³</strong></div></div></Panel>
-          <Panel title="10 · HYPSOMETRY" qualifier="COPERNICUS DEM"><div className="hypsometry-chart"><div className="hypsometry-y-axis" aria-hidden="true"><span>RELATIVE AREA</span><i /><i /><i /></div><div className="hypsometry-plot"><div className="profile" aria-label="Bimodal global elevation distribution"><span className="sea-level">SEA LEVEL</span>{[18, 29, 43, 61, 76, 88, 94, 86, 69, 51, 35, 24, 20, 25, 37, 54, 66, 58, 42, 28, 17].map((height, index) => <i className={index < 12 ? 'profile-bar profile-bar--ocean' : 'profile-bar profile-bar--land'} key={index} style={{ height: `${height}%` }} />)}</div><div className="hypsometry-labels"><span>OCEAN BASINS</span><span>CONTINENTAL LAND</span></div><div className="hypsometry-axis"><span>−10 km</span><span>−5 km</span><span>0 km</span><span>+5 km</span><span>+9 km</span></div></div></div><div className="data-grid compact-grid"><div><span>MEDIAN ELEV.</span><strong>−2 440 m</strong></div><div><span>TOTAL RELIEF</span><strong>19 784 m</strong></div><div><span>RMS SLOPE</span><strong>1.9°</strong></div><div><span>DISTRIBUTION</span><strong>BIMODAL</strong></div></div></Panel>
+          <Panel title="08 · SURFACE TEMPERATURE" qualifier="GLOBAL REFERENCE"><div className="temperature"><strong>{getReferenceValue('global_mean_surface_temperature', 'LOADING')}</strong><small>MEAN · GLOBAL SURFACE</small></div><div className="temperature-ramp"><i /></div><div className="data-grid compact-grid"><div><span>SEA SURFACE · CLIMATOLOGY</span><strong>{getReferenceValue('global_mean_sea_surface_temperature', 'LOADING')}</strong></div><div><span>ANOMALY · JUL 2026</span><strong>+{getReferenceValue('global_temperature_anomaly', 'LOADING')}</strong></div><div><span>MIN. AIR · 1983</span><strong>{getReferenceValue('minimum_near_surface_air_temperature', 'LOADING')}</strong></div><div><span>MAX. AIR · 1913</span><strong>{getReferenceValue('maximum_near_surface_air_temperature', 'LOADING')}</strong></div></div></Panel>
+          <Panel title="09 · HYDROLOGY & ICE" qualifier="GLOBAL REFERENCE"><div className="data-grid"><div><span>SURFACE WATER</span><strong>{getPercentageReferenceValue('surface_water_fraction', 'LOADING')}</strong></div><div><span>ARCTIC SEA ICE · AUG 2026</span><strong>{getReferenceValue('arctic_sea_ice_extent', 'LOADING')}</strong></div><div><span>POLAR ICE LOSS · 2002–25</span><strong>{getReferenceValue('polar_ice_sheet_mass_loss_rate', 'LOADING')}</strong></div><div><span>ATMOSPHERIC WATER</span><strong>{getReferenceValue('atmospheric_water_volume', 'LOADING')}</strong></div></div></Panel>
+          <Panel title="10 · TOPOGRAPHY &amp; BATHYMETRY" qualifier="GLOBAL REFERENCE"><div className="hypsometry-chart"><div className="hypsometry-y-axis" aria-hidden="true"><span>RELATIVE AREA</span><i /><i /><i /></div><div className="hypsometry-plot"><div className="profile" aria-label="Global relief distribution profile"><span className="sea-level">SEA LEVEL</span>{[18, 29, 43, 61, 76, 88, 94, 86, 69, 51, 35, 24, 20, 25, 37, 54, 66, 58, 42, 28, 17].map((height, index) => <i className={index < 12 ? 'profile-bar profile-bar--ocean' : 'profile-bar profile-bar--land'} key={index} style={{ height: `${height}%` }} />)}</div><div className="hypsometry-labels"><span>OCEAN BASINS</span><span>CONTINENTAL LAND</span></div><div className="hypsometry-axis"><span>−10 km</span><span>−5 km</span><span>0 km</span><span>+5 km</span><span>+9 km</span></div></div></div><div className="data-grid compact-grid"><div><span>OCEAN COVER</span><strong>{getPercentageReferenceValue('surface_water_fraction', 'LOADING')}</strong></div><div><span>LAND COVER</span><strong>{getPercentageReferenceValue('surface_land_fraction', 'LOADING')}</strong></div><div><span>MEAN OCEAN DEPTH</span><strong>{getReferenceValue('mean_ocean_depth', 'LOADING')}</strong></div><div><span>HIGHEST ELEVATION</span><strong>{getReferenceValue('highest_surface_elevation', 'LOADING')}</strong></div><div><span>DEEPEST OCEAN DEPTH</span><strong>{getReferenceValue('deepest_ocean_depth', 'LOADING')}</strong></div><div><span>TOTAL RELIEF</span><strong>{getReferenceValue('total_surface_relief', 'LOADING')}</strong></div></div></Panel>
           <div className="rail-block">GEOLOGY &amp; INTERIOR<i /></div>
-          <Panel title="11 · BULK GEOCHEMISTRY" qualifier="UPPER CONTINENTAL CRUST"><div className="bar-list geochemistry">{geochemistry.map(([label, value, weight]) => <div key={label}><span>{label}</span><i><b style={{ width: `${weight}%` }} /></i><strong>{value}</strong></div>)}</div></Panel>
-          <Panel title="12 · SPECTRAL MINERALOGY" qualifier="VNIR/SWIR"><div className="bar-list composition">{composition.map(([label, value, weight]) => <div key={label}><span>{label}</span><strong>{value}</strong><i><b style={{ width: `${weight}%` }} /></i></div>)}</div></Panel>
-          <Panel title="13 · VOLATILE INVENTORY" qualifier="REFERENCE ESTIMATES"><div className="volatile-list">{volatileInventory.map(({ label, total, reservoirs }) => <div key={label}><strong>{label}</strong><b>{total}</b><div className="reservoir-bar" aria-label={`${label} reservoir partition`}>{reservoirs.map(({ name, percentage, tone }) => <i className={`reservoir-segment reservoir-segment--${tone}`} key={name} style={{ width: `${percentage}%` }} />)}</div><div className="reservoir-legend">{reservoirs.map(({ name, percentage, tone }) => <span className={`reservoir-legend__item reservoir-legend__item--${tone}`} key={name}>{name} <b>{percentage}%</b></span>)}</div></div>)}</div></Panel>
-          <Panel title="14 · PLANETARY INTERIOR" qualifier="SEISMOLOGY · GEODYNAMICS"><div className="data-grid"><div><span>CORE STATE</span><strong>LIQUID / SOLID</strong></div><div><span>INNER CORE R.</span><strong>1 221 km</strong></div><div><span>CMB DEPTH</span><strong>2 890 km</strong></div><div><span>GLOBAL HEAT FLOW</span><strong>47 TW</strong></div><div><span>RADIOGENIC HEAT</span><strong>20 TW</strong></div><div><span>GEODYNAMO</span><strong>ACTIVE</strong></div><div><span>QUAKES / DAY · M≥2.5</span><strong>~1 300</strong></div><div><span>MEAN MAGNITUDE</span><strong>~M 3.0</strong></div></div></Panel>
+          <Panel title="11 · BULK GEOCHEMISTRY" qualifier="MODEL ESTIMATE"><div className="bar-list geochemistry">{geochemistry.map(([label, field]) => <div key={field}><span>{label}</span><i><b style={{ width: getPercentageReferenceValue(field, '0%') }} /></i><strong>{getPercentageReferenceValue(field, 'LOADING')}</strong></div>)}</div></Panel>
+          <Panel title="12 · VOLATILE INVENTORY" qualifier="REFERENCE ESTIMATES"><div className="volatile-list">{volatileInventory.map(({ label, totalField, reservoirs }) => <div key={label}><strong>{label}</strong><b>{totalField === 'atmospheric_nitrogen_fraction' ? getPercentageReferenceValue(totalField, 'LOADING') : getReferenceValue(totalField, 'LOADING')}</b><div className="reservoir-bar" aria-label={`${label} reservoir partition`}>{reservoirs.map(({ name, field, tone }) => <i className={`reservoir-segment reservoir-segment--${tone}`} key={name} style={{ width: getPercentageReferenceValue(field, '0%') }} />)}</div><div className="reservoir-legend">{reservoirs.map(({ name, field, tone }) => <span className={`reservoir-legend__item reservoir-legend__item--${tone}`} key={name}>{name} <b>{getPercentageReferenceValue(field, 'LOADING')}</b></span>)}</div></div>)}</div></Panel>
+          <Panel title="13 · PLANETARY INTERIOR" qualifier="SEISMOLOGY · GEODYNAMICS"><div className="data-grid compact-grid planetary-interior">{planetaryInterior.map(([label, field]) => <div key={field}><span>{label}</span><strong>{getReferenceValue(field, 'LOADING')}</strong></div>)}</div></Panel>
           <div className="rail-block">ANOMALOUS DETECTION<i /></div>
-          <Panel title="15 · DILITHIUM DETECTOR" qualifier="FICTIONAL ANALYSIS"><div className="state-line"><span>DEPOSIT STATUS</span><b className="status-chip">HIGH GRADE</b></div><div className="data-grid compact-grid"><div><span>LOCATION</span><strong>GREENLAND ICE SHEET</strong></div><div><span>HOST MATERIAL</span><strong>SUBGLACIAL BEDROCK</strong></div><div><span>SUBSURFACE DEPTH</span><strong>3.17 km</strong></div><div><span>EST. RESOURCE</span><strong>12.4 Mt</strong></div></div></Panel>
+          <Panel title="14 · DILITHIUM DETECTOR" qualifier="FICTIONAL ANALYSIS"><div className="state-line"><span>DEPOSIT STATUS</span><b className="status-chip">HIGH GRADE</b></div><div className="data-grid compact-grid"><div><span>LOCATION</span><strong>GREENLAND ICE SHEET</strong></div><div><span>HOST MATERIAL</span><strong>SUBGLACIAL BEDROCK</strong></div><div><span>SUBSURFACE DEPTH</span><strong>3.17 km</strong></div><div><span>EST. RESOURCE</span><strong>12.4 Mt</strong></div></div></Panel>
         </aside>
       </div>
     </main>

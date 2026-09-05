@@ -85,7 +85,7 @@ def test_earth_reference_dataset_has_registered_sources() -> None:
     )
 
     assert dataset.body_id == "earth"
-    assert len(dataset.facts) == 27
+    assert len(dataset.facts) == 74
 
 
 def test_dataset_with_unregistered_source_is_rejected(tmp_path: Path) -> None:
