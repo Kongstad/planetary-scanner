@@ -135,6 +135,11 @@ function App() {
   const [retrievalStatus, setRetrievalStatus] = useState('Enter a question to generate a grounded answer from cited reference records.')
   const [groundedAnswer, setGroundedAnswer] = useState<string | null>(null)
   const [isRetrieving, setIsRetrieving] = useState(false)
+  const [queryElapsedSeconds, setQueryElapsedSeconds] = useState(0)
+  const [lastQueryElapsedSeconds, setLastQueryElapsedSeconds] = useState<number | null>(null)
+  const scienceComputerQualifier = isReferenceApiOnline
+    ? `QWEN2.5:3B · MINILM-L6-V2 · ${referenceFacts.length} RECORDS`
+    : `QWEN2.5:3B · MINILM-L6-V2 · ${referenceFacts.length === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
   useEffect(() => {
     void fetch('/reference/bodies/earth')
@@ -153,6 +158,17 @@ function App() {
         setIsReferenceApiOnline(false)
       })
   }, [])
+
+  useEffect(() => {
+    if (!isRetrieving) {
+      return
+    }
+    const startedAt = Date.now()
+    const intervalId = window.setInterval(() => {
+      setQueryElapsedSeconds((Date.now() - startedAt) / 1000)
+    }, 100)
+    return () => window.clearInterval(intervalId)
+  }, [isRetrieving])
 
   function getReferenceValue(field: string | undefined, fallback: string, fractionDigits?: number): string {
     const fact = referenceFacts.find((candidate) => candidate.field === field)
@@ -188,7 +204,10 @@ function App() {
       setRetrievalStatus('Enter a question before querying the Science Computer.')
       return
     }
+    const startedAt = Date.now()
     setIsRetrieving(true)
+    setQueryElapsedSeconds(0)
+    setLastQueryElapsedSeconds(null)
     setGroundedAnswer(null)
     setRetrievalStatus('Retrieving cited records and generating a grounded answer...')
     void fetch(`/answers/reference?${new URLSearchParams({ question, limit: '3' })}`)
@@ -203,14 +222,18 @@ function App() {
         setRetrievalResults(response.citations)
         setRetrievalStatus(response.insufficient_evidence
           ? 'The local model found insufficient evidence in the retrieved records.'
-          : `${response.citations.length} cited reference record${response.citations.length === 1 ? '' : 's'} supplied to the local model.`)
+          : '')
       })
       .catch(() => {
         setRetrievalResults([])
         setGroundedAnswer(null)
         setRetrievalStatus('Grounded answering is unavailable. Start the local API and Ollama, then try again.')
       })
-      .finally(() => setIsRetrieving(false))
+      .finally(() => {
+        setQueryElapsedSeconds((Date.now() - startedAt) / 1000)
+        setLastQueryElapsedSeconds((Date.now() - startedAt) / 1000)
+        setIsRetrieving(false)
+      })
   }
 
   return (
@@ -303,10 +326,11 @@ function App() {
               <span>PHASE ANGLE<strong>38.00°</strong></span><span>SUB-SPACECRAFT<strong>17.02° / −59.12°</strong></span><span>DOWNLINK<strong>UNAVAILABLE</strong></span><span>SOLAR ILLUM.<strong>72%</strong></span><span>SCAN COVERAGE<strong>NOT INITIALIZED</strong></span>
             </footer>
           </section>
-          <Panel title="SCIENCE COMPUTER" qualifier="LOCAL RETRIEVAL · 74 RECORDS">
+          <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>
             <div className="science-computer">
-              <div className="message"><span>RETRIEVAL</span><p>{retrievalStatus}</p></div>
+              <div className="message"><span>RETRIEVAL{isRetrieving ? ` · ${queryElapsedSeconds.toFixed(1)} s` : lastQueryElapsedSeconds !== null ? ` · COMPLETE ${lastQueryElapsedSeconds.toFixed(1)} s` : ''}</span><p>{retrievalStatus}</p></div>
               {groundedAnswer && <div className="grounded-answer"><span>ANSWER</span><p>{groundedAnswer}</p></div>}
+              {retrievalResults[0] && <p className="answer-source">SOURCE · <a href={retrievalResults[0].document.metadata.source_url} target="_blank" rel="noreferrer">{retrievalResults[0].document.metadata.source_id}</a></p>}
               {retrievalResults.length > 0 && <ol className="retrieval-results">
                 {retrievalResults.map(({ document, score }) => <li key={document.document_id}>
                   <strong>{document.metadata.field.replaceAll('_', ' ')}</strong>

@@ -44,3 +44,32 @@ def test_reference_retriever_returns_full_cited_record() -> None:
     assert results[0].document.document_id == "earth-radius"
     assert results[0].document.metadata["source_url"] == "https://example.test/radius"
     assert results[0].score == 1.0
+
+
+class LexicalBoostFakeEmbeddingModel:
+    def encode(
+        self, sentences: Sequence[str], *, normalize_embeddings: bool
+    ) -> NDArray[np.float32]:
+        assert normalize_embeddings
+        return np.asarray(
+            [[0.9, 0.0] if "earth" in sentence.lower() else [1.0, 0.0] for sentence in sentences],
+            dtype=np.float32,
+        )
+
+
+def test_reference_retriever_boosts_exact_question_terms() -> None:
+    documents = [
+        RagDocument(document_id="earth-co2", content="Earth atmospheric CO2 concentration", metadata={}),
+        RagDocument(document_id="generic", content="planet reference record", metadata={}),
+    ]
+    embedding_model = LexicalBoostFakeEmbeddingModel()
+    index = build_reference_vector_index(documents, embedding_model, DEFAULT_EMBEDDING_MODEL)
+    retriever = ReferenceRetriever(
+        embedding_model=embedding_model,
+        index=index,
+        documents_by_id={document.document_id: document for document in documents},
+    )
+
+    results = retriever.retrieve("Earth CO2", limit=1)
+
+    assert results[0].document.document_id == "earth-co2"

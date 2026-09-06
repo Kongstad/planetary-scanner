@@ -1,5 +1,6 @@
 """Evidence retrieval over local, provenance-preserving reference records."""
 
+import re
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -51,14 +52,40 @@ class ReferenceRetriever:
             raise ValueError(f"Vector index references unknown documents: {missing_ids}")
 
     def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
-        """Retrieve full, cited records for a natural-language question."""
+        """Retrieve cited records using semantic similarity and exact-term overlap."""
 
+        semantic_scores = dict(
+            retrieve_reference_document_scores(
+                question, self._embedding_model, self._index, len(self._documents_by_id)
+            )
+        )
+        question_tokens = _tokenize(question)
+        ranked_document_ids = sorted(
+            semantic_scores,
+            key=lambda document_id: _hybrid_score(
+                semantic_scores[document_id],
+                question_tokens,
+                _tokenize(self._documents_by_id[document_id].content),
+            ),
+            reverse=True,
+        )[:limit]
         return [
             RetrievedReferenceRecord(
                 document=self._documents_by_id[document_id],
-                score=score,
+                score=semantic_scores[document_id],
             )
-            for document_id, score in retrieve_reference_document_scores(
-                question, self._embedding_model, self._index, limit
-            )
+            for document_id in ranked_document_ids
         ]
+
+
+def _tokenize(text: str) -> set[str]:
+    return set(re.findall(r"[\w.-]+", text.lower()))
+
+
+def _hybrid_score(
+    semantic_score: float, question_tokens: set[str], document_tokens: set[str]
+) -> float:
+    """Blend normalized cosine similarity with exact question-term coverage."""
+
+    lexical_score = len(question_tokens.intersection(document_tokens)) / len(question_tokens)
+    return 0.85 * ((semantic_score + 1) / 2) + 0.15 * lexical_score

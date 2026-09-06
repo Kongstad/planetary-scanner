@@ -44,6 +44,7 @@ def test_grounded_answer_prompt_includes_only_supplied_evidence() -> None:
     assert "[reference-fact-earth-mean-radius]" in prompt
     assert "Earth mean radius is 6371.0084 km." in prompt
     assert "Do not use outside knowledge." in prompt
+    assert "Never use a boolean as the answer value." in prompt
 
 
 def test_grounded_answer_service_returns_application_controlled_citations() -> None:
@@ -63,7 +64,7 @@ def test_grounded_answer_service_returns_application_controlled_citations() -> N
 def test_grounded_answer_service_replaces_insufficient_evidence_placeholder() -> None:
     class PlaceholderAnswerGenerator:
         def generate(self, prompt: str) -> GeneratedAnswer:
-            return GeneratedAnswer(answer="insufficient_evidence", insufficient_evidence=True)
+            return GeneratedAnswer(answer="Insufficient evidence", insufficient_evidence=True)
 
     answer = GroundedAnswerService(FakeRetriever(), PlaceholderAnswerGenerator()).answer(
         "What is Earth's mean radius?", limit=1

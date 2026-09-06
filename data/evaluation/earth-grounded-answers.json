@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "body_id": "earth",
+  "cases": [
+    {
+      "case_id": "earth-mean-radius-answer",
+      "question": "What is Earth's mean radius?",
+      "expected_insufficient_evidence": false,
+      "required_citation_ids": ["reference-fact-earth-mean-radius"],
+      "required_answer_terms": ["6371.0084", "km"]
+    },
+    {
+      "case_id": "earth-global-heat-flow-answer",
+      "question": "How much heat flows from Earth's interior?",
+      "expected_insufficient_evidence": false,
+      "required_citation_ids": ["reference-fact-earth-global-heat-flow"],
+      "required_answer_terms": ["47", "tw"]
+    },
+    {
+      "case_id": "earth-mineral-refusal",
+      "question": "What is Earth's most common mineral?",
+      "expected_insufficient_evidence": true,
+      "required_citation_ids": ["reference-fact-earth-bulk-iron-mass-fraction"],
+      "required_answer_terms": ["do not provide enough evidence"]
+    }
+  ]
+}

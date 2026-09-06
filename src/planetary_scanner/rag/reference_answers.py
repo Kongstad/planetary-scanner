@@ -47,11 +47,11 @@ def build_grounded_answer_prompt(
     )
     return f"""You are PlanetaryScanner's scientific reference assistant.
 Answer the question using only the evidence records below. Do not use outside knowledge.
-If the evidence does not answer the question, set insufficient_evidence to true and explain briefly.
-When insufficient_evidence is true, answer with a plain-language explanation; never write only
-"insufficient_evidence" or a JSON field name as the answer.
-Return valid JSON only, exactly matching this schema:
-{{"answer": "string", "insufficient_evidence": true}}
+For a direct factual value stated in an evidence record, report that exact value and unit, and set
+insufficient_evidence to false. If the evidence does not answer the question, set
+insufficient_evidence to true and explain briefly. Never use a boolean as the answer value.
+Return valid JSON only with two fields: "answer" (a human-readable string) and
+"insufficient_evidence" (a boolean).
 
 Question:
 {question}
@@ -100,7 +100,10 @@ class GroundedAnswerService:
         citations = self._retriever.retrieve(question, limit)
         generated = self._generator.generate(build_grounded_answer_prompt(question, citations))
         answer = generated.answer
-        if generated.insufficient_evidence and answer.strip().lower() == "insufficient_evidence":
+        if generated.insufficient_evidence and answer.strip().lower() in {
+            "insufficient evidence",
+            "insufficient_evidence",
+        }:
             answer = "The retrieved reference records do not provide enough evidence to answer this question."
         return GroundedAnswer(
             answer=answer,
