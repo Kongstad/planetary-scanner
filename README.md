@@ -65,6 +65,24 @@ Two versioned evaluation sets protect the pipeline:
 The local endpoints are `GET /retrieval/reference` for evidence inspection and
 `GET /answers/reference` for grounded answers with citations.
 
+## Reference Database
+
+The local file-backed corpus remains the active retrieval baseline. PostgreSQL with
+pgvector is provided as the scalable reference-record store for automated ingestion and
+metadata-aware vector retrieval. Start it with:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d reference-db
+docker compose ps
+```
+
+The idempotent schema at `database/init/001_reference_records.sql` creates the
+provenance-preserving `reference_records` table, relational metadata indexes, and a
+384-dimensional cosine-similarity vector index. The first importer will migrate the
+validated Earth records and compare PostgreSQL retrieval against the existing JSONL/NPZ
+evaluation baseline before the API switches storage backends.
+
 ## Local Development
 
 The frontend is currently the runnable component:

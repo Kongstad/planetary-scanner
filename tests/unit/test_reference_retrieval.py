@@ -73,3 +73,36 @@ def test_reference_retriever_boosts_exact_question_terms() -> None:
     results = retriever.retrieve("Earth CO2", limit=1)
 
     assert results[0].document.document_id == "earth-co2"
+
+
+def test_reference_retriever_expands_broad_earth_geochemistry_questions() -> None:
+    documents = [
+        RagDocument(
+            document_id=f"earth-{element}",
+            content=f"Earth bulk {element} mass fraction",
+            metadata={"scope": "bulk_earth_elemental_mass_fraction_model"},
+        )
+        for element in ("iron", "oxygen", "silicon", "magnesium", "sulfur")
+    ]
+    documents.append(
+        RagDocument(
+            document_id="earth-other-elements",
+            content="Earth other elemental mass fraction",
+            metadata={
+                "scope": "bulk_earth_elemental_mass_fraction_remainder_after_fe_o_si_mg_s"
+            },
+        )
+    )
+    embedding_model = SimilarityFakeEmbeddingModel()
+    index = build_reference_vector_index(documents, embedding_model, DEFAULT_EMBEDDING_MODEL)
+    retriever = ReferenceRetriever(
+        embedding_model=embedding_model,
+        index=index,
+        documents_by_id={document.document_id: document for document in documents},
+    )
+
+    results = retriever.retrieve("Tell me about Earth's geochemistry", limit=3)
+
+    assert {result.document.document_id for result in results} == {
+        document.document_id for document in documents
+    }

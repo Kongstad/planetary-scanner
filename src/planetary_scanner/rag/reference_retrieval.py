@@ -54,6 +54,9 @@ class ReferenceRetriever:
     def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
         """Retrieve cited records using semantic similarity and exact-term overlap."""
 
+        if _is_bulk_earth_geochemistry_question(question):
+            return self._retrieve_bulk_earth_composition(question)
+
         semantic_scores = dict(
             retrieve_reference_document_scores(
                 question, self._embedding_model, self._index, len(self._documents_by_id)
@@ -77,9 +80,47 @@ class ReferenceRetriever:
             for document_id in ranked_document_ids
         ]
 
+    def _retrieve_bulk_earth_composition(self, question: str) -> list[RetrievedReferenceRecord]:
+        """Return all major-element records needed for a complete composition synthesis."""
+
+        semantic_scores = dict(
+            retrieve_reference_document_scores(
+                question, self._embedding_model, self._index, len(self._documents_by_id)
+            )
+        )
+        document_ids = sorted(
+            (
+                document_id
+                for document_id, document in self._documents_by_id.items()
+                if document.metadata.get("scope")
+                == "bulk_earth_elemental_mass_fraction_model"
+                or document.metadata.get("scope")
+                == "bulk_earth_elemental_mass_fraction_remainder_after_fe_o_si_mg_s"
+            ),
+            key=lambda document_id: semantic_scores[document_id],
+            reverse=True,
+        )
+        return [
+            RetrievedReferenceRecord(
+                document=self._documents_by_id[document_id],
+                score=semantic_scores[document_id],
+            )
+            for document_id in document_ids
+        ]
+
 
 def _tokenize(text: str) -> set[str]:
     return set(re.findall(r"[\w.-]+", text.lower()))
+
+
+def _is_bulk_earth_geochemistry_question(question: str) -> bool:
+    """Identify questions that need the complete Earth major-element composition group."""
+
+    question_lower = question.lower()
+    return "earth" in question_lower and (
+        "geochem" in question_lower
+        or ("bulk" in question_lower and "composition" in question_lower)
+    )
 
 
 def _hybrid_score(

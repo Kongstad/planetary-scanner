@@ -29,26 +29,9 @@ type ReferenceDataset = {
   facts: ReferenceFact[]
 }
 
-type RetrievedReferenceRecord = {
-  document: {
-    document_id: string
-    content: string
-    metadata: {
-      field: string
-      value: number | string
-      unit?: string
-      scope: string
-      source_id: string
-      source_url: string
-    }
-  }
-  score: number
-}
-
 type GroundedAnswer = {
   answer: string
   insufficient_evidence: boolean
-  citations: RetrievedReferenceRecord[]
 }
 
 const vitalStatistics: [label: string, value: string, field?: string][] = [
@@ -131,7 +114,6 @@ function App() {
   const [referenceFacts, setReferenceFacts] = useState<ReferenceFact[]>([])
   const [isReferenceApiOnline, setIsReferenceApiOnline] = useState(false)
   const [query, setQuery] = useState('')
-  const [retrievalResults, setRetrievalResults] = useState<RetrievedReferenceRecord[]>([])
   const [retrievalStatus, setRetrievalStatus] = useState('Enter a question to generate a grounded answer from cited reference records.')
   const [groundedAnswer, setGroundedAnswer] = useState<string | null>(null)
   const [isRetrieving, setIsRetrieving] = useState(false)
@@ -219,13 +201,11 @@ function App() {
       })
       .then((response) => {
         setGroundedAnswer(response.answer)
-        setRetrievalResults(response.citations)
         setRetrievalStatus(response.insufficient_evidence
           ? 'The local model found insufficient evidence in the retrieved records.'
           : '')
       })
       .catch(() => {
-        setRetrievalResults([])
         setGroundedAnswer(null)
         setRetrievalStatus('Grounded answering is unavailable. Start the local API and Ollama, then try again.')
       })
@@ -330,15 +310,6 @@ function App() {
             <div className="science-computer">
               <div className="message"><span>RETRIEVAL{isRetrieving ? ` · ${queryElapsedSeconds.toFixed(1)} s` : lastQueryElapsedSeconds !== null ? ` · COMPLETE ${lastQueryElapsedSeconds.toFixed(1)} s` : ''}</span><p>{retrievalStatus}</p></div>
               {groundedAnswer && <div className="grounded-answer"><span>ANSWER</span><p>{groundedAnswer}</p></div>}
-              {retrievalResults[0] && <p className="answer-source">SOURCE · <a href={retrievalResults[0].document.metadata.source_url} target="_blank" rel="noreferrer">{retrievalResults[0].document.metadata.source_id}</a></p>}
-              {retrievalResults.length > 0 && <ol className="retrieval-results">
-                {retrievalResults.map(({ document, score }) => <li key={document.document_id}>
-                  <strong>{document.metadata.field.replaceAll('_', ' ')}</strong>
-                  <span>{String(document.metadata.value)}{document.metadata.unit && document.metadata.unit !== '1' && document.metadata.unit !== 'count' ? ` ${document.metadata.unit}` : ''} · {document.metadata.scope}</span>
-                  <a href={document.metadata.source_url} target="_blank" rel="noreferrer">{document.metadata.source_id}</a>
-                  <em>{score.toFixed(3)}</em>
-                </li>)}
-              </ol>}
             </div>
             <form className="query-form" onSubmit={submitQuery}><label htmlFor="query">&gt;</label><input id="query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Query the science computer about Earth..." /><button type="submit" disabled={isRetrieving}>{isRetrieving ? 'SEARCHING' : 'QUERY'}</button></form>
           </Panel>
