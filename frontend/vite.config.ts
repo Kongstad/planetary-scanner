@@ -39,6 +39,7 @@ export default defineConfig({
       '/reference': 'http://127.0.0.1:8000',
       '/retrieval': 'http://127.0.0.1:8000',
       '/answers': 'http://127.0.0.1:8000',
+      '/health': 'http://127.0.0.1:8000',
       '/imagery': 'http://127.0.0.1:8000',
     },
   },

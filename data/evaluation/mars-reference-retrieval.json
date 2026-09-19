@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "body_id": "mars",
+  "cases": [
+    {
+      "case_id": "mars-mean-radius",
+      "question": "What is Mars's mean radius?",
+      "expected_document_ids": ["reference-fact-mars-mean-radius"]
+    },
+    {
+      "case_id": "mars-mass",
+      "question": "How much does Mars weigh?",
+      "expected_document_ids": ["reference-fact-mars-mass"]
+    },
+    {
+      "case_id": "mars-axial-tilt",
+      "question": "What is the tilt of Mars's axis?",
+      "expected_document_ids": ["reference-fact-mars-axial-tilt"]
+    },
+    {
+      "case_id": "mars-semi-major-axis",
+      "question": "What is Mars's semi-major axis?",
+      "expected_document_ids": ["reference-fact-mars-semi-major-axis-j2000"]
+    },
+    {
+      "case_id": "mars-relay-orbiters",
+      "question": "How many operational NASA and ESA Mars relay orbiters were documented in May 2026?",
+      "expected_document_ids": ["reference-fact-mars-operational-relay-orbiter-count-2026-05"]
+    },
+    {
+      "case_id": "mars-highest-throughput-relay",
+      "question": "Which Mars relay orbiter sent the most average data in February through May 2026?",
+      "expected_document_ids": ["reference-fact-mars-highest-throughput-relay-2026-05"]
+    },
+    {
+      "case_id": "mars-atmosphere",
+      "question": "What is Mars's atmosphere made of?",
+      "expected_document_ids": ["reference-fact-mars-atmospheric-composition"]
+    },
+    {
+      "case_id": "mars-global-magnetic-field",
+      "question": "Does Mars have a global magnetic field today?",
+      "expected_document_ids": ["reference-fact-mars-global-magnetic-field-status"]
+    },
+    {
+      "case_id": "mars-solar-wind",
+      "question": "What role does the solar wind play in Mars's atmosphere?",
+      "expected_document_ids": ["reference-fact-mars-solar-wind-interaction"]
+    },
+    {
+      "case_id": "mars-aurora",
+      "question": "Does Mars have auroras?",
+      "expected_document_ids": ["reference-fact-mars-auroral-response"]
+    },
+    {
+      "case_id": "mars-surface-pressure",
+      "question": "What is the reference surface pressure on Mars?",
+      "expected_document_ids": ["reference-fact-mars-surface-pressure"]
+    },
+    {
+      "case_id": "mars-mola-relief",
+      "question": "What is Mars's global relief in the MOLA topography grid?",
+      "expected_document_ids": ["reference-fact-mars-mola-global-relief"]
+    },
+    {
+      "case_id": "mars-core-state",
+      "question": "What is the current model of Mars's core?",
+      "expected_document_ids": ["reference-fact-mars-core-state"]
+    },
+    {
+      "case_id": "mars-current-life",
+      "question": "Has current life been confirmed on Mars?",
+      "expected_document_ids": ["reference-fact-mars-current-life-status"]
+    }
+  ]
+}

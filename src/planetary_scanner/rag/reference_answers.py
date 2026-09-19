@@ -3,6 +3,7 @@
 import json
 from collections.abc import Sequence
 from typing import Protocol
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from pydantic import BaseModel
@@ -14,6 +15,7 @@ from planetary_scanner.rag.reference_retrieval import (
 
 DEFAULT_ANSWER_MODEL = "qwen2.5:3b"
 OLLAMA_GENERATE_URL = "http://127.0.0.1:11434/api/generate"
+OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
 
 
 class AnswerGenerator(Protocol):
@@ -35,6 +37,16 @@ class GroundedAnswer(BaseModel):
     answer: str
     insufficient_evidence: bool
     citations: list[RetrievedReferenceRecord]
+
+
+def is_ollama_model_available(model_name: str = DEFAULT_ANSWER_MODEL) -> bool:
+    """Return whether the configured local answer model is available from Ollama."""
+    try:
+        with urlopen(OLLAMA_TAGS_URL, timeout=5) as response:
+            models = json.loads(response.read())["models"]
+    except (HTTPError, URLError, TimeoutError, KeyError, json.JSONDecodeError):
+        return False
+    return any(model.get("name") == model_name for model in models)
 
 
 def build_grounded_answer_prompt(

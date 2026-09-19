@@ -150,10 +150,10 @@ def load_validated_reference_dataset(
     return dataset
 
 
-def build_reference_rag_corpus(
+def build_reference_rag_documents(
     dataset_path: Path, source_registry_path: Path
 ) -> list[RagDocument]:
-    """Build one provenance-preserving RAG document for each validated fact."""
+    """Build one provenance-preserving retrieval document for each validated fact."""
 
     dataset = load_validated_reference_dataset(dataset_path, source_registry_path)
     registry = ReferenceSourceRegistry.model_validate_json(

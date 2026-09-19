@@ -11,6 +11,105 @@
       "usage_note": "Public NASA reference page; individual facts identify their supporting section."
     },
     {
+      "source_id": "nasa-mars-facts-2026",
+      "publisher": "NASA Science",
+      "title": "Mars: Facts",
+      "url": "https://science.nasa.gov/mars/facts/",
+      "published_or_updated": "2026-07-10",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "Public NASA reference page; individual facts identify their supporting section. The publication page declares this update date in its structured metadata."
+    },
+    {
+      "source_id": "nasa-nssdc-mars-fact-sheet-2025",
+      "publisher": "NASA Goddard Space Flight Center, National Space Science Data Center",
+      "title": "Mars Fact Sheet",
+      "url": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/marsfact.html",
+      "published_or_updated": "2025-05-19",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "NASA reference table of Martian atmosphere composition, mean-reference surface pressure, and temperature values. Atmospheric pressure varies with location and season."
+    },
+    {
+      "source_id": "nasa-maven-atmospheric-loss-2023",
+      "publisher": "NASA",
+      "title": "NASA's MAVEN Reveals Most of Mars' Atmosphere Was Lost to Space",
+      "url": "https://www.nasa.gov/news-release/nasas-maven-reveals-most-of-mars-atmosphere-was-lost-to-space/",
+      "published_or_updated": "2023-07-26",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "NASA MAVEN atmospheric-escape release. It attributes most long-term Martian atmospheric loss to solar wind and radiation, including sputtering."
+    },
+    {
+      "source_id": "nasa-maven-aurora-discoveries-2023",
+      "publisher": "NASA",
+      "title": "1,000 Days in Orbit: MAVEN's Top 10 Discoveries at Mars",
+      "url": "https://www.nasa.gov/solar-system/1000-days-in-orbit-mavens-top-10-discoveries-at-mars/",
+      "published_or_updated": "2023-08-21",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "NASA MAVEN overview documenting diffuse and proton aurora at Mars and localized magnetized crust in the absence of a present global magnetic field."
+    },
+    {
+      "source_id": "nasa-pds-mola-megdr-v2",
+      "publisher": "NASA Planetary Data System Geosciences Node",
+      "title": "Mars Global Surveyor MOLA MEGDR v2.0",
+      "url": "https://pds-geosciences.wustl.edu/mgs/urn-nasa-pds-mgs_mola_topography_derived/meg128/megt00n000hb.lbl",
+      "published_or_updated": "2003-03-21",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "MOLA global topography grid label. Elevations are relative to the MOLA areoid; the 128-pixel-per-degree grid is a binned/interpolated product."
+    },
+    {
+      "source_id": "taylor-bulk-composition-mars-2013",
+      "publisher": "Chemie der Erde - Geochemistry",
+      "title": "The bulk composition of Mars",
+      "url": "https://doi.org/10.1016/j.chemer.2013.09.006",
+      "published_or_updated": "2013-12-01",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "Peer-reviewed reconstructed whole-planet bulk-composition model. Values are model estimates, not direct global surface measurements."
+    },
+    {
+      "source_id": "khan-mars-liquid-silicate-layer-2023",
+      "publisher": "Nature",
+      "title": "Evidence for a liquid silicate layer atop the Martian core",
+      "url": "https://doi.org/10.1038/s41586-023-06586-4",
+      "published_or_updated": "2023-10-25",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "InSight seismic reanalysis giving a model-dependent liquid-core radius and an overlying molten silicate layer."
+    },
+    {
+      "source_id": "nasa-insight-deep-interior-2021",
+      "publisher": "NASA Jet Propulsion Laboratory",
+      "title": "NASA's InSight Reveals the Deep Interior of Mars",
+      "url": "https://www.nasa.gov/centers-and-facilities/jpl/nasas-insight-reveals-the-deep-interior-of-mars/",
+      "published_or_updated": "2021-07-22",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "NASA/JPL overview of InSight interior inferences, including model-dependent crust depth and Mars's single-plate crust."
+    },
+    {
+      "source_id": "nasa-mars-relay-network-2026",
+      "publisher": "NASA Science",
+      "title": "Mars Relay Network",
+      "url": "https://science.nasa.gov/mars/mars-relay-network/",
+      "published_or_updated": "2026-06-05",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "NASA/ESA Mars relay-network status page. Its Feb-May 2026 data table is a scoped relay-network snapshot, not a complete Mars-orbit object catalog."
+    },
+    {
+      "source_id": "nasa-maven-end-of-mission-2026",
+      "publisher": "NASA",
+      "title": "NASA Says Farewell to MAVEN Mars Mission",
+      "url": "https://www.nasa.gov/news-release/nasa-says-farewell-to-maven-mars-mission-hosts-media-call-today/",
+      "published_or_updated": "2026-06-03",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "NASA announcement that MAVEN's mission ended and the spacecraft was not recoverable. It is not an orbit determination or general Mars-object catalog."
+    },
+    {
+      "source_id": "jpl-horizons-spacex-roadster-2025",
+      "publisher": "NASA Jet Propulsion Laboratory Solar System Dynamics",
+      "title": "Horizons: SpaceX Roadster (spacecraft), -143205",
+      "url": "https://ssd.jpl.nasa.gov/api/horizons.api",
+      "published_or_updated": "2025-01-03",
+      "retrieved_on": "2026-09-19",
+      "usage_note": "JPL Horizons identifies the SpaceX Roadster and its Sun-centered orbital elements and lists predicted Mars close approaches. It does not place the object in Mars orbit."
+    },
+    {
       "source_id": "jpl-planetary-physical-parameters-2019",
       "publisher": "NASA Jet Propulsion Laboratory Solar System Dynamics",
       "title": "Planetary Physical Parameters",
@@ -26,7 +125,7 @@
       "url": "https://ssd.jpl.nasa.gov/planets/approx_pos.html",
       "published_or_updated": "1992-01-01",
       "retrieved_on": "2026-09-04",
-      "usage_note": "JPL-published J2000 Keplerian elements and rates. Values here describe the Earth-Moon barycenter and are valid from 1800 through 2050."
+      "usage_note": "JPL-published J2000 Keplerian elements and rates for the listed planets. The Earth entries describe the Earth-Moon barycenter; Mars entries describe Mars. Values are valid from 1800 through 2050."
     },
     {
       "source_id": "celestrak-satcat-2026-09-04",

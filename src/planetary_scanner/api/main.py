@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Annotated, Literal, cast
 
 from fastapi import FastAPI, HTTPException, Query
-from sentence_transformers import SentenceTransformer
+from pydantic import BaseModel
 
 from planetary_scanner.api.sentinel_imagery import (
     MAX_SCENES,
@@ -25,6 +25,7 @@ from planetary_scanner.rag.reference_answers import (
     GroundedAnswer,
     GroundedAnswerService,
     OllamaAnswerGenerator,
+    is_ollama_model_available,
 )
 from planetary_scanner.rag.reference_index import (
     EmbeddingModel,
@@ -42,14 +43,23 @@ PROJECT_ROOT = Path(__file__).parents[3]
 SOURCE_REGISTRY_PATH = PROJECT_ROOT / "data" / "reference" / "sources.json"
 REFERENCE_DATASET_PATHS = {
     "earth": PROJECT_ROOT / "data" / "reference" / "earth.json",
+    "mars": PROJECT_ROOT / "data" / "reference" / "mars.json",
+    "solar-system": PROJECT_ROOT / "data" / "reference" / "solar-system.json",
 }
 REFERENCE_RECORD_PATH = PROJECT_ROOT / "data" / "reference" / "earth-reference-records.jsonl"
 REFERENCE_VECTOR_INDEX_PATH = PROJECT_ROOT / "data" / "reference" / "earth-reference-vectors.npz"
 
 
+class ScienceComputerStatus(BaseModel):
+    """Availability of the local Ollama dependency for grounded answers."""
+
+    online: bool
+    model: str
+
+
 @app.get("/reference/bodies/{body_id}", response_model=ReferenceDataset)
 def get_reference_dataset(body_id: str) -> ReferenceDataset:
-    """Return the validated factual reference dataset for a supported body."""
+    """Return the validated factual reference dataset tagged for one supported body."""
 
     dataset_path = REFERENCE_DATASET_PATHS.get(body_id)
     if dataset_path is None:
@@ -60,6 +70,8 @@ def get_reference_dataset(body_id: str) -> ReferenceDataset:
 @lru_cache
 def get_reference_retriever() -> ReferenceRetriever:
     """Load local retrieval resources once per API process."""
+
+    from sentence_transformers import SentenceTransformer
 
     index = load_reference_vector_index(REFERENCE_VECTOR_INDEX_PATH)
     return ReferenceRetriever(
@@ -87,6 +99,15 @@ def get_grounded_answer_service() -> GroundedAnswerService:
 def answer_reference_question(question: str, limit: int = 3) -> GroundedAnswer:
     """Answer only from retrieved reference evidence and return that evidence."""
     return get_grounded_answer_service().answer(question, limit)
+
+
+@app.get("/health/science-computer", response_model=ScienceComputerStatus)
+def get_science_computer_status() -> ScienceComputerStatus:
+    """Report whether the configured local Ollama answer model is ready."""
+    return ScienceComputerStatus(
+        online=is_ollama_model_available(),
+        model="qwen2.5:3b",
+    )
 
 
 @app.get("/imagery/sentinel-2/scenes", response_model=list[Sentinel2Scene])

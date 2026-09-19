@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import EarthViewer, { type ViewerMode } from './EarthViewer.tsx'
+import MarsDashboard from './MarsDashboard.tsx'
 
 type PanelProps = {
   title: string
@@ -27,6 +28,7 @@ type ReferenceFact = {
 }
 
 type ReferenceDataset = {
+  body_id: 'earth' | 'mars'
   facts: ReferenceFact[]
 }
 
@@ -113,7 +115,9 @@ const volatileInventory = [
 
 function App() {
   const [referenceFacts, setReferenceFacts] = useState<ReferenceFact[]>([])
+  const [referenceBodyId, setReferenceBodyId] = useState<'earth' | 'mars' | null>(null)
   const [isReferenceApiOnline, setIsReferenceApiOnline] = useState(false)
+  const [isScienceComputerOnline, setIsScienceComputerOnline] = useState(false)
   const [query, setQuery] = useState('')
   const [retrievalStatus, setRetrievalStatus] = useState('Enter a question to generate a grounded answer from cited reference records.')
   const [groundedAnswer, setGroundedAnswer] = useState<string | null>(null)
@@ -122,26 +126,35 @@ function App() {
   const [lastQueryElapsedSeconds, setLastQueryElapsedSeconds] = useState<number | null>(null)
   const [viewerMode, setViewerMode] = useState<ViewerMode>('imagery')
   const [depositFocusRequest, setDepositFocusRequest] = useState(0)
-  const scienceComputerQualifier = isReferenceApiOnline
-    ? `QWEN2.5:3B · MINILM-L6-V2 · ${referenceFacts.length} RECORDS`
-    : `QWEN2.5:3B · MINILM-L6-V2 · ${referenceFacts.length === 0 ? 'LOADING' : 'UNAVAILABLE'}`
+  const [scanCoverage, setScanCoverage] = useState('GLOBAL BASELINE')
+  const [activeBody, setActiveBody] = useState<'earth' | 'mars'>('earth')
+  const isActiveReferenceDatasetLoaded = isReferenceApiOnline && referenceBodyId === activeBody
+  const activeReferenceRecordCount = isActiveReferenceDatasetLoaded ? referenceFacts.length : 0
+  const scienceComputerQualifier = isReferenceApiOnline && isScienceComputerOnline
+    ? `QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount} RECORDS`
+    : `QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
   useEffect(() => {
     let isDisposed = false
     async function loadReferenceFacts() {
       try {
-        const response = await fetch('/reference/bodies/earth')
+        const response = await fetch(`/reference/bodies/${activeBody}`)
         if (!response.ok) {
           throw new Error(`Reference API returned ${response.status}`)
         }
         const dataset = await response.json() as ReferenceDataset
+        if (dataset.body_id !== activeBody) {
+          throw new Error(`Reference API returned ${dataset.body_id} data for ${activeBody}`)
+        }
         if (!isDisposed) {
           setReferenceFacts(dataset.facts)
+          setReferenceBodyId(dataset.body_id)
           setIsReferenceApiOnline(true)
         }
       } catch {
         if (!isDisposed) {
           setReferenceFacts([])
+          setReferenceBodyId(null)
           setIsReferenceApiOnline(false)
         }
       }
@@ -150,6 +163,35 @@ function App() {
     void loadReferenceFacts()
     const retryIntervalId = window.setInterval(() => {
       void loadReferenceFacts()
+    }, 10_000)
+    return () => {
+      isDisposed = true
+      window.clearInterval(retryIntervalId)
+    }
+  }, [activeBody])
+
+  useEffect(() => {
+    let isDisposed = false
+    async function loadScienceComputerStatus() {
+      try {
+        const response = await fetch('/health/science-computer')
+        if (!response.ok) {
+          throw new Error(`Science Computer health check returned ${response.status}`)
+        }
+        const status = await response.json() as { online: boolean }
+        if (!isDisposed) {
+          setIsScienceComputerOnline(status.online)
+        }
+      } catch {
+        if (!isDisposed) {
+          setIsScienceComputerOnline(false)
+        }
+      }
+    }
+
+    void loadScienceComputerStatus()
+    const retryIntervalId = window.setInterval(() => {
+      void loadScienceComputerStatus()
     }, 10_000)
     return () => {
       isDisposed = true
@@ -243,18 +285,26 @@ function App() {
           <span>REMOTE SENSING SUITE · v0.1</span>
         </div>
         <div className="navigation-status">
-          <button className="body-tab body-tab--active" type="button">
+          <button className={`body-tab ${activeBody === 'earth' ? 'body-tab--active' : ''}`} type="button" onClick={() => setActiveBody('earth')}>
             <span className="body-disc" />
             <span>EARTH<small>SOL III</small></span>
           </button>
-          <button className="body-tab" type="button" disabled><span className="body-disc body-disc--mars" /><span>MARS<small>SOL IV</small></span></button>
+          <button className={`body-tab ${activeBody === 'mars' ? 'body-tab--active' : ''}`} type="button" onClick={() => setActiveBody('mars')}><span className="body-disc body-disc--mars" /><span>MARS<small>SOL IV</small></span></button>
           <button className="body-tab" type="button" disabled><span className="body-disc body-disc--luna" /><span>LUNA<small>SOL III-a</small></span></button>
           <div className="mission-status">
             <div><span>REFERENCE API</span><strong className={isReferenceApiOnline ? 'status-online' : 'status-offline'}><i />{isReferenceApiOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
-            <div><span>MISSION CLOCK</span><strong>00:22:00 UTC</strong></div>
+          <div><span>SCIENCE COMPUTER</span><strong className={isScienceComputerOnline ? 'status-online' : 'status-offline'}><i />{isScienceComputerOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
+          <div><span>MISSION CLOCK</span><strong>00:22:00 UTC</strong></div>
           </div>
         </div>
       </header>
+      {activeBody === 'mars' ? (
+        <MarsDashboard
+          referenceFacts={isActiveReferenceDatasetLoaded ? referenceFacts : []}
+          isReferenceApiOnline={isActiveReferenceDatasetLoaded}
+          scienceComputerQualifier={scienceComputerQualifier}
+        />
+      ) : (
       <div className="console__main">
         <aside className="rail">
           <div className="rail-block">PLANETARY PROFILE<i /></div>
@@ -265,7 +315,7 @@ function App() {
               {vitalStatistics.map(([label, value, field]) => <div key={label}><span>{label}</span><strong>{getReferenceValue(field, value)}</strong></div>)}
             </div>
           </Panel>
-          <Panel title="02 · ORBITAL ELEMENTS" qualifier="J2000">
+          <Panel title="02 · ORBITAL ELEMENTS" qualifier="ORBIT & ROTATION">
             <dl className="data-list">
               {orbitalElements.map(([label, value, field]) => <div key={label}><dt>{label}</dt><dd>{getReferenceValue(field, value)}</dd></div>)}
             </dl>
@@ -317,9 +367,9 @@ function App() {
               </div>
               <span>PROJ · GEODETIC WGS-84</span>
             </header>
-            <EarthViewer mode={viewerMode} depositFocusRequest={depositFocusRequest} />
+            <EarthViewer mode={viewerMode} depositFocusRequest={depositFocusRequest} onCoverageChange={setScanCoverage} />
             <footer className="telemetry">
-              <span>PHASE ANGLE<strong>38.00°</strong></span><span>SUB-SPACECRAFT<strong>17.02° / −59.12°</strong></span><span>DOWNLINK<strong>UNAVAILABLE</strong></span><span>SOLAR ILLUM.<strong>72%</strong></span><span>SCAN COVERAGE<strong>NOT INITIALIZED</strong></span>
+              <span>PHASE ANGLE<strong>38.00°</strong></span><span>SUB-SPACECRAFT<strong>17.02° / −59.12°</strong></span><span>DOWNLINK<strong>UNAVAILABLE</strong></span><span>SOLAR ILLUM.<strong>72%</strong></span><span>SCAN COVERAGE<strong>{scanCoverage}</strong></span>
             </footer>
           </section>
           <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>
@@ -340,9 +390,10 @@ function App() {
           <Panel title="12 · VOLATILE INVENTORY" qualifier="REFERENCE ESTIMATES"><div className="volatile-list">{volatileInventory.map(({ label, totalField, reservoirs }) => <div key={label}><strong>{label}</strong><b>{totalField === 'atmospheric_nitrogen_fraction' ? getPercentageReferenceValue(totalField, 'LOADING') : getReferenceValue(totalField, 'LOADING')}</b><div className="reservoir-bar" aria-label={`${label} reservoir partition`}>{reservoirs.map(({ name, field, tone }) => <i className={`reservoir-segment reservoir-segment--${tone}`} key={name} style={{ width: getPercentageReferenceValue(field, '0%') }} />)}</div><div className="reservoir-legend">{reservoirs.map(({ name, field, tone }) => <span className={`reservoir-legend__item reservoir-legend__item--${tone}`} key={name}>{name} <b>{getPercentageReferenceValue(field, 'LOADING')}</b></span>)}</div></div>)}</div></Panel>
           <Panel title="13 · PLANETARY INTERIOR" qualifier="SEISMOLOGY · GEODYNAMICS"><div className="data-grid compact-grid planetary-interior">{planetaryInterior.map(([label, field]) => <div key={field}><span>{label}</span><strong>{getReferenceValue(field, 'LOADING')}</strong></div>)}</div></Panel>
           <div className="rail-block">ANOMALOUS DETECTION<i /></div>
-          <Panel title="14 · DILITHIUM DETECTOR" qualifier="FICTIONAL ANALYSIS"><div className="state-line"><span>DEPOSIT STATUS</span><b className="status-chip">HIGH GRADE</b></div><div className="data-grid compact-grid"><div><span>LOCATION</span><strong>GREENLAND ICE SHEET</strong></div><div><span>HOST MATERIAL</span><strong>SUBGLACIAL BEDROCK</strong></div><div><span>SUBSURFACE DEPTH</span><strong>3.17 km</strong></div><div><span>EST. RESOURCE</span><strong>12.4 Mt</strong></div><div><span>EST. DEPOSIT AREA</span><strong>12,000 km²</strong></div><div><span>DENSITY MODEL</span><strong>HIGH · CENTRALIZED</strong></div></div><button className="deposit-focus-button" type="button" onClick={() => setDepositFocusRequest((request) => request + 1)}>VIEW GREENLAND DEPOSIT</button></Panel>
+          <Panel title="14 · DILITHIUM DETECTOR" qualifier="FICTIONAL ANALYSIS"><div className="state-line"><span>DEPOSIT STATUS</span><b className="status-chip">HIGH GRADE</b></div><div className="data-grid compact-grid"><div><span>LOCATION</span><strong>GREENLAND ICE SHEET</strong></div><div><span>HOST MATERIAL</span><strong>SUBGLACIAL BEDROCK</strong></div><div><span>SUBSURFACE DEPTH</span><strong>3.17 km</strong></div><div><span>EST. RESOURCE</span><strong>12.4 Mt</strong></div><div><span>EST. DEPOSIT AREA</span><strong>12,000 km²</strong></div><div><span>DENSITY MODEL</span><strong>HIGH · CENTRALIZED</strong></div></div><button className="deposit-focus-button" type="button" onClick={() => setDepositFocusRequest((request) => request + 1)}>VIEW DILITHIUM DEPOSIT</button></Panel>
         </aside>
       </div>
+      )}
     </main>
   )
 }

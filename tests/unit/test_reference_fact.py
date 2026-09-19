@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from planetary_scanner.models.reference import (
     ReferenceFact,
     ReferenceSource,
-    build_reference_rag_corpus,
+    build_reference_rag_documents,
     load_validated_reference_dataset,
     load_validated_retrieval_evaluation_set,
     reference_fact_to_rag_document,
@@ -92,10 +92,34 @@ def test_earth_reference_dataset_has_registered_sources() -> None:
     assert len(dataset.facts) == 74
 
 
-def test_reference_rag_corpus_preserves_fact_provenance() -> None:
+def test_mars_reference_dataset_has_registered_sources() -> None:
     project_root = Path(__file__).parents[2]
 
-    documents = build_reference_rag_corpus(
+    dataset = load_validated_reference_dataset(
+        project_root / "data" / "reference" / "mars.json",
+        project_root / "data" / "reference" / "sources.json",
+    )
+
+    assert dataset.body_id == "mars"
+    assert len(dataset.facts) == 50
+
+
+def test_solar_system_reference_dataset_has_registered_sources() -> None:
+    project_root = Path(__file__).parents[2]
+
+    dataset = load_validated_reference_dataset(
+        project_root / "data" / "reference" / "solar-system.json",
+        project_root / "data" / "reference" / "sources.json",
+    )
+
+    assert dataset.body_id == "solar-system"
+    assert len(dataset.facts) == 2
+
+
+def test_reference_documents_preserve_fact_provenance() -> None:
+    project_root = Path(__file__).parents[2]
+
+    documents = build_reference_rag_documents(
         project_root / "data" / "reference" / "earth.json",
         project_root / "data" / "reference" / "sources.json",
     )
@@ -108,7 +132,7 @@ def test_reference_rag_corpus_preserves_fact_provenance() -> None:
 
 def test_reference_rag_documents_are_written_as_deterministic_jsonl(tmp_path: Path) -> None:
     project_root = Path(__file__).parents[2]
-    documents = build_reference_rag_corpus(
+    documents = build_reference_rag_documents(
         project_root / "data" / "reference" / "earth.json",
         project_root / "data" / "reference" / "sources.json",
     )
@@ -125,9 +149,29 @@ def test_reference_rag_documents_are_written_as_deterministic_jsonl(tmp_path: Pa
     assert first_record["metadata"]["source_url"] == "https://ssd.jpl.nasa.gov/planets/phys_par.html"
 
 
+def test_mars_reference_rag_documents_are_written_as_deterministic_jsonl(tmp_path: Path) -> None:
+    project_root = Path(__file__).parents[2]
+    documents = build_reference_rag_documents(
+        project_root / "data" / "reference" / "mars.json",
+        project_root / "data" / "reference" / "sources.json",
+    )
+    first_output_path = tmp_path / "mars-reference-records.jsonl"
+    second_output_path = tmp_path / "repeat" / "mars-reference-records.jsonl"
+
+    write_reference_rag_documents(first_output_path, documents)
+    write_reference_rag_documents(second_output_path, documents)
+
+    first_record = json.loads(first_output_path.read_text(encoding="utf-8").splitlines()[0])
+    assert first_output_path.read_bytes() == second_output_path.read_bytes()
+    assert len(first_output_path.read_text(encoding="utf-8").splitlines()) == 50
+    assert first_record["document_id"] == "reference-fact-mars-mean-radius"
+    assert first_record["metadata"]["body_id"] == "mars"
+    assert first_record["metadata"]["source_url"] == "https://ssd.jpl.nasa.gov/planets/phys_par.html"
+
+
 def test_retrieval_evaluation_set_references_known_documents() -> None:
     project_root = Path(__file__).parents[2]
-    documents = build_reference_rag_corpus(
+    documents = build_reference_rag_documents(
         project_root / "data" / "reference" / "earth.json",
         project_root / "data" / "reference" / "sources.json",
     )
@@ -144,6 +188,37 @@ def test_retrieval_evaluation_set_references_known_documents() -> None:
         "earth-axis-tilt",
         "earth-atmospheric-carbon-dioxide",
         "earth-global-heat-flow",
+    ]
+
+
+def test_mars_retrieval_evaluation_set_references_known_documents() -> None:
+    project_root = Path(__file__).parents[2]
+    documents = build_reference_rag_documents(
+        project_root / "data" / "reference" / "mars.json",
+        project_root / "data" / "reference" / "sources.json",
+    )
+
+    evaluation_set = load_validated_retrieval_evaluation_set(
+        project_root / "data" / "evaluation" / "mars-reference-retrieval.json",
+        documents,
+    )
+
+    assert evaluation_set.body_id == "mars"
+    assert [case.case_id for case in evaluation_set.cases] == [
+        "mars-mean-radius",
+        "mars-mass",
+        "mars-axial-tilt",
+        "mars-semi-major-axis",
+        "mars-relay-orbiters",
+        "mars-highest-throughput-relay",
+        "mars-atmosphere",
+        "mars-global-magnetic-field",
+        "mars-solar-wind",
+        "mars-aurora",
+        "mars-surface-pressure",
+        "mars-mola-relief",
+        "mars-core-state",
+        "mars-current-life",
     ]
 
 

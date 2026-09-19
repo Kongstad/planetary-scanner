@@ -42,6 +42,7 @@ export type ViewerMode = 'imagery' | 'terrain' | 'biosphere' | 'thermal'
 type EarthViewerProps = {
   mode: ViewerMode
   depositFocusRequest: number
+  onCoverageChange: (coverage: string) => void
 }
 
 function formatCameraAltitude(heightMeters: number): string {
@@ -108,7 +109,7 @@ function getDilithiumGridColor(density: number): Color {
   return Color.fromBytes(color[0], color[1], color[2], Math.round(35 + density * 180))
 }
 
-function EarthViewer({ mode, depositFocusRequest }: EarthViewerProps) {
+function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewerProps) {
   const viewerContainerRef = useRef<HTMLDivElement>(null)
   const requestSentinel2ScenesRef = useRef<(() => void) | null>(null)
   const setViewerModeRef = useRef<((nextMode: ViewerMode) => void) | null>(null)
@@ -212,6 +213,7 @@ function EarthViewer({ mode, depositFocusRequest }: EarthViewerProps) {
             ? 'DETAIL · SELECTING MODIS TEMPERATURE TILES'
           : 'DETAIL · SELECTING LATEST LOW-CLOUD SCENES',
       )
+      onCoverageChange('ANALYSING VIEWPORT')
       const endpoint = activeMode === 'terrain'
         ? '/imagery/copernicus-dem/scenes'
         : activeMode === 'thermal'
@@ -264,6 +266,11 @@ function EarthViewer({ mode, depositFocusRequest }: EarthViewerProps) {
             ? 'DETAIL · 1 ACTIVE SENTINEL-2 SCENE'
             : `DETAIL · ${scenes.length} ACTIVE SENTINEL-2 SCENE MOSAIC`,
       )
+      onCoverageChange(
+        scenes.length === 0
+          ? 'NO USABLE COVERAGE'
+          : `DETAIL MOSAIC · ${scenes.length} ${scenes.length === 1 ? 'TILE' : 'TILES'}`,
+      )
     }
 
     const requestDetailScenes = () => {
@@ -277,6 +284,7 @@ function EarthViewer({ mode, depositFocusRequest }: EarthViewerProps) {
         requestSequence += 1
         removeSentinel2Layers()
         setImageryStatus('DETAIL · ZOOM BELOW 200 KM TO SCAN')
+        onCoverageChange('GLOBAL BASELINE')
         return
       }
       refreshTimer = window.setTimeout(() => {
@@ -284,6 +292,7 @@ function EarthViewer({ mode, depositFocusRequest }: EarthViewerProps) {
           if (!disposed) {
             removeSentinel2Layers()
             setImageryStatus('DETAIL · SENTINEL-2 DISCOVERY UNAVAILABLE')
+            onCoverageChange('DISCOVERY UNAVAILABLE')
           }
         })
       }, SCENE_SEARCH_DEBOUNCE_MILLISECONDS)
@@ -303,6 +312,7 @@ function EarthViewer({ mode, depositFocusRequest }: EarthViewerProps) {
           ? 'DETAIL · ZOOM BELOW 200 KM TO SCAN'
           : 'DETAIL · PRESS SCAN FOR CURRENT VIEW',
       )
+      onCoverageChange(isCloseEnoughToScan ? 'AWAITING SCAN' : 'GLOBAL BASELINE')
     }
     const removeCameraChangedListener = viewer.camera.changed.addEventListener(
       clearDetailScenesForNavigation,
@@ -366,6 +376,7 @@ function EarthViewer({ mode, depositFocusRequest }: EarthViewerProps) {
         },
       })
       setImageryStatus('FICTIONAL · DILITHIUM DEPOSIT DENSITY MODEL')
+      onCoverageChange('FICTIONAL SCENARIO')
     }
     viewer.camera.percentageChanged = 0.01
     clearDetailScenesForNavigation()
@@ -387,7 +398,7 @@ function EarthViewer({ mode, depositFocusRequest }: EarthViewerProps) {
       removeSentinel2Layers()
       viewer.destroy()
     }
-  }, [])
+  }, [onCoverageChange])
 
   useEffect(() => {
     setViewerModeRef.current?.(mode)

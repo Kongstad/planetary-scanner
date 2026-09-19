@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "body_id": "solar-system",
+  "facts": [
+    {
+      "fact_id": "solar-system-spacex-roadster-identity-2026-09",
+      "field": "spacex_roadster_identity",
+      "kind": "statement",
+      "value": "RED HUMAN-MADE LAND VEHICLE",
+      "scope": "spacex_roadster_spacecraft",
+      "as_of": "2026-09-19",
+      "source_id": "jpl-horizons-spacex-roadster-2025",
+      "source_locator": "Target body SpaceX Roadster (spacecraft), -143205"
+    },
+    {
+      "fact_id": "solar-system-spacex-roadster-orbit-class-2026-09",
+      "field": "spacex_roadster_orbit_class",
+      "kind": "statement",
+      "value": "SUN-CENTERED ORBIT · NOT MARS ORBIT",
+      "scope": "spacex_roadster_orbit_center",
+      "as_of": "2026-09-19",
+      "source_id": "jpl-horizons-spacex-roadster-2025",
+      "source_locator": "Center body name: Sun (10)"
+    }
+  ]
+}

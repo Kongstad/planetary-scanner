@@ -1,0 +1,506 @@
+{
+  "schema_version": "1.0",
+  "body_id": "mars",
+  "facts": [
+    {
+      "fact_id": "mars-mean-radius",
+      "field": "mean_radius",
+      "value": 3389.5,
+      "unit": "km",
+      "scope": "volume_equivalent_sphere",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Mars row, Mean Radius"
+    },
+    {
+      "fact_id": "mars-equatorial-radius",
+      "field": "equatorial_radius",
+      "value": 3396.19,
+      "unit": "km",
+      "scope": "equatorial",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Mars row, Equatorial Radius"
+    },
+    {
+      "fact_id": "mars-mass",
+      "field": "mass",
+      "value": 6.41691e+23,
+      "unit": "kg",
+      "scope": "total_mass",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Mars row, Mass (0.641691 × 10^24 kg)"
+    },
+    {
+      "fact_id": "mars-equatorial-surface-gravity",
+      "field": "equatorial_surface_gravity",
+      "value": 3.71,
+      "unit": "m/s²",
+      "scope": "equatorial_surface",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Mars row, Equatorial Gravity"
+    },
+    {
+      "fact_id": "mars-geometric-albedo",
+      "field": "geometric_albedo",
+      "value": 0.15,
+      "unit": "1",
+      "scope": "disk_integrated_visible_light",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Mars row, Geometric Albedo"
+    },
+    {
+      "fact_id": "mars-semi-major-axis-j2000",
+      "field": "semi_major_axis",
+      "value": 1.52371034,
+      "unit": "AU",
+      "scope": "mars_mean_ecliptic_equinox_j2000",
+      "as_of": "2000-01-01",
+      "source_id": "jpl-approximate-planetary-positions",
+      "source_locator": "Table 1, Mars, semi-major axis"
+    },
+    {
+      "fact_id": "mars-orbital-eccentricity-j2000",
+      "field": "orbital_eccentricity",
+      "value": 0.0933941,
+      "unit": "1",
+      "scope": "mars_mean_ecliptic_equinox_j2000",
+      "as_of": "2000-01-01",
+      "source_id": "jpl-approximate-planetary-positions",
+      "source_locator": "Table 1, Mars, eccentricity"
+    },
+    {
+      "fact_id": "mars-orbital-inclination-j2000",
+      "field": "orbital_inclination",
+      "value": 1.84969142,
+      "unit": "deg",
+      "scope": "mars_mean_ecliptic_equinox_j2000",
+      "as_of": "2000-01-01",
+      "source_id": "jpl-approximate-planetary-positions",
+      "source_locator": "Table 1, Mars, inclination"
+    },
+    {
+      "fact_id": "mars-equatorial-escape-velocity",
+      "field": "equatorial_escape_velocity",
+      "value": 5.03,
+      "unit": "km/s",
+      "scope": "equatorial_surface",
+      "as_of": "2019-12-12",
+      "source_id": "jpl-planetary-physical-parameters-2019",
+      "source_locator": "Mars row, Escape Velocity"
+    },
+    {
+      "fact_id": "mars-rotation-period",
+      "field": "rotation_period",
+      "value": 24.6,
+      "unit": "h",
+      "scope": "sidereal_rotation_approximation",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Quick Facts"
+    },
+    {
+      "fact_id": "mars-orbital-period",
+      "field": "orbital_period",
+      "value": 687,
+      "unit": "d",
+      "scope": "earth_days_per_martian_year_approximation",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Quick Facts"
+    },
+    {
+      "fact_id": "mars-axial-tilt",
+      "field": "axial_tilt",
+      "value": 25,
+      "unit": "deg",
+      "scope": "rotation_axis_relative_to_orbital_plane",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Orbit and Rotation"
+    },
+    {
+      "fact_id": "mars-natural-satellite-count",
+      "field": "natural_satellite_count",
+      "value": 2,
+      "unit": "count",
+      "scope": "permanent_natural_satellites",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Moons"
+    },
+    {
+      "fact_id": "mars-natural-satellite-names",
+      "field": "natural_satellite_names",
+      "kind": "statement",
+      "value": "2 · PHOBOS · DEIMOS",
+      "scope": "permanent_natural_satellites",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Moons"
+    },
+    {
+      "fact_id": "mars-operational-relay-orbiter-count-2026-05",
+      "field": "operational_relay_orbiter_count",
+      "value": 4,
+      "unit": "count",
+      "scope": "nasa_esa_mars_relay_network_operational_snapshot",
+      "as_of": "2026-05-31",
+      "source_id": "nasa-mars-relay-network-2026",
+      "source_locator": "Mars Relay Network table, Feb-May 2026 operational data"
+    },
+    {
+      "fact_id": "mars-operational-relay-orbiters-2026-05",
+      "field": "operational_relay_orbiters",
+      "kind": "statement",
+      "value": "ODYSSEY · MARS EXPRESS · MRO · EXOMARS TGO",
+      "scope": "nasa_esa_mars_relay_network_operational_snapshot",
+      "as_of": "2026-05-31",
+      "source_id": "nasa-mars-relay-network-2026",
+      "source_locator": "Mars Relay Network table, Feb-May 2026 operational data"
+    },
+    {
+      "fact_id": "mars-relay-backup-orbiter-2026-05",
+      "field": "relay_backup_orbiter",
+      "kind": "statement",
+      "value": "MARS EXPRESS",
+      "scope": "nasa_esa_mars_relay_network_backup_assignment",
+      "as_of": "2026-05-31",
+      "source_id": "nasa-mars-relay-network-2026",
+      "source_locator": "Mars Relay Network table, Mars Express backup-orbiter status"
+    },
+    {
+      "fact_id": "mars-highest-throughput-relay-2026-05",
+      "field": "highest_throughput_relay",
+      "kind": "statement",
+      "value": "EXOMARS TGO · 2,228.1 Mb/DAY",
+      "scope": "nasa_esa_mars_relay_network_average_daily_relay_data",
+      "as_of": "2026-05-31",
+      "source_id": "nasa-mars-relay-network-2026",
+      "source_locator": "Mars Relay Network table, ExoMars Trace Gas Orbiter average data transmitted Feb-May 2026"
+    },
+    {
+      "fact_id": "mars-ended-relay-mission-2026-06",
+      "field": "ended_relay_mission",
+      "kind": "statement",
+      "value": "MAVEN · MISSION ENDED 2026-06-03",
+      "scope": "nasa_maven_mission_status",
+      "as_of": "2026-06-03",
+      "source_id": "nasa-maven-end-of-mission-2026",
+      "source_locator": "Mission-end announcement"
+    },
+    {
+      "fact_id": "mars-atmospheric-composition",
+      "field": "atmospheric_composition",
+      "kind": "statement",
+      "value": "THIN; MOSTLY CARBON DIOXIDE, NITROGEN, AND ARGON",
+      "scope": "present_martian_atmosphere",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Atmosphere"
+    },
+    {
+      "fact_id": "mars-global-magnetic-field-status",
+      "field": "global_magnetic_field_status",
+      "kind": "statement",
+      "value": "NO PRESENT GLOBAL MAGNETIC FIELD",
+      "scope": "present_day_global_magnetic_field",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Magnetic Field"
+    },
+    {
+      "fact_id": "mars-crustal-magnetization",
+      "field": "crustal_magnetization",
+      "kind": "statement",
+      "value": "HIGHLY MAGNETIZED SOUTHERN CRUST",
+      "scope": "southern_hemisphere_crustal_remanent_magnetization",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Magnetic Field"
+    },
+    {
+      "fact_id": "mars-solar-wind-interaction",
+      "field": "solar_wind_interaction",
+      "kind": "statement",
+      "value": "SOLAR WIND + RADIATION DRIVE ATMOSPHERIC ESCAPE",
+      "scope": "long_term_martian_atmospheric_loss",
+      "as_of": "2023-07-26",
+      "source_id": "nasa-maven-atmospheric-loss-2023",
+      "source_locator": "Release introduction and atmospheric sputtering explanation"
+    },
+    {
+      "fact_id": "mars-auroral-response",
+      "field": "auroral_response",
+      "kind": "statement",
+      "value": "DIFFUSE + PROTON AURORAE OBSERVED",
+      "scope": "martian_ultraviolet_auroral_phenomena",
+      "as_of": "2023-08-21",
+      "source_id": "nasa-maven-aurora-discoveries-2023",
+      "source_locator": "Aurora discovery summary"
+    },
+    {
+      "fact_id": "mars-atmospheric-carbon-dioxide-fraction",
+      "field": "atmospheric_carbon_dioxide",
+      "kind": "statement",
+      "value": "CO₂ · 95.1%",
+      "scope": "atmospheric_volume_fraction",
+      "as_of": "2025-05-19",
+      "source_id": "nasa-nssdc-mars-fact-sheet-2025",
+      "source_locator": "Martian Atmosphere, composition by volume"
+    },
+    {
+      "fact_id": "mars-atmospheric-nitrogen-fraction",
+      "field": "atmospheric_nitrogen",
+      "kind": "statement",
+      "value": "N₂ · 2.59%",
+      "scope": "atmospheric_volume_fraction",
+      "as_of": "2025-05-19",
+      "source_id": "nasa-nssdc-mars-fact-sheet-2025",
+      "source_locator": "Martian Atmosphere, composition by volume"
+    },
+    {
+      "fact_id": "mars-atmospheric-argon-fraction",
+      "field": "atmospheric_argon",
+      "kind": "statement",
+      "value": "Ar · 1.94%",
+      "scope": "atmospheric_volume_fraction",
+      "as_of": "2025-05-19",
+      "source_id": "nasa-nssdc-mars-fact-sheet-2025",
+      "source_locator": "Martian Atmosphere, composition by volume"
+    },
+    {
+      "fact_id": "mars-surface-pressure",
+      "field": "surface_pressure",
+      "value": 6.36,
+      "unit": "hPa",
+      "scope": "mean_radius_reference_pressure_seasonally_variable",
+      "as_of": "2025-05-19",
+      "source_id": "nasa-nssdc-mars-fact-sheet-2025",
+      "source_locator": "Martian Atmosphere, surface pressure at mean radius"
+    },
+    {
+      "fact_id": "mars-average-temperature",
+      "field": "global_mean_surface_temperature",
+      "value": -59,
+      "unit": "°C",
+      "scope": "published_average_temperature_reference",
+      "as_of": "2025-05-19",
+      "source_id": "nasa-nssdc-mars-fact-sheet-2025",
+      "source_locator": "Martian Atmosphere, average temperature (214 K)"
+    },
+    {
+      "fact_id": "mars-maximum-temperature-reference",
+      "field": "daytime_surface_temperature_range",
+      "kind": "statement",
+      "value": "UP TO +20 °C",
+      "scope": "broad_published_martian_temperature_extreme",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Atmosphere"
+    },
+    {
+      "fact_id": "mars-minimum-temperature-reference",
+      "field": "nighttime_surface_temperature_range",
+      "kind": "statement",
+      "value": "DOWN TO −153 °C",
+      "scope": "broad_published_martian_temperature_extreme",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Atmosphere"
+    },
+    {
+      "fact_id": "mars-thermal-reference",
+      "field": "thermal_product",
+      "kind": "statement",
+      "value": "REFERENCE CLIMATOLOGY · NOT LIVE",
+      "scope": "static_reference_temperature_values",
+      "as_of": "2025-05-19",
+      "source_id": "nasa-nssdc-mars-fact-sheet-2025",
+      "source_locator": "Martian Atmosphere"
+    },
+    {
+      "fact_id": "mars-water-ice",
+      "field": "water_ice",
+      "kind": "statement",
+      "value": "WATER ICE BELOW THE SURFACE IN POLAR REGIONS",
+      "scope": "present_polar_subsurface_water_ice",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Water"
+    },
+    {
+      "fact_id": "mars-past-liquid-water-evidence",
+      "field": "past_liquid_water_evidence",
+      "kind": "statement",
+      "value": "SURFACE FEATURES INDICATE PAST LIQUID WATER",
+      "scope": "geological_evidence_for_past_surface_water",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Water"
+    },
+    {
+      "fact_id": "mars-present-surface-liquid-water",
+      "field": "present_liquid_water",
+      "kind": "statement",
+      "value": "NOT STABLE FOR LONG ON THE SURFACE",
+      "scope": "present_martian_surface_liquid_water_stability",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Water"
+    },
+    {
+      "fact_id": "mars-present-global-ocean",
+      "field": "present_global_ocean",
+      "kind": "statement",
+      "value": "NO PRESENT GLOBAL OCEAN",
+      "scope": "present_global_surface_ocean",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Water"
+    },
+    {
+      "fact_id": "mars-mola-highest-elevation",
+      "field": "highest_elevation",
+      "value": 21.249,
+      "unit": "km",
+      "scope": "mola_areoid_relative_global_grid_maximum",
+      "as_of": "2003-03-21",
+      "source_id": "nasa-pds-mola-megdr-v2",
+      "source_locator": "MEGT00N000HB label, IMAGE description maximum elevation"
+    },
+    {
+      "fact_id": "mars-mola-lowest-elevation",
+      "field": "lowest_elevation",
+      "value": -8.208,
+      "unit": "km",
+      "scope": "mola_areoid_relative_global_grid_minimum",
+      "as_of": "2003-03-21",
+      "source_id": "nasa-pds-mola-megdr-v2",
+      "source_locator": "MEGT00N000HB label, IMAGE description minimum elevation"
+    },
+    {
+      "fact_id": "mars-mola-global-relief",
+      "field": "global_relief",
+      "value": 29.457,
+      "unit": "km",
+      "scope": "mola_areoid_relative_global_grid_range",
+      "as_of": "2003-03-21",
+      "source_id": "nasa-pds-mola-megdr-v2",
+      "source_locator": "Calculated from MEGT00N000HB label maximum and minimum elevations"
+    },
+    {
+      "fact_id": "mars-mola-terrain-grid",
+      "field": "mola_terrain",
+      "kind": "statement",
+      "value": "128 PIXELS/DEG · 463 M/PIXEL",
+      "scope": "mola_megdr_v2_binned_interpolated_global_grid",
+      "as_of": "2003-03-21",
+      "source_id": "nasa-pds-mola-megdr-v2",
+      "source_locator": "MEGT00N000HB label, IMAGE resolution and map projection"
+    },
+    {
+      "fact_id": "mars-bulk-iron-fraction",
+      "field": "bulk_iron_fraction",
+      "value": 27.7,
+      "unit": "wt%",
+      "scope": "whole_planet_bulk_composition_model_estimate",
+      "as_of": "2013-12-01",
+      "source_id": "taylor-bulk-composition-mars-2013",
+      "source_locator": "Bulk-composition model table"
+    },
+    {
+      "fact_id": "mars-bulk-oxygen-fraction",
+      "field": "bulk_oxygen_fraction",
+      "value": 30,
+      "unit": "wt%",
+      "scope": "whole_planet_bulk_composition_model_estimate",
+      "as_of": "2013-12-01",
+      "source_id": "taylor-bulk-composition-mars-2013",
+      "source_locator": "Bulk-composition model table"
+    },
+    {
+      "fact_id": "mars-bulk-silicon-fraction",
+      "field": "bulk_silicon_fraction",
+      "value": 16.7,
+      "unit": "wt%",
+      "scope": "whole_planet_bulk_composition_model_estimate",
+      "as_of": "2013-12-01",
+      "source_id": "taylor-bulk-composition-mars-2013",
+      "source_locator": "Bulk-composition model table"
+    },
+    {
+      "fact_id": "mars-bulk-magnesium-fraction",
+      "field": "bulk_magnesium_fraction",
+      "value": 15.4,
+      "unit": "wt%",
+      "scope": "whole_planet_bulk_composition_model_estimate",
+      "as_of": "2013-12-01",
+      "source_id": "taylor-bulk-composition-mars-2013",
+      "source_locator": "Bulk-composition model table"
+    },
+    {
+      "fact_id": "mars-core-state",
+      "field": "core_state",
+      "kind": "statement",
+      "value": "LIQUID CORE · MOLTEN SILICATE LAYER ABOVE",
+      "scope": "insight_seismic_interior_model",
+      "as_of": "2023-10-25",
+      "source_id": "khan-mars-liquid-silicate-layer-2023",
+      "source_locator": "Abstract"
+    },
+    {
+      "fact_id": "mars-crust-thickness",
+      "field": "crust_thickness",
+      "kind": "statement",
+      "value": "20–37 KM · MODEL-DEPENDENT",
+      "scope": "insight_local_seismic_crustal_depth_model",
+      "as_of": "2021-07-22",
+      "source_id": "nasa-insight-deep-interior-2021",
+      "source_locator": "Interior layers discussion"
+    },
+    {
+      "fact_id": "mars-mantle-thickness",
+      "field": "mantle_thickness",
+      "kind": "statement",
+      "value": "MODEL-DEPENDENT · DEFINITION REQUIRED",
+      "scope": "martian_mantle_boundary_model_dependence",
+      "as_of": "2023-10-25",
+      "source_id": "khan-mars-liquid-silicate-layer-2023",
+      "source_locator": "Abstract, molten silicate layer above core"
+    },
+    {
+      "fact_id": "mars-tectonic-regime",
+      "field": "tectonic_regime",
+      "kind": "statement",
+      "value": "SINGLE-PLATE · NO EARTH-LIKE PLATE TECTONICS",
+      "scope": "present_martian_crustal_tectonic_regime",
+      "as_of": "2021-07-22",
+      "source_id": "nasa-insight-deep-interior-2021",
+      "source_locator": "Mars crust as one giant plate discussion"
+    },
+    {
+      "fact_id": "mars-current-life-status",
+      "field": "current_life_status",
+      "kind": "statement",
+      "value": "NO CONFIRMED CURRENT LIFE DETECTION",
+      "scope": "present_life_assessment",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Potential for Life"
+    },
+    {
+      "fact_id": "mars-subsurface-microbial-life-potential",
+      "field": "subsurface_microbial_life_potential",
+      "kind": "statement",
+      "value": "SUBSURFACE MICROBIAL LIFE REMAINS A SCIENTIFIC QUESTION",
+      "scope": "present_subsurface_life_investigation",
+      "as_of": "2026-07-10",
+      "source_id": "nasa-mars-facts-2026",
+      "source_locator": "Potential for Life"
+    }
+  ]
+}
