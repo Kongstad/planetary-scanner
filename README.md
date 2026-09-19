@@ -9,7 +9,17 @@ Local-first planetary science console and cited RAG learning project. PlanetaryS
 
 ## Status
 
-Prototype. The current React client is a static Earth reference console. The viewer uses a temporary Earth image while CesiumJS integration, the local API, and retrieval pipeline are developed.
+Prototype. The React client provides a CesiumJS Earth reference console backed by a local
+FastAPI service and a local retrieval pipeline. Its explicit **SCAN VIEW** workflow provides
+exploratory display-only layers from Microsoft Planetary Computer: Sentinel-2 RGB imagery,
+Sentinel-2 NDVI, Copernicus DEM elevation, and 8-day daytime MODIS land-surface temperature.
+These map products do not enter the RAG context.
+
+MODIS thermal display uses the `modis-11A2-061` `LST_Day_1km` product: a 1 km,
+8-day, daytime land-surface-temperature composite. It is not an air-temperature measurement
+or raw long-wave infrared radiance. The viewer calculates a viewport-specific 2nd–98th
+percentile display range from source statistics, renders it in Kelvin, and reports its legend
+in degrees Celsius.
 
 ## Scientific Integrity
 
@@ -65,23 +75,17 @@ Two versioned evaluation sets protect the pipeline:
 The local endpoints are `GET /retrieval/reference` for evidence inspection and
 `GET /answers/reference` for grounded answers with citations.
 
-## Reference Database
+## Deferred: Reference Database
 
-The local file-backed corpus remains the active retrieval baseline. PostgreSQL with
-pgvector is provided as the scalable reference-record store for automated ingestion and
-metadata-aware vector retrieval. Start it with:
+The local file-backed corpus is the active retrieval baseline. PostgreSQL with pgvector is
+deferred until Docker can be used comfortably on the development machine. It remains the
+planned scalable reference-record store for automated ingestion and metadata-aware vector
+retrieval.
 
-```powershell
-Copy-Item .env.example .env
-docker compose up -d reference-db
-docker compose ps
-```
-
-The idempotent schema at `database/init/001_reference_records.sql` creates the
-provenance-preserving `reference_records` table, relational metadata indexes, and a
-384-dimensional cosine-similarity vector index. The first importer will migrate the
-validated Earth records and compare PostgreSQL retrieval against the existing JSONL/NPZ
-evaluation baseline before the API switches storage backends.
+**Later todo:** run the idempotent schema at
+`database/init/001_reference_records.sql`, implement the importer and PostgreSQL
+retriever, and demonstrate retrieval equivalence to the current JSONL/NPZ evaluation
+baseline before switching API storage.
 
 ## Local Development
 
@@ -104,7 +108,7 @@ npm run lint
 
 1. Versioned Earth reference facts with provenance.
 2. FastAPI contract for facts, citations, and viewer directives.
-3. CesiumJS Earth viewer.
+3. CesiumJS Earth viewer with a self-contained ellipsoid, followed by local or openly accessible imagery.
 4. Local RAG pipeline with optional personal API-provider support.
 5. Docker Compose and reproducible evaluation.
 

@@ -12,7 +12,7 @@
 
 .console { min-height: 100vh; display: flex; flex-direction: column; gap: 12px; padding: 14px; }
 .console__header, .console__main { display: grid; gap: 12px; }
-.console__header { grid-template-columns: 300px 1fr auto; height: 62px; }
+.console__header { grid-template-columns: 300px 1fr; height: 62px; }
 .wordmark, .mission-status, .panel, .viewer-shell { border: 1px solid var(--border); background: var(--panel); }
 .wordmark, .mission-status { padding: 8px 14px; font-family: var(--mono); }
 .wordmark { display: flex; flex-direction: column; justify-content: center; gap: 2px; }
@@ -34,8 +34,9 @@
 .status-offline { color: oklch(0.68 0.18 25); }
 .mission-status .status-offline { color: oklch(0.68 0.18 25); }
 .status-offline i { display: inline-block; width: 6px; height: 6px; margin-right: 6px; border-radius: 50%; background: oklch(0.68 0.18 25); }
-.console__header > button, .query-form button { border: 1px solid oklch(0.45 0.06 205); background: oklch(0.2 0.03 205); color: oklch(0.86 0.11 205); font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; }
-.console__header > button { padding: 0 22px; }
+.viewer-scan-button, .query-form button { border: 1px solid oklch(0.45 0.06 205); background: oklch(0.2 0.03 205); color: oklch(0.86 0.11 205); font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; }
+.viewer-scan-button { position: absolute; z-index: 1; top: 16px; right: 16px; border-color: oklch(0.5 0.1 145); background: oklch(0.2 0.03 145); color: oklch(0.84 0.13 145); padding: 11px 20px; font-size: 14px; font-weight: 600; }
+.viewer-scan-button:disabled { border-color: oklch(0.3 0.02 250); background: oklch(0.15 0.014 250); color: oklch(0.7 0.015 250); cursor: not-allowed; }
 .console__main { grid-template-columns: 380px minmax(420px, 1fr) 400px; flex: 1; min-height: 0; }
 .rail, .center-column { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .rail { overflow: auto; }
@@ -51,6 +52,8 @@
 .data-grid div { display: flex; flex-direction: column; gap: 3px; padding: 8px 10px; background: oklch(0.155 0.014 250); }
 .data-grid span, .index-count span { color: var(--muted); font-family: var(--mono); font-size: 9px; letter-spacing: 0.13em; }
 .data-grid strong { color: oklch(0.9 0.01 240); font-family: var(--mono); font-size: 12px; font-weight: 400; letter-spacing: 0.03em; }
+.deposit-focus-button { width: 100%; margin-top: 10px; border: 1px solid oklch(0.68 0.14 80); background: oklch(0.22 0.045 72); color: oklch(0.9 0.13 90); padding: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.13em; }
+.deposit-focus-button:hover { background: oklch(0.27 0.06 72); }
 .magnetic-shield-grid strong { font-size: 10px; }
 .biosphere-observations strong { font-size: 10px; }
 .planetary-interior strong { font-size: 10px; }
@@ -75,8 +78,39 @@
 .viewer-shell { flex: 1; display: flex; flex-direction: column; min-height: 440px; border-color: oklch(0.34 0.02 250); }
 .viewer-shell__header { align-items: center; }
 .layer-chips { display: flex; gap: 5px; }
-.layer-chips button { border: 1px solid oklch(0.5 0.06 205); border-radius: 0; background: oklch(0.22 0.03 205); color: oklch(0.88 0.09 205); padding: 3px 6px; font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; }
+.layer-chips button { border: 1px solid oklch(0.5 0.06 205); border-radius: 0; background: oklch(0.22 0.03 205); color: oklch(0.88 0.09 205); padding: 4px 6px; font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; }
+.layer-chips .layer-chip--active { border-color: oklch(0.5 0.1 145); background: oklch(0.2 0.03 145); color: oklch(0.84 0.13 145); }
 .layer-chips button:disabled { border-color: oklch(0.29 0.02 250); background: oklch(0.16 0.014 250); color: var(--muted); cursor: not-allowed; }
+.earth-viewer { position: relative; flex: 1; min-height: 0; overflow: hidden; background: radial-gradient(circle at 30% 20%, oklch(0.2 0.02 250), oklch(0.1 0.012 250) 60%); }
+.earth-viewer__canvas { position: absolute; inset: 0; }
+.earth-viewer .cesium-viewer, .earth-viewer .cesium-viewer-cesiumWidget, .earth-viewer .cesium-widget { width: 100%; height: 100%; }
+.earth-viewer .cesium-viewer-bottom { right: 8px; bottom: 4px; }
+.earth-viewer .cesium-widget-credits { color: oklch(0.74 0.018 245); font-family: var(--mono); font-size: 8px; }
+.earth-viewer .cesium-widget-credits a { color: var(--cyan); }
+.imagery-provenance { position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 3px; max-width: 310px; border-right: 2px solid var(--cyan); background: oklch(0.12 0.012 250 / 0.87); padding: 8px 10px; color: oklch(0.74 0.018 245); font-family: var(--mono); font-size: 8px; letter-spacing: 0.07em; text-align: right; }
+.scene-status { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+.scene-status__spinner { width: 8px; height: 8px; border: 1px solid oklch(0.78 0.12 205 / 0.35); border-top-color: var(--cyan); border-radius: 50%; animation: scene-spin 0.8s linear infinite; }
+@keyframes scene-spin { to { transform: rotate(360deg); } }
+.terrain-legend { position: absolute; z-index: 1; top: 72px; right: 16px; display: flex; flex-direction: column; gap: 7px; min-width: 104px; border-right: 2px solid var(--cyan); background: oklch(0.12 0.012 250 / 0.87); padding: 8px 10px; color: oklch(0.78 0.02 250); font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; text-align: right; }
+.terrain-legend__scale { display: flex; align-items: stretch; justify-content: flex-end; gap: 6px; height: 136px; }
+.terrain-legend__gradient { width: 12px; border: 1px solid oklch(0.76 0.02 250 / 0.35); background: linear-gradient(to top, #0c1c5c 0%, #1e4d8b 20%, #2d7bb6 35%, #3fa855 50%, #7ac74f 65%, #c4d968 78%, #e8c167 88%, #d89a5a 95%, #ffffff 100%); }
+.terrain-legend__labels { display: flex; flex-direction: column; justify-content: space-between; color: oklch(0.75 0.02 250); white-space: nowrap; }
+.terrain-legend small { color: var(--muted); font-size: 7px; letter-spacing: 0.12em; }
+.biosphere-legend { position: absolute; z-index: 1; top: 72px; right: 16px; display: flex; flex-direction: column; gap: 7px; min-width: 104px; border-right: 2px solid var(--green); background: oklch(0.12 0.012 250 / 0.87); padding: 8px 10px; color: oklch(0.78 0.02 250); font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; text-align: right; }
+.biosphere-legend__scale { display: flex; align-items: stretch; justify-content: flex-end; gap: 6px; height: 136px; }
+.biosphere-legend__gradient { width: 12px; border: 1px solid oklch(0.76 0.02 250 / 0.35); background: linear-gradient(to top, #006837 0%, #1a9850 20%, #66bd63 35%, #a6d96a 50%, #d9ef8b 60%, #ffffbf 70%, #fee08b 80%, #f46d43 90%, #a50026 100%); }
+.biosphere-legend__labels { display: flex; flex-direction: column; justify-content: space-between; color: oklch(0.75 0.02 250); white-space: nowrap; }
+.biosphere-legend small { color: var(--muted); font-size: 7px; letter-spacing: 0.12em; }
+.thermal-legend { position: absolute; z-index: 1; top: 72px; right: 16px; display: flex; flex-direction: column; gap: 7px; min-width: 104px; border-right: 2px solid oklch(0.78 0.14 55); background: oklch(0.12 0.012 250 / 0.87); padding: 8px 10px; color: oklch(0.78 0.02 250); font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; text-align: right; }
+.thermal-legend__scale { display: flex; align-items: stretch; justify-content: flex-end; gap: 6px; height: 136px; }
+.thermal-legend__gradient { width: 12px; border: 1px solid oklch(0.76 0.02 250 / 0.35); background: linear-gradient(to top, #2c115f 0%, #721f81 20%, #b73779 40%, #ed7953 60%, #fbbf45 80%, #fcffa4 100%); }
+.thermal-legend__labels { display: flex; flex-direction: column; justify-content: space-between; color: oklch(0.75 0.02 250); white-space: nowrap; }
+.thermal-legend small { color: var(--muted); font-size: 7px; letter-spacing: 0.12em; }
+.dilithium-legend { position: absolute; z-index: 1; top: 72px; right: 16px; display: flex; flex-direction: column; gap: 7px; min-width: 118px; border-right: 2px solid oklch(0.5 0.04 150); background: oklch(0.12 0.012 250 / 0.9); padding: 8px 10px; color: oklch(0.8 0.04 150); font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; text-align: right; }
+.dilithium-legend__scale { display: flex; align-items: stretch; justify-content: flex-end; gap: 6px; height: 100px; }
+.dilithium-legend__gradient { width: 12px; border: 1px solid oklch(0.76 0.02 250 / 0.35); background: linear-gradient(to top, #800026 0%, #d63637 25%, #f98e52 50%, #b1d34d 70%, #006837 100%); }
+.dilithium-legend__labels { display: flex; flex-direction: column; justify-content: space-between; color: oklch(0.75 0.02 250); }
+.dilithium-legend small { color: var(--muted); font-size: 7px; letter-spacing: 0.1em; }
 .viewer-placeholder { position: relative; flex: 1; display: grid; place-items: center; overflow: hidden; background: radial-gradient(circle at 30% 20%, oklch(0.2 0.02 250), oklch(0.1 0.012 250) 60%); }
 .viewer-placeholder::before { position: absolute; inset: 0; content: ''; background-image: radial-gradient(1px 1px at 20% 20%, white 50%, transparent 50%), radial-gradient(1px 1px at 70% 40%, white 50%, transparent 50%), radial-gradient(1px 1px at 45% 80%, white 50%, transparent 50%); background-size: 180px 160px, 260px 220px, 220px 200px; opacity: 0.4; }
 .viewer-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 54%; opacity: 0.9; }
@@ -86,7 +120,7 @@
 .target-reticle { position: absolute; width: 46px; height: 46px; border-top: 1px solid oklch(0.7 0.09 205 / 0.55); border-left: 1px solid oklch(0.7 0.09 205 / 0.55); transform: rotate(45deg); }
 .viewer-placeholder p { position: absolute; padding: 7px 12px; border: 1px dashed var(--border); background: oklch(0.12 0.012 250 / 0.8); color: var(--label); font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-align: center; line-height: 1.6; }
 .viewer-placeholder p small { color: var(--muted); font-size: 9px; }
-.hud { position: absolute; bottom: 16px; color: oklch(0.78 0.02 250); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; line-height: 1.5; }
+.hud { position: absolute; bottom: 42px; color: oklch(0.78 0.02 250); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; line-height: 1.5; }
 .hud span { color: var(--muted); }
 .hud--left { left: 50px; }.hud--right { right: 50px; text-align: right; }.hud--right div { width: 120px; height: 5px; margin-top: 4px; border: 1px solid oklch(0.7 0.02 250); border-top: 0; }
 .telemetry { display: grid; grid-template-columns: repeat(4, 1fr) 1.35fr; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--divider); background: oklch(0.165 0.014 250); }

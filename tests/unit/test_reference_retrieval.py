@@ -106,3 +106,46 @@ def test_reference_retriever_expands_broad_earth_geochemistry_questions() -> Non
     assert {result.document.document_id for result in results} == {
         document.document_id for document in documents
     }
+
+
+def test_reference_retriever_returns_top_evidence_per_explicit_question_subject() -> None:
+    documents = [
+        RagDocument(
+            document_id="earth-mean-radius",
+            content="Earth mean radius is 6371 km",
+            metadata={"field": "mean_radius"},
+        ),
+        RagDocument(
+            document_id="earth-equatorial-diameter",
+            content="Earth equatorial diameter is 12756 km",
+            metadata={"field": "equatorial_diameter"},
+        ),
+        RagDocument(
+            document_id="earth-population",
+            content="Earth global human population is 8.2 B",
+            metadata={"field": "global_human_population"},
+        ),
+        RagDocument(
+            document_id="earth-forest",
+            content="Earth global forest area is 4.06 billion hectares",
+            metadata={"field": "global_forest_area"},
+        ),
+    ]
+    embedding_model = SimilarityFakeEmbeddingModel()
+    index = build_reference_vector_index(documents, embedding_model, DEFAULT_EMBEDDING_MODEL)
+    retriever = ReferenceRetriever(
+        embedding_model=embedding_model,
+        index=index,
+        documents_by_id={document.document_id: document for document in documents},
+    )
+
+    results = retriever.retrieve(
+        "What is the size of Earth and how many people live here?", limit=3
+    )
+
+    assert len(results) == 2
+    assert results[0].document.document_id in {
+        "earth-mean-radius",
+        "earth-equatorial-diameter",
+    }
+    assert results[1].document.document_id == "earth-population"

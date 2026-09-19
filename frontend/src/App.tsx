@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import EarthViewer, { type ViewerMode } from './EarthViewer.tsx'
 
 type PanelProps = {
   title: string
@@ -119,26 +120,41 @@ function App() {
   const [isRetrieving, setIsRetrieving] = useState(false)
   const [queryElapsedSeconds, setQueryElapsedSeconds] = useState(0)
   const [lastQueryElapsedSeconds, setLastQueryElapsedSeconds] = useState<number | null>(null)
+  const [viewerMode, setViewerMode] = useState<ViewerMode>('imagery')
+  const [depositFocusRequest, setDepositFocusRequest] = useState(0)
   const scienceComputerQualifier = isReferenceApiOnline
     ? `QWEN2.5:3B · MINILM-L6-V2 · ${referenceFacts.length} RECORDS`
     : `QWEN2.5:3B · MINILM-L6-V2 · ${referenceFacts.length === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
   useEffect(() => {
-    void fetch('/reference/bodies/earth')
-      .then((response) => {
+    let isDisposed = false
+    async function loadReferenceFacts() {
+      try {
+        const response = await fetch('/reference/bodies/earth')
         if (!response.ok) {
           throw new Error(`Reference API returned ${response.status}`)
         }
-        return response.json() as Promise<ReferenceDataset>
-      })
-      .then((dataset) => {
-        setReferenceFacts(dataset.facts)
-        setIsReferenceApiOnline(true)
-      })
-      .catch(() => {
-        setReferenceFacts([])
-        setIsReferenceApiOnline(false)
-      })
+        const dataset = await response.json() as ReferenceDataset
+        if (!isDisposed) {
+          setReferenceFacts(dataset.facts)
+          setIsReferenceApiOnline(true)
+        }
+      } catch {
+        if (!isDisposed) {
+          setReferenceFacts([])
+          setIsReferenceApiOnline(false)
+        }
+      }
+    }
+
+    void loadReferenceFacts()
+    const retryIntervalId = window.setInterval(() => {
+      void loadReferenceFacts()
+    }, 10_000)
+    return () => {
+      isDisposed = true
+      window.clearInterval(retryIntervalId)
+    }
   }, [])
 
   useEffect(() => {
@@ -155,7 +171,7 @@ function App() {
   function getReferenceValue(field: string | undefined, fallback: string, fractionDigits?: number): string {
     const fact = referenceFacts.find((candidate) => candidate.field === field)
     if (!fact) {
-      return fallback
+      return isReferenceApiOnline ? fallback : 'SYSTEMS OFFLINE'
     }
     const value = typeof fact.value === 'number' && fractionDigits !== undefined
       ? fact.value.toFixed(fractionDigits)
@@ -168,7 +184,10 @@ function App() {
 
   function getPercentageReferenceValue(field: string, fallback: string): string {
     const fact = referenceFacts.find((candidate) => candidate.field === field)
-    return fact && typeof fact.value === 'number' ? `${(fact.value * 100).toFixed(1)}%` : fallback
+    if (fact && typeof fact.value === 'number') {
+      return `${(fact.value * 100).toFixed(1)}%`
+    }
+    return isReferenceApiOnline ? fallback : 'SYSTEMS OFFLINE'
   }
 
   function getCo2ScalePosition(): string {
@@ -231,11 +250,10 @@ function App() {
           <button className="body-tab" type="button" disabled><span className="body-disc body-disc--mars" /><span>MARS<small>SOL IV</small></span></button>
           <button className="body-tab" type="button" disabled><span className="body-disc body-disc--luna" /><span>LUNA<small>SOL III-a</small></span></button>
           <div className="mission-status">
-            <div><span>SENSOR ARRAY</span><strong className={isReferenceApiOnline ? 'status-online' : 'status-offline'}><i />{isReferenceApiOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
+            <div><span>REFERENCE API</span><strong className={isReferenceApiOnline ? 'status-online' : 'status-offline'}><i />{isReferenceApiOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
             <div><span>MISSION CLOCK</span><strong>00:22:00 UTC</strong></div>
           </div>
         </div>
-        <button type="button">RE-SCAN</button>
       </header>
       <div className="console__main">
         <aside className="rail">
@@ -278,7 +296,7 @@ function App() {
           <div className="rail-block">LIFE<i /></div>
           <Panel title="06 · BIOSPHERE" qualifier="GLOBAL OBSERVABLES">
             <div className="biosphere-status"><strong>CONFIRMED</strong><span>FOREST + OCEAN + ATMOSPHERE</span></div>
-            <div className="data-grid compact-grid biosphere-observations">{biosphereObservations.map(([label, field]) => <div key={field}><span>{label}</span><strong>{field === 'ocean_net_primary_production' ? 'UNKNOWN' : getReferenceValue(field, 'LOADING')}</strong></div>)}</div>
+            <div className="data-grid compact-grid biosphere-observations">{biosphereObservations.map(([label, field]) => <div key={field}><span>{label}</span><strong>{getReferenceValue(field, 'LOADING')}</strong></div>)}</div>
           </Panel>
           <Panel title="07 · CIVILISATION" qualifier="REFERENCE + SCENARIO">
             <h2 className="group-title">REFERENCE</h2>
@@ -291,17 +309,15 @@ function App() {
           <section className="viewer-shell">
             <header className="viewer-shell__header">
               <span>PRIMARY VIEWER</span>
-              <div className="layer-chips"><button type="button">IMAGERY</button><button type="button">TERRAIN</button><button type="button" disabled>THERMAL</button><button type="button" disabled>SPECTRAL</button><button type="button">GRID</button></div>
+              <div className="layer-chips">
+                <button className={viewerMode === 'imagery' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('imagery')}>IMAGERY</button>
+                <button className={viewerMode === 'terrain' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('terrain')}>TERRAIN</button>
+                <button className={viewerMode === 'biosphere' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('biosphere')}>BIOSPHERE</button>
+                <button className={viewerMode === 'thermal' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('thermal')}>THERMAL</button>
+              </div>
               <span>PROJ · GEODETIC WGS-84</span>
             </header>
-            <div className="viewer-placeholder">
-              <img className="viewer-image" src="/earth-placeholder.jpg" alt="Earth viewed from space" />
-              <div className="graticule" />
-              <div className="target-reticle" aria-hidden="true" />
-              <div className="viewer-directive"><strong>PRIME DIRECTIVE IN EFFECT</strong><span>PRE-WARP CIVILISATION DETECTED</span><span>ALL CONTACT PROHIBITED</span></div>
-              <div className="hud hud--left">CURSOR 34.0500° N 118.2400° W<br /><span>ALT 412.0 km · GSD 10.0 m</span></div>
-              <div className="hud hud--right">1 000 km<div /></div>
-            </div>
+            <EarthViewer mode={viewerMode} depositFocusRequest={depositFocusRequest} />
             <footer className="telemetry">
               <span>PHASE ANGLE<strong>38.00°</strong></span><span>SUB-SPACECRAFT<strong>17.02° / −59.12°</strong></span><span>DOWNLINK<strong>UNAVAILABLE</strong></span><span>SOLAR ILLUM.<strong>72%</strong></span><span>SCAN COVERAGE<strong>NOT INITIALIZED</strong></span>
             </footer>
@@ -324,7 +340,7 @@ function App() {
           <Panel title="12 · VOLATILE INVENTORY" qualifier="REFERENCE ESTIMATES"><div className="volatile-list">{volatileInventory.map(({ label, totalField, reservoirs }) => <div key={label}><strong>{label}</strong><b>{totalField === 'atmospheric_nitrogen_fraction' ? getPercentageReferenceValue(totalField, 'LOADING') : getReferenceValue(totalField, 'LOADING')}</b><div className="reservoir-bar" aria-label={`${label} reservoir partition`}>{reservoirs.map(({ name, field, tone }) => <i className={`reservoir-segment reservoir-segment--${tone}`} key={name} style={{ width: getPercentageReferenceValue(field, '0%') }} />)}</div><div className="reservoir-legend">{reservoirs.map(({ name, field, tone }) => <span className={`reservoir-legend__item reservoir-legend__item--${tone}`} key={name}>{name} <b>{getPercentageReferenceValue(field, 'LOADING')}</b></span>)}</div></div>)}</div></Panel>
           <Panel title="13 · PLANETARY INTERIOR" qualifier="SEISMOLOGY · GEODYNAMICS"><div className="data-grid compact-grid planetary-interior">{planetaryInterior.map(([label, field]) => <div key={field}><span>{label}</span><strong>{getReferenceValue(field, 'LOADING')}</strong></div>)}</div></Panel>
           <div className="rail-block">ANOMALOUS DETECTION<i /></div>
-          <Panel title="14 · DILITHIUM DETECTOR" qualifier="FICTIONAL ANALYSIS"><div className="state-line"><span>DEPOSIT STATUS</span><b className="status-chip">HIGH GRADE</b></div><div className="data-grid compact-grid"><div><span>LOCATION</span><strong>GREENLAND ICE SHEET</strong></div><div><span>HOST MATERIAL</span><strong>SUBGLACIAL BEDROCK</strong></div><div><span>SUBSURFACE DEPTH</span><strong>3.17 km</strong></div><div><span>EST. RESOURCE</span><strong>12.4 Mt</strong></div></div></Panel>
+          <Panel title="14 · DILITHIUM DETECTOR" qualifier="FICTIONAL ANALYSIS"><div className="state-line"><span>DEPOSIT STATUS</span><b className="status-chip">HIGH GRADE</b></div><div className="data-grid compact-grid"><div><span>LOCATION</span><strong>GREENLAND ICE SHEET</strong></div><div><span>HOST MATERIAL</span><strong>SUBGLACIAL BEDROCK</strong></div><div><span>SUBSURFACE DEPTH</span><strong>3.17 km</strong></div><div><span>EST. RESOURCE</span><strong>12.4 Mt</strong></div><div><span>EST. DEPOSIT AREA</span><strong>12,000 km²</strong></div><div><span>DENSITY MODEL</span><strong>HIGH · CENTRALIZED</strong></div></div><button className="deposit-focus-button" type="button" onClick={() => setDepositFocusRequest((request) => request + 1)}>VIEW GREENLAND DEPOSIT</button></Panel>
         </aside>
       </div>
     </main>

@@ -62,6 +62,9 @@ class ReferenceRetriever:
                 question, self._embedding_model, self._index, len(self._documents_by_id)
             )
         )
+        explicit_intent_fields = _explicit_intent_fields(question)
+        if len(explicit_intent_fields) > 1:
+            return self._retrieve_explicit_intents(semantic_scores, explicit_intent_fields, limit)
         question_tokens = _tokenize(question)
         ranked_document_ids = sorted(
             semantic_scores,
@@ -79,6 +82,31 @@ class ReferenceRetriever:
             )
             for document_id in ranked_document_ids
         ]
+
+    def _retrieve_explicit_intents(
+        self,
+        semantic_scores: dict[str, float],
+        intent_fields: tuple[tuple[str, ...], ...],
+        limit: int,
+    ) -> list[RetrievedReferenceRecord]:
+        """Select one highest-ranked record for every explicit subject in a compound question."""
+        results: list[RetrievedReferenceRecord] = []
+        for fields in intent_fields:
+            candidates = [
+                document
+                for document in self._documents_by_id.values()
+                if document.metadata.get("field") in fields
+            ]
+            if not candidates:
+                continue
+            document = max(candidates, key=lambda candidate: semantic_scores[candidate.document_id])
+            results.append(
+                RetrievedReferenceRecord(
+                    document=document,
+                    score=semantic_scores[document.document_id],
+                )
+            )
+        return results[:limit]
 
     def _retrieve_bulk_earth_composition(self, question: str) -> list[RetrievedReferenceRecord]:
         """Return all major-element records needed for a complete composition synthesis."""
@@ -121,6 +149,19 @@ def _is_bulk_earth_geochemistry_question(question: str) -> bool:
         "geochem" in question_lower
         or ("bulk" in question_lower and "composition" in question_lower)
     )
+
+
+def _explicit_intent_fields(question: str) -> tuple[tuple[str, ...], ...]:
+    """Return field groups for explicitly named subjects in a compound Earth question."""
+    question_lower = question.lower()
+    if "earth" not in question_lower:
+        return ()
+    intents: list[tuple[str, ...]] = []
+    if any(term in question_lower for term in ("size", "radius", "diameter")):
+        intents.append(("mean_radius", "equatorial_diameter"))
+    if "population" in question_lower or "people" in question_lower:
+        intents.append(("global_human_population",))
+    return tuple(intents)
 
 
 def _hybrid_score(

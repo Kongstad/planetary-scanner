@@ -2,11 +2,21 @@
 
 from functools import lru_cache
 from pathlib import Path
-from typing import cast
+from typing import Annotated, Literal, cast
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from sentence_transformers import SentenceTransformer
 
+from planetary_scanner.api.sentinel_imagery import (
+    MAX_SCENES,
+    CopernicusDemScene,
+    ModisThermalScene,
+    Sentinel2Scene,
+    SentinelImageryUnavailableError,
+    find_copernicus_dem_scenes,
+    find_modis_thermal_scenes,
+    find_sentinel_2_scenes,
+)
 from planetary_scanner.models.reference import (
     ReferenceDataset,
     load_validated_reference_dataset,
@@ -76,5 +86,75 @@ def get_grounded_answer_service() -> GroundedAnswerService:
 @app.get("/answers/reference", response_model=GroundedAnswer)
 def answer_reference_question(question: str, limit: int = 3) -> GroundedAnswer:
     """Answer only from retrieved reference evidence and return that evidence."""
-
     return get_grounded_answer_service().answer(question, limit)
+
+
+@app.get("/imagery/sentinel-2/scenes", response_model=list[Sentinel2Scene])
+def get_sentinel_2_scenes(
+    west: Annotated[float, Query(ge=-180, le=180)],
+    south: Annotated[float, Query(ge=-90, le=90)],
+    east: Annotated[float, Query(ge=-180, le=180)],
+    north: Annotated[float, Query(ge=-90, le=90)],
+    maximum_cloud_cover: Annotated[float, Query(ge=0, le=100)] = 20,
+    limit: Annotated[int, Query(ge=1, le=MAX_SCENES)] = MAX_SCENES,
+    mode: Literal["imagery", "biosphere"] = "imagery",
+) -> list[Sentinel2Scene]:
+    """Return latest usable display scenes for one non-wrapping viewer extent."""
+    if west >= east or south >= north:
+        raise HTTPException(status_code=422, detail="Viewer extent must have positive area")
+    try:
+        return list(
+            find_sentinel_2_scenes(
+                round(west, 1),
+                round(south, 1),
+                round(east, 1),
+                round(north, 1),
+                maximum_cloud_cover,
+                limit,
+                mode,
+            )
+        )
+    except SentinelImageryUnavailableError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+@app.get("/imagery/copernicus-dem/scenes", response_model=list[CopernicusDemScene])
+def get_copernicus_dem_scenes(
+    west: Annotated[float, Query(ge=-180, le=180)],
+    south: Annotated[float, Query(ge=-90, le=90)],
+    east: Annotated[float, Query(ge=-180, le=180)],
+    north: Annotated[float, Query(ge=-90, le=90)],
+    limit: Annotated[int, Query(ge=1, le=MAX_SCENES)] = MAX_SCENES,
+) -> list[CopernicusDemScene]:
+    """Return display-only Copernicus DEM tiles for one non-wrapping viewer extent."""
+    if west >= east or south >= north:
+        raise HTTPException(status_code=422, detail="Viewer extent must have positive area")
+    try:
+        return list(
+            find_copernicus_dem_scenes(
+                round(west, 1), round(south, 1), round(east, 1), round(north, 1), limit
+            )
+        )
+    except SentinelImageryUnavailableError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
+@app.get("/imagery/modis-lst/scenes", response_model=list[ModisThermalScene])
+def get_modis_thermal_scenes(
+    west: Annotated[float, Query(ge=-180, le=180)],
+    south: Annotated[float, Query(ge=-90, le=90)],
+    east: Annotated[float, Query(ge=-180, le=180)],
+    north: Annotated[float, Query(ge=-90, le=90)],
+    limit: Annotated[int, Query(ge=1, le=MAX_SCENES)] = MAX_SCENES,
+) -> list[ModisThermalScene]:
+    """Return display-only 8-day daytime MODIS LST tiles for the viewer extent."""
+    if west >= east or south >= north:
+        raise HTTPException(status_code=422, detail="Viewer extent must have positive area")
+    try:
+        return list(
+            find_modis_thermal_scenes(
+                round(west, 1), round(south, 1), round(east, 1), round(north, 1), limit
+            )
+        )
+    except SentinelImageryUnavailableError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
