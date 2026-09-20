@@ -149,7 +149,6 @@
 .status-chip--absent { border-color: oklch(0.68 0.18 25); background: oklch(0.22 0.05 25); color: oklch(0.88 0.14 25); }
 .biosphere-status--unconfirmed strong { color: oklch(0.9 0.15 90); }
 .mars-temperature-ramp { background: linear-gradient(90deg, oklch(0.36 0.1 275), oklch(0.55 0.11 235), oklch(0.68 0.08 190), oklch(0.78 0.12 85), oklch(0.66 0.18 35)); }
-.mars-temperature-ramp i { left: 28%; }
 .mars-elevation-profile { margin-top: 10px; padding: 2px 2px 0; }
 .mars-elevation-profile__heading, .mars-elevation-profile__labels, .mars-elevation-profile__axis { display: flex; justify-content: space-between; color: var(--muted); font-family: var(--mono); font-size: 7px; letter-spacing: 0.1em; }
 .mars-elevation-profile__heading strong { color: oklch(0.75 0.08 55); font-weight: 400; }

@@ -245,7 +245,7 @@ function MarsDashboard({
             <strong>{formatReferenceValue(referenceFacts, isReferenceApiOnline, 'global_mean_surface_temperature')}</strong>
             <small>AVERAGE · MARS REFERENCE</small>
           </div>
-          <div className="temperature-ramp mars-temperature-ramp"><i /></div>
+          <div className="temperature-ramp mars-temperature-ramp"><i style={{ left: '18%' }} /></div>
           <div className="data-grid compact-grid magnetic-shield-grid">
             <div><span>WARM EXTREME</span><strong>{formatReferenceValue(referenceFacts, isReferenceApiOnline, 'daytime_surface_temperature_range')}</strong></div>
             <div><span>COLD EXTREME</span><strong>{formatReferenceValue(referenceFacts, isReferenceApiOnline, 'nighttime_surface_temperature_range')}</strong></div>
