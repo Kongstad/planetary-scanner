@@ -218,7 +218,7 @@ function MarsDashboard({
         <section className="viewer-shell">
           <header className="viewer-shell__header">
             <span>PRIMARY VIEWER</span>
-            <span>IMAGERY · AUTO DETAIL</span>
+            <div className="layer-chips"><button className="layer-chip--active" type="button">IMAGERY</button></div>
             <span>PROJ · PLANETOCENTRIC MARS</span>
           </header>
           <MarsViewer onCameraAltitudeChange={setCameraAltitude} onCoverageChange={setImageryCoverage} />

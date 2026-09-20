@@ -128,11 +128,19 @@ function App() {
   const [depositFocusRequest, setDepositFocusRequest] = useState(0)
   const [scanCoverage, setScanCoverage] = useState('GLOBAL BASELINE')
   const [activeBody, setActiveBody] = useState<'earth' | 'mars'>('earth')
+  const [missionClock, setMissionClock] = useState(() => new Date())
   const isActiveReferenceDatasetLoaded = isReferenceApiOnline && referenceBodyId === activeBody
   const activeReferenceRecordCount = isActiveReferenceDatasetLoaded ? referenceFacts.length : 0
   const scienceComputerQualifier = isActiveReferenceDatasetLoaded && isScienceComputerOnline
     ? `QWEN2.5:3B · MINILM-L6-V2 · EARTH + MARS`
     : `QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
+
+  useEffect(() => {
+    const clockIntervalId = window.setInterval(() => {
+      setMissionClock(new Date())
+    }, 1_000)
+    return () => window.clearInterval(clockIntervalId)
+  }, [])
 
   useEffect(() => {
     let isDisposed = false
@@ -305,7 +313,7 @@ function App() {
           <div className="mission-status">
             <div><span>REFERENCE API</span><strong className={isReferenceApiOnline ? 'status-online' : 'status-offline'}><i />{isReferenceApiOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
           <div><span>SCIENCE COMPUTER</span><strong className={isScienceComputerOnline ? 'status-online' : 'status-offline'}><i />{isScienceComputerOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
-          <div><span>MISSION CLOCK</span><strong>00:22:00 UTC</strong></div>
+          <div><span>MISSION CLOCK</span><strong>{`${missionClock.toISOString().slice(11, 19)} UTC`}</strong></div>
           </div>
         </div>
       </header>

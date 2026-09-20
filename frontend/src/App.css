@@ -46,8 +46,6 @@
 .mars-viewer .cesium-viewer, .mars-viewer .cesium-viewer-cesiumWidget, .mars-viewer .cesium-widget { width: 100%; height: 100%; }
 .mars-viewer .cesium-viewer-bottom { right: 8px; bottom: 4px; }
 .mars-viewer .cesium-widget-credits { color: oklch(0.74 0.018 45); font-family: var(--mono); font-size: 8px; }
-.mars-viewer__directive { position: absolute; z-index: 1; top: 16px; left: 16px; display: flex; flex-direction: column; gap: 3px; border-left: 2px solid oklch(0.7 0.13 55); background: oklch(0.12 0.012 45 / 0.84); padding: 8px 10px; color: oklch(0.85 0.08 55); font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; }
-.mars-viewer__directive span { color: oklch(0.68 0.03 45); font-size: 8px; }
 .rail, .center-column { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .rail { overflow: auto; }
 .panel__header, .viewer-shell__header { display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--divider); background: var(--panel-header); color: var(--label); font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; }
