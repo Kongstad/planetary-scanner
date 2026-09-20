@@ -1,6 +1,5 @@
 import MarsViewer from './MarsViewer.tsx'
 import { useState } from 'react'
-import type { MarsImageryMode } from './MarsViewer.tsx'
 
 type ReferenceFact = {
   field: string
@@ -119,7 +118,8 @@ function MarsDashboard({
   onQueryChange,
   onSubmit,
 }: MarsDashboardProps) {
-  const [imageryMode, setImageryMode] = useState<MarsImageryMode>('baseline')
+  const [cameraAltitude, setCameraAltitude] = useState('11,000 KM')
+  const [imageryCoverage, setImageryCoverage] = useState('GLOBAL BASELINE · ZOOM BELOW 200 KM')
   const facts = (entries: FactGridEntry[], className?: string) => (
     <FactGrid
       className={className}
@@ -218,15 +218,12 @@ function MarsDashboard({
         <section className="viewer-shell">
           <header className="viewer-shell__header">
             <span>PRIMARY VIEWER</span>
-            <div className="layer-chips">
-              <button className={imageryMode === 'baseline' ? 'layer-chip--active' : ''} type="button" onClick={() => setImageryMode('baseline')}>GLOBAL MOSAIC</button>
-              <button className={imageryMode === 'themis' ? 'layer-chip--active' : ''} type="button" onClick={() => setImageryMode('themis')}>THEMIS WMS</button>
-            </div>
+            <span>IMAGERY · AUTO DETAIL</span>
             <span>PROJ · PLANETOCENTRIC MARS</span>
           </header>
-          <MarsViewer imageryMode={imageryMode} />
+          <MarsViewer onCameraAltitudeChange={setCameraAltitude} onCoverageChange={setImageryCoverage} />
           <footer className="telemetry">
-            <span>BODY<strong>MARS</strong></span><span>BASELINE<strong>{imageryMode === 'themis' ? 'THEMIS WMS' : 'VIKING GLOBAL MOSAIC'}</strong></span><span>RESOLUTION<strong>{imageryMode === 'themis' ? '~100 M SOURCE' : '925 M SOURCE'}</strong></span><span>SCAN COVERAGE<strong>{imageryMode === 'themis' ? 'VISIBLE WMS TILES' : 'GLOBAL BASELINE'}</strong></span>
+            <span>BODY<strong>MARS</strong></span><span>ALTITUDE<strong>{cameraAltitude}</strong></span><span>BASELINE<strong>VIKING COLOUR MOSAIC</strong></span><span>DETAIL<strong>THEMIS IR WMS · ~100 M</strong></span><span>SCAN COVERAGE<strong>{imageryCoverage}</strong></span>
           </footer>
         </section>
         <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>

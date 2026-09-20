@@ -11,38 +11,47 @@ import {
   Viewer,
   WebMapServiceImageryProvider,
 } from 'cesium'
-import { useEffect, useRef } from 'react'
+import type { ImageryLayer } from 'cesium'
+import { useEffect, useRef, useState } from 'react'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
 const MARS_ELLIPSOID = new Ellipsoid(3_396_190, 3_396_190, 3_376_200)
 const MARS_GLOBAL_VIEW_HEIGHT_METERS = 11_000_000
+const THEMIS_DISPLAY_HEIGHT_METERS = 200_000
 const USGS_MARS_WMS_URL = 'https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/mars_simp_cyl.map'
 
-export type MarsImageryMode = 'baseline' | 'themis'
-
 type MarsViewerProps = {
-  imageryMode: MarsImageryMode
+  onCameraAltitudeChange: (altitude: string) => void
+  onCoverageChange: (coverage: string) => void
 }
 
-function createMarsImageryProvider(imageryMode: MarsImageryMode) {
-  if (imageryMode === 'themis') {
-    return new WebMapServiceImageryProvider({
-      url: USGS_MARS_WMS_URL,
-      layers: 'THEMIS',
-      parameters: {
-        format: 'image/jpeg',
-        styles: '',
-        transparent: false,
-        version: '1.1.1',
-      },
-      tilingScheme: new GeographicTilingScheme({ ellipsoid: MARS_ELLIPSOID }),
-      tileWidth: 512,
-      tileHeight: 512,
-      maximumLevel: 10,
-      enablePickFeatures: false,
-      credit: 'USGS Astrogeology: THEMIS global mosaic WMS',
-    })
+function formatCameraAltitude(heightMeters: number): string {
+  if (heightMeters < 1_000) {
+    return `${Math.round(heightMeters)} M`
   }
+  return `${(heightMeters / 1_000).toFixed(heightMeters < 10_000 ? 1 : 0)} KM`
+}
+
+function createThemisImageryProvider() {
+  return new WebMapServiceImageryProvider({
+    url: USGS_MARS_WMS_URL,
+    layers: 'THEMIS',
+    parameters: {
+      format: 'image/jpeg',
+      styles: '',
+      transparent: false,
+      version: '1.1.1',
+    },
+    tilingScheme: new GeographicTilingScheme({ ellipsoid: MARS_ELLIPSOID }),
+    tileWidth: 512,
+    tileHeight: 512,
+    maximumLevel: 10,
+    enablePickFeatures: false,
+    credit: 'USGS Astrogeology: THEMIS global mosaic WMS',
+  })
+}
+
+function createGlobalMosaicProvider() {
   return new SingleTileImageryProvider({
     url: '/mars/viking-global-color-mosaic-1024.jpg',
     rectangle: Rectangle.MAX_VALUE,
@@ -52,9 +61,10 @@ function createMarsImageryProvider(imageryMode: MarsImageryMode) {
   })
 }
 
-function MarsViewer({ imageryMode }: MarsViewerProps) {
+function MarsViewer({ onCameraAltitudeChange, onCoverageChange }: MarsViewerProps) {
   const viewerContainerRef = useRef<HTMLDivElement>(null)
-  const viewerRef = useRef<Viewer | null>(null)
+  const [cameraAltitude, setCameraAltitude] = useState(MARS_GLOBAL_VIEW_HEIGHT_METERS)
+  const [isThemisStreaming, setIsThemisStreaming] = useState(false)
 
   useEffect(() => {
     const container = viewerContainerRef.current
@@ -83,35 +93,56 @@ function MarsViewer({ imageryMode }: MarsViewerProps) {
     if (viewer.scene.skyAtmosphere) {
       viewer.scene.skyAtmosphere.show = false
     }
+    viewer.imageryLayers.addImageryProvider(createGlobalMosaicProvider())
     viewer.camera.setView({
       destination: Cartesian3.fromDegrees(0, 10, MARS_GLOBAL_VIEW_HEIGHT_METERS, MARS_ELLIPSOID),
     })
-    viewerRef.current = viewer
+    let themisLayer: ImageryLayer | undefined
+
+    const updateImageryForAltitude = () => {
+      const altitude = viewer.camera.positionCartographic.height
+      const shouldStreamThemis = altitude <= THEMIS_DISPLAY_HEIGHT_METERS
+      setCameraAltitude(altitude)
+      setIsThemisStreaming(shouldStreamThemis)
+      onCameraAltitudeChange(formatCameraAltitude(altitude))
+      onCoverageChange(
+        shouldStreamThemis
+          ? 'THEMIS WMS · VISIBLE TILES'
+          : 'GLOBAL BASELINE · ZOOM BELOW 200 KM',
+      )
+      if (shouldStreamThemis && !themisLayer) {
+        themisLayer = viewer.imageryLayers.addImageryProvider(createThemisImageryProvider())
+        themisLayer.alpha = 0.55
+      } else if (!shouldStreamThemis && themisLayer) {
+        viewer.imageryLayers.remove(themisLayer, true)
+        themisLayer = undefined
+      }
+    }
+
+    viewer.camera.percentageChanged = 0.01
+    const removeCameraChangedListener = viewer.camera.changed.addEventListener(
+      updateImageryForAltitude,
+    )
+    const removeCameraMoveEndListener = viewer.camera.moveEnd.addEventListener(
+      updateImageryForAltitude,
+    )
+    updateImageryForAltitude()
 
     return () => {
-      viewerRef.current = null
+      removeCameraChangedListener()
+      removeCameraMoveEndListener()
       viewer.destroy()
     }
-  }, [])
-
-  useEffect(() => {
-    const viewer = viewerRef.current
-    if (!viewer) {
-      return
-    }
-    viewer.imageryLayers.removeAll(true)
-    viewer.imageryLayers.addImageryProvider(createMarsImageryProvider(imageryMode))
-  }, [imageryMode])
-
-  const isThemisMode = imageryMode === 'themis'
+  }, [onCameraAltitudeChange, onCoverageChange])
 
   return (
     <div className="mars-viewer">
       <div ref={viewerContainerRef} className="mars-viewer__canvas" />
       <div className="mars-viewer__directive">
-        <strong>{isThemisMode ? 'MARS · ZOOMABLE THEMIS' : 'MARS · GLOBAL BASELINE'}</strong>
-        <span>{isThemisMode ? 'THEMIS GLOBAL MOSAIC · WMS TILES TO ~100 M/PIXEL' : 'VIKING GLOBAL COLOR MOSAIC · 925 M SOURCE PRODUCT'}</span>
-        <span>{isThemisMode ? 'USGS ASTROGEOLOGY · LIVE WMS' : 'USGS ASTROGEOLOGY · LOCAL DISPLAY ASSET'}</span>
+        <strong>{isThemisStreaming ? 'MARS · STREAMING THEMIS' : 'MARS · GLOBAL BASELINE'}</strong>
+        <span>{isThemisStreaming ? 'VIKING COLOUR BASE + THEMIS IR DETAIL · ~100 M/PIXEL' : 'VIKING GLOBAL COLOR MOSAIC · 925 M SOURCE PRODUCT'}</span>
+        <span>{isThemisStreaming ? 'USGS ASTROGEOLOGY · LIVE WMS · 55% DETAIL OVERLAY' : 'DETAIL · ZOOM BELOW 200 KM TO STREAM'}</span>
+        <span>{`ALTITUDE · ${formatCameraAltitude(cameraAltitude)}`}</span>
       </div>
     </div>
   )
