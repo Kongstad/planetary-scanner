@@ -9,7 +9,7 @@ from urllib.request import Request, urlopen
 from pydantic import BaseModel
 
 from planetary_scanner.rag.reference_retrieval import (
-    ReferenceRetriever,
+    ReferenceRecordRetriever,
     RetrievedReferenceRecord,
 )
 
@@ -114,7 +114,11 @@ class OllamaAnswerGenerator:
 class GroundedAnswerService:
     """Retrieves evidence and generates an answer constrained to that evidence."""
 
-    def __init__(self, retriever: ReferenceRetriever, generator: AnswerGenerator) -> None:
+    def __init__(
+        self,
+        retriever: ReferenceRecordRetriever,
+        generator: AnswerGenerator,
+    ) -> None:
         self._retriever = retriever
         self._generator = generator
 

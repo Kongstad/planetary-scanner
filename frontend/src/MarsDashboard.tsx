@@ -10,6 +10,14 @@ type MarsDashboardProps = {
   referenceFacts: ReferenceFact[]
   isReferenceApiOnline: boolean
   scienceComputerQualifier: string
+  query: string
+  retrievalStatus: string
+  groundedAnswer: string | null
+  isRetrieving: boolean
+  queryElapsedSeconds: number
+  lastQueryElapsedSeconds: number | null
+  onQueryChange: (query: string) => void
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
 }
 
 type PanelProps = {
@@ -100,6 +108,14 @@ function MarsDashboard({
   referenceFacts,
   isReferenceApiOnline,
   scienceComputerQualifier,
+  query,
+  retrievalStatus,
+  groundedAnswer,
+  isRetrieving,
+  queryElapsedSeconds,
+  lastQueryElapsedSeconds,
+  onQueryChange,
+  onSubmit,
 }: MarsDashboardProps) {
   const facts = (entries: FactGridEntry[], className?: string) => (
     <FactGrid
@@ -209,9 +225,10 @@ function MarsDashboard({
         </section>
         <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>
           <div className="science-computer">
-            <div className="message"><span>RETRIEVAL</span><p>Mars facts are loaded separately from Earth. Question answering remains disabled until body-aware retrieval is available.</p></div>
+            <div className="message"><span>RETRIEVAL{isRetrieving ? ` · ${queryElapsedSeconds.toFixed(1)} s` : lastQueryElapsedSeconds !== null ? ` · COMPLETE ${lastQueryElapsedSeconds.toFixed(1)} s` : ''}</span><p>{retrievalStatus}</p></div>
+            {groundedAnswer && <div className="grounded-answer"><span>ANSWER</span><p>{groundedAnswer}</p></div>}
           </div>
-          <form className="query-form"><label htmlFor="mars-query">&gt;</label><input id="mars-query" disabled placeholder="Body-aware Mars retrieval pending..." /><button type="button" disabled>QUERY</button></form>
+          <form className="query-form" onSubmit={onSubmit}><label htmlFor="mars-query">&gt;</label><input id="mars-query" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Ask about Mars, or compare Mars and Earth..." /><button type="submit" disabled={isRetrieving}>{isRetrieving ? 'SEARCHING' : 'QUERY'}</button></form>
         </Panel>
       </section>
 

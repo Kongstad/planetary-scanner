@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from typing import Protocol
 
 from pydantic import BaseModel
 
@@ -18,6 +19,12 @@ class RetrievedReferenceRecord(BaseModel):
 
     document: RagDocument
     score: float
+
+
+class ReferenceRecordRetriever(Protocol):
+    """The retrieval interface used by grounded answer generation."""
+
+    def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]: ...
 
 
 def load_reference_records(record_path: Path) -> dict[str, RagDocument]:
@@ -108,6 +115,27 @@ class ReferenceRetriever:
             )
         return results[:limit]
 
+    def retrieve_field(self, question: str, field: str) -> RetrievedReferenceRecord | None:
+        """Return the highest-ranked record for one explicitly requested field."""
+
+        semantic_scores = dict(
+            retrieve_reference_document_scores(
+                question, self._embedding_model, self._index, len(self._documents_by_id)
+            )
+        )
+        candidates = [
+            document
+            for document in self._documents_by_id.values()
+            if document.metadata.get("field") == field
+        ]
+        if not candidates:
+            return None
+        document = max(candidates, key=lambda candidate: semantic_scores[candidate.document_id])
+        return RetrievedReferenceRecord(
+            document=document,
+            score=semantic_scores[document.document_id],
+        )
+
     def _retrieve_bulk_earth_composition(self, question: str) -> list[RetrievedReferenceRecord]:
         """Return all major-element records needed for a complete composition synthesis."""
 
@@ -152,16 +180,70 @@ def _is_bulk_earth_geochemistry_question(question: str) -> bool:
 
 
 def _explicit_intent_fields(question: str) -> tuple[tuple[str, ...], ...]:
-    """Return field groups for explicitly named subjects in a compound Earth question."""
+    """Return field groups for explicitly named subjects in a compound planetary question."""
     question_lower = question.lower()
-    if "earth" not in question_lower:
+    if not any(body_name in question_lower for body_name in ("earth", "mars")):
         return ()
     intents: list[tuple[str, ...]] = []
     if any(term in question_lower for term in ("size", "radius", "diameter")):
-        intents.append(("mean_radius", "equatorial_diameter"))
-    if "population" in question_lower or "people" in question_lower:
+        intents.append(("mean_radius", "equatorial_radius", "equatorial_diameter"))
+    if "earth" in question_lower and ("population" in question_lower or "people" in question_lower):
         intents.append(("global_human_population",))
     return tuple(intents)
+
+
+class CrossBodyReferenceRetriever:
+    """Retrieve comparison evidence from both curated planetary reference sets."""
+
+    def __init__(self, retrievers: dict[str, ReferenceRetriever]) -> None:
+        self._retrievers = retrievers
+
+    def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
+        """Return balanced evidence from every explicitly named supported body."""
+
+        body_ids = _explicit_body_ids(question)
+        if len(body_ids) < 2:
+            raise ValueError("Cross-body retrieval requires at least two supported bodies")
+        comparison_field = _comparison_field(question)
+        if comparison_field is not None:
+            return [
+                record
+                for body_id in body_ids
+                if (
+                    record := self._retrievers[body_id].retrieve_field(question, comparison_field)
+                )
+                is not None
+            ]
+        records_per_body = max(1, limit // len(body_ids))
+        return [
+            record
+            for body_id in body_ids
+            for record in self._retrievers[body_id].retrieve(question, records_per_body)
+        ]
+
+
+def is_cross_body_question(question: str) -> bool:
+    """Return whether the question explicitly names more than one supported body."""
+
+    return len(_explicit_body_ids(question)) > 1
+
+
+def _explicit_body_ids(question: str) -> tuple[str, ...]:
+    question_lower = question.lower()
+    return tuple(
+        body_id
+        for body_id in ("earth", "mars")
+        if re.search(rf"\b{re.escape(body_id)}\b", question_lower)
+    )
+
+
+def _comparison_field(question: str) -> str | None:
+    """Map an explicit cross-body comparison to a shared canonical measurement."""
+
+    question_lower = question.lower()
+    if any(term in question_lower for term in ("size", "radius", "diameter")):
+        return "mean_radius"
+    return None
 
 
 def _hybrid_score(

@@ -130,8 +130,8 @@ function App() {
   const [activeBody, setActiveBody] = useState<'earth' | 'mars'>('earth')
   const isActiveReferenceDatasetLoaded = isReferenceApiOnline && referenceBodyId === activeBody
   const activeReferenceRecordCount = isActiveReferenceDatasetLoaded ? referenceFacts.length : 0
-  const scienceComputerQualifier = isReferenceApiOnline && isScienceComputerOnline
-    ? `QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount} RECORDS`
+  const scienceComputerQualifier = isActiveReferenceDatasetLoaded && isScienceComputerOnline
+    ? `QWEN2.5:3B · MINILM-L6-V2 · EARTH + MARS`
     : `QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
   useEffect(() => {
@@ -240,6 +240,17 @@ function App() {
     return `${Math.min(100, Math.max(0, ((fact.value - 280) / 220) * 100))}%`
   }
 
+  function selectBody(bodyId: 'earth' | 'mars') {
+    if (bodyId === activeBody) {
+      return
+    }
+    setActiveBody(bodyId)
+    setQuery('')
+    setGroundedAnswer(null)
+    setRetrievalStatus('Ask a body-specific or Earth–Mars comparison question using cited reference records.')
+    setLastQueryElapsedSeconds(null)
+  }
+
   function submitQuery(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const question = query.trim()
@@ -253,7 +264,7 @@ function App() {
     setLastQueryElapsedSeconds(null)
     setGroundedAnswer(null)
     setRetrievalStatus('Retrieving cited records and generating a grounded answer...')
-    void fetch(`/answers/reference?${new URLSearchParams({ question, limit: '3' })}`)
+    void fetch(`/answers/reference?${new URLSearchParams({ question, body_id: activeBody, limit: '3' })}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Answer API returned ${response.status}`)
@@ -285,11 +296,11 @@ function App() {
           <span>REMOTE SENSING SUITE · v0.1</span>
         </div>
         <div className="navigation-status">
-          <button className={`body-tab ${activeBody === 'earth' ? 'body-tab--active' : ''}`} type="button" onClick={() => setActiveBody('earth')}>
+          <button className={`body-tab ${activeBody === 'earth' ? 'body-tab--active' : ''}`} type="button" onClick={() => selectBody('earth')}>
             <span className="body-disc" />
             <span>EARTH<small>SOL III</small></span>
           </button>
-          <button className={`body-tab ${activeBody === 'mars' ? 'body-tab--active' : ''}`} type="button" onClick={() => setActiveBody('mars')}><span className="body-disc body-disc--mars" /><span>MARS<small>SOL IV</small></span></button>
+          <button className={`body-tab ${activeBody === 'mars' ? 'body-tab--active' : ''}`} type="button" onClick={() => selectBody('mars')}><span className="body-disc body-disc--mars" /><span>MARS<small>SOL IV</small></span></button>
           <button className="body-tab" type="button" disabled><span className="body-disc body-disc--luna" /><span>LUNA<small>SOL III-a</small></span></button>
           <div className="mission-status">
             <div><span>REFERENCE API</span><strong className={isReferenceApiOnline ? 'status-online' : 'status-offline'}><i />{isReferenceApiOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
@@ -303,6 +314,14 @@ function App() {
           referenceFacts={isActiveReferenceDatasetLoaded ? referenceFacts : []}
           isReferenceApiOnline={isActiveReferenceDatasetLoaded}
           scienceComputerQualifier={scienceComputerQualifier}
+          query={query}
+          retrievalStatus={retrievalStatus}
+          groundedAnswer={groundedAnswer}
+          isRetrieving={isRetrieving}
+          queryElapsedSeconds={queryElapsedSeconds}
+          lastQueryElapsedSeconds={lastQueryElapsedSeconds}
+          onQueryChange={setQuery}
+          onSubmit={submitQuery}
         />
       ) : (
       <div className="console__main">
@@ -377,7 +396,7 @@ function App() {
               <div className="message"><span>RETRIEVAL{isRetrieving ? ` · ${queryElapsedSeconds.toFixed(1)} s` : lastQueryElapsedSeconds !== null ? ` · COMPLETE ${lastQueryElapsedSeconds.toFixed(1)} s` : ''}</span><p>{retrievalStatus}</p></div>
               {groundedAnswer && <div className="grounded-answer"><span>ANSWER</span><p>{groundedAnswer}</p></div>}
             </div>
-            <form className="query-form" onSubmit={submitQuery}><label htmlFor="query">&gt;</label><input id="query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Query the science computer about Earth..." /><button type="submit" disabled={isRetrieving}>{isRetrieving ? 'SEARCHING' : 'QUERY'}</button></form>
+            <form className="query-form" onSubmit={submitQuery}><label htmlFor="query">&gt;</label><input id="query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ask about Earth, or compare Earth and Mars..." /><button type="submit" disabled={isRetrieving}>{isRetrieving ? 'SEARCHING' : 'QUERY'}</button></form>
           </Panel>
         </section>
         <aside className="rail">
@@ -386,7 +405,7 @@ function App() {
           <Panel title="09 · HYDROLOGY & ICE" qualifier="GLOBAL REFERENCE"><div className="data-grid"><div><span>SURFACE WATER</span><strong>{getPercentageReferenceValue('surface_water_fraction', 'LOADING')}</strong></div><div><span>ARCTIC SEA ICE · AUG 2026</span><strong>{getReferenceValue('arctic_sea_ice_extent', 'LOADING')}</strong></div><div><span>POLAR ICE LOSS · 2002–25</span><strong>{getReferenceValue('polar_ice_sheet_mass_loss_rate', 'LOADING')}</strong></div><div><span>ATMOSPHERIC WATER</span><strong>{getReferenceValue('atmospheric_water_volume', 'LOADING')}</strong></div></div></Panel>
           <Panel title="10 · TOPOGRAPHY &amp; BATHYMETRY" qualifier="GLOBAL REFERENCE"><div className="hypsometry-chart"><div className="hypsometry-y-axis" aria-hidden="true"><span>RELATIVE AREA</span><i /><i /><i /></div><div className="hypsometry-plot"><div className="profile" aria-label="Global relief distribution profile"><span className="sea-level">SEA LEVEL</span>{[18, 29, 43, 61, 76, 88, 94, 86, 69, 51, 35, 24, 20, 25, 37, 54, 66, 58, 42, 28, 17].map((height, index) => <i className={index < 12 ? 'profile-bar profile-bar--ocean' : 'profile-bar profile-bar--land'} key={index} style={{ height: `${height}%` }} />)}</div><div className="hypsometry-labels"><span>OCEAN BASINS</span><span>CONTINENTAL LAND</span></div><div className="hypsometry-axis"><span>−10 km</span><span>−5 km</span><span>0 km</span><span>+5 km</span><span>+9 km</span></div></div></div><div className="data-grid compact-grid"><div><span>OCEAN COVER</span><strong>{getPercentageReferenceValue('surface_water_fraction', 'LOADING')}</strong></div><div><span>LAND COVER</span><strong>{getPercentageReferenceValue('surface_land_fraction', 'LOADING')}</strong></div><div><span>MEAN OCEAN DEPTH</span><strong>{getReferenceValue('mean_ocean_depth', 'LOADING')}</strong></div><div><span>HIGHEST ELEVATION</span><strong>{getReferenceValue('highest_surface_elevation', 'LOADING')}</strong></div><div><span>DEEPEST OCEAN DEPTH</span><strong>{getReferenceValue('deepest_ocean_depth', 'LOADING')}</strong></div><div><span>TOTAL RELIEF</span><strong>{getReferenceValue('total_surface_relief', 'LOADING')}</strong></div></div></Panel>
           <div className="rail-block">GEOLOGY &amp; INTERIOR<i /></div>
-          <Panel title="11 · BULK GEOCHEMISTRY" qualifier="MODEL ESTIMATE"><div className="bar-list geochemistry">{geochemistry.map(([label, field]) => <div key={field}><span>{label}</span><i><b style={{ width: getPercentageReferenceValue(field, '0%') }} /></i><strong>{getPercentageReferenceValue(field, 'LOADING')}</strong></div>)}</div></Panel>
+          <Panel title="11 · BULK GEOCHEMISTRY" qualifier="WHOLE-PLANET MODEL · WT%"><div className="bar-list geochemistry">{geochemistry.map(([label, field]) => <div key={field}><span>{label}</span><i><b style={{ width: getPercentageReferenceValue(field, '0%') }} /></i><strong>{getPercentageReferenceValue(field, 'LOADING')}</strong></div>)}</div></Panel>
           <Panel title="12 · VOLATILE INVENTORY" qualifier="REFERENCE ESTIMATES"><div className="volatile-list">{volatileInventory.map(({ label, totalField, reservoirs }) => <div key={label}><strong>{label}</strong><b>{totalField === 'atmospheric_nitrogen_fraction' ? getPercentageReferenceValue(totalField, 'LOADING') : getReferenceValue(totalField, 'LOADING')}</b><div className="reservoir-bar" aria-label={`${label} reservoir partition`}>{reservoirs.map(({ name, field, tone }) => <i className={`reservoir-segment reservoir-segment--${tone}`} key={name} style={{ width: getPercentageReferenceValue(field, '0%') }} />)}</div><div className="reservoir-legend">{reservoirs.map(({ name, field, tone }) => <span className={`reservoir-legend__item reservoir-legend__item--${tone}`} key={name}>{name} <b>{getPercentageReferenceValue(field, 'LOADING')}</b></span>)}</div></div>)}</div></Panel>
           <Panel title="13 · PLANETARY INTERIOR" qualifier="SEISMOLOGY · GEODYNAMICS"><div className="data-grid compact-grid planetary-interior">{planetaryInterior.map(([label, field]) => <div key={field}><span>{label}</span><strong>{getReferenceValue(field, 'LOADING')}</strong></div>)}</div></Panel>
           <div className="rail-block">ANOMALOUS DETECTION<i /></div>

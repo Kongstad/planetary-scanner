@@ -32,8 +32,10 @@ from planetary_scanner.rag.reference_index import (
     load_reference_vector_index,
 )
 from planetary_scanner.rag.reference_retrieval import (
+    CrossBodyReferenceRetriever,
     ReferenceRetriever,
     RetrievedReferenceRecord,
+    is_cross_body_question,
     load_reference_records,
 )
 
@@ -46,8 +48,15 @@ REFERENCE_DATASET_PATHS = {
     "mars": PROJECT_ROOT / "data" / "reference" / "mars.json",
     "solar-system": PROJECT_ROOT / "data" / "reference" / "solar-system.json",
 }
-REFERENCE_RECORD_PATH = PROJECT_ROOT / "data" / "reference" / "earth-reference-records.jsonl"
-REFERENCE_VECTOR_INDEX_PATH = PROJECT_ROOT / "data" / "reference" / "earth-reference-vectors.npz"
+ANSWERABLE_BODY_IDS = frozenset({"earth", "mars"})
+REFERENCE_RECORD_PATHS = {
+    body_id: PROJECT_ROOT / "data" / "reference" / f"{body_id}-reference-records.jsonl"
+    for body_id in ANSWERABLE_BODY_IDS
+}
+REFERENCE_VECTOR_INDEX_PATHS = {
+    body_id: PROJECT_ROOT / "data" / "reference" / f"{body_id}-reference-vectors.npz"
+    for body_id in ANSWERABLE_BODY_IDS
+}
 
 
 class ScienceComputerStatus(BaseModel):
@@ -68,37 +77,73 @@ def get_reference_dataset(body_id: str) -> ReferenceDataset:
 
 
 @lru_cache
-def get_reference_retriever() -> ReferenceRetriever:
-    """Load local retrieval resources once per API process."""
+def get_embedding_model(model_name: str) -> EmbeddingModel:
+    """Load each local embedding model once, even when searching both bodies."""
 
     from sentence_transformers import SentenceTransformer
 
-    index = load_reference_vector_index(REFERENCE_VECTOR_INDEX_PATH)
+    return cast(EmbeddingModel, SentenceTransformer(model_name))
+
+
+@lru_cache
+def get_reference_retriever(body_id: Literal["earth", "mars"]) -> ReferenceRetriever:
+    """Load local retrieval resources for one answerable body once per API process."""
+
+    index = load_reference_vector_index(REFERENCE_VECTOR_INDEX_PATHS[body_id])
     return ReferenceRetriever(
-        embedding_model=cast(EmbeddingModel, SentenceTransformer(index.model_name)),
+        embedding_model=get_embedding_model(index.model_name),
         index=index,
-        documents_by_id=load_reference_records(REFERENCE_RECORD_PATH),
+        documents_by_id=load_reference_records(REFERENCE_RECORD_PATHS[body_id]),
     )
 
 
 @app.get("/retrieval/reference", response_model=list[RetrievedReferenceRecord])
-def retrieve_reference_records(question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
-    """Return cited reference records relevant to a natural-language question."""
+def retrieve_reference_records(
+    question: str,
+    body_id: Literal["earth", "mars"] = "earth",
+    limit: int = 3,
+) -> list[RetrievedReferenceRecord]:
+    """Return cited records for one body or an explicitly named Earth--Mars comparison."""
 
-    return get_reference_retriever().retrieve(question, limit)
+    if is_cross_body_question(question):
+        return get_cross_body_reference_retriever().retrieve(question, limit)
+    return get_reference_retriever(body_id).retrieve(question, limit)
 
 
 @lru_cache
-def get_grounded_answer_service() -> GroundedAnswerService:
-    """Create the local answer layer over the cached reference retriever."""
+def get_cross_body_reference_retriever() -> CrossBodyReferenceRetriever:
+    """Build the Earth--Mars comparison retriever from isolated per-body indexes."""
 
-    return GroundedAnswerService(get_reference_retriever(), OllamaAnswerGenerator())
+    return CrossBodyReferenceRetriever(
+        {body_id: get_reference_retriever(body_id) for body_id in ANSWERABLE_BODY_IDS}
+    )
+
+
+@lru_cache
+def get_grounded_answer_service(body_id: Literal["earth", "mars"]) -> GroundedAnswerService:
+    """Create the local answer layer for one body over its cached retriever."""
+
+    return GroundedAnswerService(get_reference_retriever(body_id), OllamaAnswerGenerator())
+
+
+@lru_cache
+def get_cross_body_grounded_answer_service() -> GroundedAnswerService:
+    """Create the answer layer for evidence-backed Earth--Mars comparisons."""
+
+    return GroundedAnswerService(get_cross_body_reference_retriever(), OllamaAnswerGenerator())
 
 
 @app.get("/answers/reference", response_model=GroundedAnswer)
-def answer_reference_question(question: str, limit: int = 3) -> GroundedAnswer:
-    """Answer only from retrieved reference evidence and return that evidence."""
-    return get_grounded_answer_service().answer(question, limit)
+def answer_reference_question(
+    question: str,
+    body_id: Literal["earth", "mars"] = "earth",
+    limit: int = 3,
+) -> GroundedAnswer:
+    """Answer from the selected body, or both when the question names Earth and Mars."""
+
+    if is_cross_body_question(question):
+        return get_cross_body_grounded_answer_service().answer(question, limit)
+    return get_grounded_answer_service(body_id).answer(question, limit)
 
 
 @app.get("/health/science-computer", response_model=ScienceComputerStatus)

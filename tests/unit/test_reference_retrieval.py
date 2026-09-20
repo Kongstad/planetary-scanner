@@ -8,7 +8,11 @@ from planetary_scanner.rag.reference_index import (
     DEFAULT_EMBEDDING_MODEL,
     build_reference_vector_index,
 )
-from planetary_scanner.rag.reference_retrieval import ReferenceRetriever
+from planetary_scanner.rag.reference_retrieval import (
+    CrossBodyReferenceRetriever,
+    ReferenceRetriever,
+    is_cross_body_question,
+)
 
 
 class SimilarityFakeEmbeddingModel:
@@ -149,3 +153,76 @@ def test_reference_retriever_returns_top_evidence_per_explicit_question_subject(
         "earth-equatorial-diameter",
     }
     assert results[1].document.document_id == "earth-population"
+
+
+def test_cross_body_retriever_returns_one_size_record_for_each_named_body() -> None:
+    embedding_model = SimilarityFakeEmbeddingModel()
+    earth_document = RagDocument(
+        document_id="earth-mean-radius",
+        content="Earth mean radius is 6371 km",
+        metadata={"body_id": "earth", "field": "mean_radius"},
+    )
+    mars_document = RagDocument(
+        document_id="mars-mean-radius",
+        content="Mars mean radius is 3389.5 km",
+        metadata={"body_id": "mars", "field": "mean_radius"},
+    )
+
+    def retriever_for(document: RagDocument) -> ReferenceRetriever:
+        return ReferenceRetriever(
+            embedding_model=embedding_model,
+            index=build_reference_vector_index(
+                [document], embedding_model, DEFAULT_EMBEDDING_MODEL
+            ),
+            documents_by_id={document.document_id: document},
+        )
+
+    retriever = CrossBodyReferenceRetriever(
+        {"earth": retriever_for(earth_document), "mars": retriever_for(mars_document)}
+    )
+
+    results = retriever.retrieve("How does Mars's size compare to Earth?", limit=3)
+
+    assert is_cross_body_question("How does Mars's size compare to Earth?")
+    assert [result.document.metadata["body_id"] for result in results] == ["earth", "mars"]
+    assert {result.document.metadata["field"] for result in results} == {"mean_radius"}
+
+
+def test_cross_body_retriever_uses_mean_radius_for_differently_ranked_size_records() -> None:
+    embedding_model = SimilarityFakeEmbeddingModel()
+    earth_radius = RagDocument(
+        document_id="earth-mean-radius",
+        content="Earth mean radius is 6371 km",
+        metadata={"body_id": "earth", "field": "mean_radius"},
+    )
+    mars_radius = RagDocument(
+        document_id="mars-mean-radius",
+        content="Mars mean radius is 3389.5 km",
+        metadata={"body_id": "mars", "field": "mean_radius"},
+    )
+    mars_unrelated = RagDocument(
+        document_id="mars-crust-thickness",
+        content="Mars crust thickness",
+        metadata={"body_id": "mars", "field": "crust_thickness"},
+    )
+
+    def retriever_for(documents: list[RagDocument]) -> ReferenceRetriever:
+        return ReferenceRetriever(
+            embedding_model=embedding_model,
+            index=build_reference_vector_index(documents, embedding_model, DEFAULT_EMBEDDING_MODEL),
+            documents_by_id={document.document_id: document for document in documents},
+        )
+
+    retriever = CrossBodyReferenceRetriever(
+        {
+            "earth": retriever_for([earth_radius]),
+            "mars": retriever_for([mars_radius, mars_unrelated]),
+        }
+    )
+
+    results = retriever.retrieve("How does Mars's size compare to Earth?", limit=3)
+
+    assert [result.document.document_id for result in results] == [
+        "earth-mean-radius",
+        "mars-mean-radius",
+    ]
