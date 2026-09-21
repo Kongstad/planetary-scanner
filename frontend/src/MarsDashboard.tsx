@@ -1,5 +1,6 @@
 import MarsViewer from './MarsViewer.tsx'
 import { useState } from 'react'
+import type { MarsViewerMode } from './MarsViewer.tsx'
 
 type ReferenceFact = {
   field: string
@@ -120,6 +121,7 @@ function MarsDashboard({
 }: MarsDashboardProps) {
   const [cameraAltitude, setCameraAltitude] = useState('11,000 KM')
   const [imageryCoverage, setImageryCoverage] = useState('GLOBAL BASELINE · ZOOM BELOW 200 KM')
+  const [viewerMode, setViewerMode] = useState<MarsViewerMode>('imagery')
   const facts = (entries: FactGridEntry[], className?: string) => (
     <FactGrid
       className={className}
@@ -218,12 +220,16 @@ function MarsDashboard({
         <section className="viewer-shell">
           <header className="viewer-shell__header">
             <span>PRIMARY VIEWER</span>
-            <div className="layer-chips"><button className="layer-chip--active" type="button">IMAGERY</button></div>
+            <div className="layer-chips">
+              <button className={viewerMode === 'imagery' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('imagery')}>IMAGERY</button>
+              <button className={viewerMode === 'infrared' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('infrared')}>IR</button>
+              <button className={viewerMode === 'relief' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('relief')}>RELIEF</button>
+            </div>
             <span>PROJ · PLANETOCENTRIC MARS</span>
           </header>
-          <MarsViewer onCameraAltitudeChange={setCameraAltitude} onCoverageChange={setImageryCoverage} />
+          <MarsViewer mode={viewerMode} onCameraAltitudeChange={setCameraAltitude} onCoverageChange={setImageryCoverage} />
           <footer className="telemetry">
-            <span>BODY<strong>MARS</strong></span><span>ALTITUDE<strong>{cameraAltitude}</strong></span><span>BASELINE<strong>VIKING COLOUR MOSAIC</strong></span><span>DETAIL<strong>THEMIS IR WMS · ~100 M</strong></span><span>SCAN COVERAGE<strong>{imageryCoverage}</strong></span>
+            <span>BODY<strong>MARS</strong></span><span>ALTITUDE<strong>{cameraAltitude}</strong></span><span>ACTIVE LAYER<strong>{viewerMode === 'imagery' ? 'MDIM 2.1 COLOUR' : viewerMode === 'infrared' ? 'THEMIS IR' : 'MOLA COLOR RELIEF'}</strong></span><span>RESOLUTION<strong>{viewerMode === 'imagery' ? '231 M' : viewerMode === 'infrared' ? '~100 M' : '~463 M GRID'}</strong></span><span>TILE COVERAGE<strong>{imageryCoverage}</strong></span>
           </footer>
         </section>
         <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>

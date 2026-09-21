@@ -6,21 +6,20 @@ import {
   GeographicProjection,
   GeographicTilingScheme,
   Globe,
-  Rectangle,
-  SingleTileImageryProvider,
   Viewer,
   WebMapServiceImageryProvider,
 } from 'cesium'
-import type { ImageryLayer } from 'cesium'
 import { useEffect, useRef, useState } from 'react'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 
 const MARS_ELLIPSOID = new Ellipsoid(3_396_190, 3_396_190, 3_376_200)
 const MARS_GLOBAL_VIEW_HEIGHT_METERS = 11_000_000
-const THEMIS_DISPLAY_HEIGHT_METERS = 200_000
 const USGS_MARS_WMS_URL = 'https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/mars_simp_cyl.map'
 
+export type MarsViewerMode = 'imagery' | 'infrared' | 'relief'
+
 type MarsViewerProps = {
+  mode: MarsViewerMode
   onCameraAltitudeChange: (altitude: string) => void
   onCoverageChange: (coverage: string) => void
 }
@@ -42,10 +41,14 @@ function getMarsCameraAltitude(viewer: Viewer): number {
   return cartographicPosition.height
 }
 
-function createThemisImageryProvider() {
+function createMarsWmsProvider(
+  layer: string,
+  maximumLevel: number,
+  credit: string,
+) {
   return new WebMapServiceImageryProvider({
     url: USGS_MARS_WMS_URL,
-    layers: 'THEMIS',
+    layers: layer,
     parameters: {
       format: 'image/jpeg',
       styles: '',
@@ -55,29 +58,39 @@ function createThemisImageryProvider() {
     tilingScheme: new GeographicTilingScheme({ ellipsoid: MARS_ELLIPSOID }),
     tileWidth: 512,
     tileHeight: 512,
-    maximumLevel: 10,
+    maximumLevel,
     enablePickFeatures: false,
-    credit: 'USGS Astrogeology: THEMIS global mosaic WMS',
+    credit,
   })
 }
 
-function createGlobalMosaicProvider() {
-  return new SingleTileImageryProvider({
-    url: '/mars/viking-global-color-mosaic-1024.jpg',
-    rectangle: Rectangle.MAX_VALUE,
-    tileWidth: 1024,
-    tileHeight: 512,
-    credit: 'USGS Astrogeology: Mars Viking Global Color Mosaic 925 m',
-  })
+function createBaseImageryProvider(mode: MarsViewerMode) {
+  if (mode === 'imagery') {
+    return createMarsWmsProvider(
+      'MDIM21_color',
+      9,
+      'USGS Astrogeology: MDIM 2.1 color mosaic WMS',
+    )
+  }
+  if (mode === 'infrared') {
+    return createMarsWmsProvider(
+      'THEMIS',
+      10,
+      'USGS Astrogeology: THEMIS global mosaic WMS',
+    )
+  }
+  return createMarsWmsProvider(
+      'MOLA_color',
+      8,
+      'USGS Astrogeology: MOLA color relief WMS',
+  )
 }
 
-function MarsViewer({ onCameraAltitudeChange, onCoverageChange }: MarsViewerProps) {
+function MarsViewer({ mode, onCameraAltitudeChange, onCoverageChange }: MarsViewerProps) {
   const viewerContainerRef = useRef<HTMLDivElement>(null)
-  const requestDetailImageryRef = useRef<(() => void) | null>(null)
+  const setViewerModeRef = useRef<((mode: MarsViewerMode) => void) | null>(null)
+  const modeRef = useRef<MarsViewerMode>(mode)
   const [cameraAltitude, setCameraAltitude] = useState(MARS_GLOBAL_VIEW_HEIGHT_METERS)
-  const [isThemisStreaming, setIsThemisStreaming] = useState(false)
-  const [scanAvailable, setScanAvailable] = useState(false)
-  const [themisTileStatus, setThemisTileStatus] = useState('AWAITING SCAN')
 
   useEffect(() => {
     const container = viewerContainerRef.current
@@ -108,92 +121,84 @@ function MarsViewer({ onCameraAltitudeChange, onCoverageChange }: MarsViewerProp
     if (viewer.scene.skyAtmosphere) {
       viewer.scene.skyAtmosphere.show = false
     }
-    viewer.imageryLayers.addImageryProvider(createGlobalMosaicProvider())
+    let baseLayer = viewer.imageryLayers.addImageryProvider(
+      createBaseImageryProvider(modeRef.current),
+    )
     viewer.camera.setView({
       destination: Cartesian3.fromDegrees(0, 10, MARS_GLOBAL_VIEW_HEIGHT_METERS, MARS_ELLIPSOID),
     })
-    let themisLayer: ImageryLayer | undefined
-
-    const updateDetailImageryForNavigation = () => {
+    const updateViewerTelemetry = () => {
       const altitude = getMarsCameraAltitude(viewer)
-      const isCloseEnoughToScan = altitude <= THEMIS_DISPLAY_HEIGHT_METERS
       setCameraAltitude(altitude)
-      setScanAvailable(isCloseEnoughToScan)
       onCameraAltitudeChange(formatCameraAltitude(altitude))
-      if (!isCloseEnoughToScan && themisLayer) {
-        viewer.imageryLayers.remove(themisLayer, true)
-        themisLayer = undefined
-        setIsThemisStreaming(false)
-        setThemisTileStatus('AWAITING SCAN')
-      }
-      if (themisLayer) {
-        onCoverageChange('THEMIS WMS · VISIBLE TILES')
-      } else {
-        onCoverageChange(
-          isCloseEnoughToScan
-            ? 'AWAITING SCAN'
-            : 'GLOBAL BASELINE · ZOOM BELOW 200 KM',
-        )
-      }
+      onCoverageChange(
+        modeRef.current === 'imagery'
+          ? 'MDIM 2.1 COLOUR · VISIBLE TILES'
+          : modeRef.current === 'infrared'
+            ? 'THEMIS IR · VISIBLE TILES'
+            : 'MOLA COLOR RELIEF · VISIBLE TILES',
+      )
     }
-    const requestDetailImagery = () => {
-      if (
-        getMarsCameraAltitude(viewer) > THEMIS_DISPLAY_HEIGHT_METERS
-        || themisLayer
-      ) {
+    const updateViewerMode = (nextMode: MarsViewerMode) => {
+      if (modeRef.current === nextMode) {
         return
       }
-      themisLayer = viewer.imageryLayers.addImageryProvider(createThemisImageryProvider())
-      themisLayer.alpha = 0.65
-      viewer.imageryLayers.raiseToTop(themisLayer)
-      setIsThemisStreaming(true)
-      setThemisTileStatus('LOADING TILES')
-      onCoverageChange('THEMIS WMS · VISIBLE TILES')
+      modeRef.current = nextMode
+      viewer.imageryLayers.remove(baseLayer, true)
+      baseLayer = viewer.imageryLayers.addImageryProvider(createBaseImageryProvider(nextMode))
+      updateViewerTelemetry()
     }
 
-    requestDetailImageryRef.current = requestDetailImagery
+    setViewerModeRef.current = updateViewerMode
     viewer.camera.percentageChanged = 0.01
     const removeCameraChangedListener = viewer.camera.changed.addEventListener(
-      updateDetailImageryForNavigation,
+      updateViewerTelemetry,
     )
     const removeCameraMoveEndListener = viewer.camera.moveEnd.addEventListener(
-      updateDetailImageryForNavigation,
+      updateViewerTelemetry,
     )
-    const removeTileLoadProgressListener = viewer.scene.globe.tileLoadProgressEvent.addEventListener(
-      (pendingTileCount: number) => {
-        if (themisLayer) {
-          setThemisTileStatus(
-            pendingTileCount > 0 ? `LOADING ${pendingTileCount} TILES` : 'READY',
-          )
-        }
-      },
-    )
-    updateDetailImageryForNavigation()
+    updateViewerTelemetry()
 
     return () => {
-      requestDetailImageryRef.current = null
+      setViewerModeRef.current = null
       removeCameraChangedListener()
       removeCameraMoveEndListener()
-      removeTileLoadProgressListener()
       viewer.destroy()
     }
   }, [onCameraAltitudeChange, onCoverageChange])
 
+  useEffect(() => {
+    setViewerModeRef.current?.(mode)
+  }, [mode])
+
+  const sourceText = mode === 'imagery'
+    ? 'MDIM 2.1 COLOUR MOSAIC · 231 M SOURCE PRODUCT'
+    : mode === 'infrared'
+      ? 'THEMIS INFRARED MOSAIC · ~100 M SOURCE PRODUCT'
+      : 'MOLA COLOUR RELIEF · 463 M GRID PRODUCT'
+  const sourceDetail = mode === 'imagery'
+    ? 'USGS ASTROGEOLOGY · MDIM 2.1 WMS'
+    : mode === 'infrared'
+      ? 'USGS ASTROGEOLOGY · THEMIS IR WMS'
+      : 'USGS ASTROGEOLOGY · MOLA ELEVATION VISUALIZATION'
+  const provenance = mode === 'imagery'
+    ? 'GLOBAL IMAGERY · MDIM 2.1 COLOUR MOSAIC · USGS'
+    : mode === 'infrared'
+      ? 'GLOBAL INFRARED · THEMIS MOSAIC · USGS'
+      : 'GLOBAL RELIEF · MOLA COLOR · USGS'
+  const resolution = mode === 'imagery'
+    ? 'RESOLUTION · 231 M · MDIM 2.1 COLOR MOSAIC'
+    : mode === 'infrared'
+      ? 'RESOLUTION · ~100 M · THEMIS INFRARED MOSAIC'
+      : 'GRID SPACING · ~463 M · DISPLAY-ONLY RELIEF'
+
   return (
     <div className="mars-viewer">
       <div ref={viewerContainerRef} className="mars-viewer__canvas" />
-      <button
-        className="viewer-scan-button"
-        type="button"
-        disabled={!scanAvailable}
-        onClick={() => requestDetailImageryRef.current?.()}
-      >
-        SCAN VIEW
-      </button>
       <div className="viewer-directive">
         <strong>PRIMARY OBSERVATION</strong>
-        <span>{isThemisStreaming ? 'VIKING COLOUR BASE + THEMIS IR DETAIL · ~100 M/PIXEL' : 'VIKING GLOBAL COLOR MOSAIC · 925 M SOURCE PRODUCT'}</span>
-        <span>{isThemisStreaming ? 'USGS ASTROGEOLOGY · LIVE WMS · 55% DETAIL OVERLAY' : scanAvailable ? 'DETAIL · PRESS SCAN FOR CURRENT VIEW' : 'DETAIL · ZOOM BELOW 200 KM TO SCAN'}</span>
+        <span>{sourceText}</span>
+        <span>{sourceDetail}</span>
         <span>{`ALTITUDE · ${formatCameraAltitude(cameraAltitude)}`}</span>
       </div>
       <div className="hud hud--left">
@@ -202,10 +207,9 @@ function MarsViewer({ onCameraAltitudeChange, onCoverageChange }: MarsViewerProp
         <span>DRAG TO NAVIGATE · SCROLL TO ZOOM</span>
       </div>
       <div className="imagery-provenance">
-        <span>GLOBAL BASE · VIKING GLOBAL COLOR MOSAIC · USGS</span>
-        {isThemisStreaming && <span className="scene-status">{themisTileStatus !== 'READY' && <i className="scene-status__spinner" aria-label="Loading THEMIS imagery tiles" />}{`DETAIL · THEMIS IR WMS · ${themisTileStatus}`}</span>}
-        <span>{isThemisStreaming ? 'SURFACE DETAIL · THEMIS IR WMS · USGS ASTROGEOLOGY' : 'VIEWPORT DETAIL · ZOOM BELOW 200 KM TO SCAN'}</span>
-        <span>{isThemisStreaming ? 'RESOLUTION · ~100 M · COLOUR BASE + IR DETAIL' : 'RESOLUTION · 925 M · LOCAL DISPLAY ASSET'}</span>
+        <span>{provenance}</span>
+        <span>{sourceDetail}</span>
+        <span>{resolution}</span>
       </div>
     </div>
   )
