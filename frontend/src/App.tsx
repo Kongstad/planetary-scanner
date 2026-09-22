@@ -389,6 +389,7 @@ function App() {
               <div className="layer-chips">
                 <button className={viewerMode === 'imagery' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('imagery')}>IMAGERY</button>
                 <button className={viewerMode === 'terrain' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('terrain')}>TERRAIN</button>
+                <button className={viewerMode === 'relief' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('relief')}>RELIEF</button>
                 <button className={viewerMode === 'biosphere' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('biosphere')}>BIOSPHERE</button>
                 <button className={viewerMode === 'thermal' ? 'layer-chip--active' : ''} type="button" onClick={() => setViewerMode('thermal')}>THERMAL</button>
               </div>

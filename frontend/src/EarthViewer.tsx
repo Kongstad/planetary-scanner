@@ -6,6 +6,9 @@ import {
   SkyBox,
   UrlTemplateImageryProvider,
   Viewer,
+  WebMapServiceImageryProvider,
+  WebMapTileServiceImageryProvider,
+  WebMercatorTilingScheme,
 } from 'cesium'
 import type { ImageryLayer } from 'cesium'
 import { useEffect, useRef, useState } from 'react'
@@ -16,9 +19,11 @@ const COPENHAGEN_LONGITUDE = 12.5683
 const COPENHAGEN_LATITUDE = 55.6761
 const GLOBAL_VIEW_HEIGHT_METERS = 20_000_000
 const SENTINEL_2_DISPLAY_HEIGHT_METERS = 200_000
-const SCENE_SEARCH_DEBOUNCE_MILLISECONDS = 600
 const EOX_SENTINEL_2_CLOUDLESS_TILES_URL =
   'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2024_3857/default/g/{z}/{y}/{x}.jpg'
+const GEBCO_WMS_URL = 'https://wms.gebco.net/mapserv?'
+const GIBS_GLOBAL_LAYER_DATE = '2026-09-20'
+const GIBS_WMTS_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{Time}/{TileMatrixSet}/{TileMatrix}/{TileRow}/{TileCol}.png'
 
 type Sentinel2Scene = {
   item_id: string
@@ -37,7 +42,7 @@ type ActiveScene = Sentinel2Scene & {
   imageryLoaded: boolean
 }
 
-export type ViewerMode = 'imagery' | 'terrain' | 'biosphere' | 'thermal'
+export type ViewerMode = 'imagery' | 'terrain' | 'relief' | 'biosphere' | 'thermal'
 
 type EarthViewerProps = {
   mode: ViewerMode
@@ -56,8 +61,27 @@ function formatElevation(heightMeters: number): string {
   return `${Math.round(heightMeters).toLocaleString()} M`
 }
 
-function formatTemperature(temperatureCelsius: number): string {
-  return `${temperatureCelsius.toFixed(1)} °C`
+function createGibsImageryProvider(
+  layer: string,
+  tileMatrixSetId: string,
+  maximumLevel: number,
+  credit: string,
+) {
+  return new WebMapTileServiceImageryProvider({
+    url: GIBS_WMTS_URL,
+    layer,
+    style: 'default',
+    format: 'image/png',
+    tileMatrixSetID: tileMatrixSetId,
+    tilingScheme: new WebMercatorTilingScheme(),
+    maximumLevel,
+    tileMatrixLabels: Array.from(
+      { length: maximumLevel + 1 },
+      (_, level) => level.toString(),
+    ),
+    dimensions: { Time: GIBS_GLOBAL_LAYER_DATE },
+    credit,
+  })
 }
 
 function isInsideDilithiumDeposit(longitude: number, latitude: number): boolean {
@@ -120,20 +144,17 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
   const [viewerMode, setViewerMode] = useState<ViewerMode>(mode)
   const [cameraAltitude, setCameraAltitude] = useState(GLOBAL_VIEW_HEIGHT_METERS)
   const [isDilithiumDepositVisible, setIsDilithiumDepositVisible] = useState(false)
+  const [globalTileStatus, setGlobalTileStatus] = useState('READY')
+  const [globalTileError, setGlobalTileError] = useState<string | null>(null)
+  const [isDetailDiscoveryLoading, setIsDetailDiscoveryLoading] = useState(false)
   const terrainDisplayRange = activeScenes.find(
     (
       scene,
     ): scene is ActiveScene & { display_min_m: number; display_max_m: number } =>
       scene.display_min_m !== undefined && scene.display_max_m !== undefined,
   )
-  const thermalDisplayRange = activeScenes.find(
-    (
-      scene,
-    ): scene is ActiveScene & { display_min_c: number; display_max_c: number } =>
-      scene.display_min_c !== undefined && scene.display_max_c !== undefined,
-  )
   const [imageryStatus, setImageryStatus] = useState(
-    'DETAIL · ZOOM BELOW 200 KM TO SCAN',
+    'GLOBAL IMAGERY · EOX SENTINEL-2 CLOUDLESS',
   )
 
   useEffect(() => {
@@ -174,10 +195,57 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
     globalSurfaceLayer.brightness = 0.88
     globalSurfaceLayer.contrast = 1.04
     globalSurfaceLayer.saturation = 0.78
+    const reliefLayer = viewer.imageryLayers.addImageryProvider(
+      new WebMapServiceImageryProvider({
+        url: GEBCO_WMS_URL,
+        layers: 'GEBCO_LATEST',
+        parameters: {
+          format: 'image/png',
+          styles: '',
+          transparent: false,
+          version: '1.3.0',
+        },
+        maximumLevel: 8,
+        enablePickFeatures: false,
+        credit: 'GEBCO_2026 Grid: global relief and bathymetry',
+      }),
+    )
+    reliefLayer.show = false
+    const globalBiosphereProvider = createGibsImageryProvider(
+      'MODIS_Terra_NDVI_8Day',
+      'GoogleMapsCompatible_Level9',
+      9,
+      `NASA GIBS: MODIS Terra NDVI 8-day · ${GIBS_GLOBAL_LAYER_DATE}`,
+    )
+    const globalBiosphereLayer = viewer.imageryLayers.addImageryProvider(
+      globalBiosphereProvider,
+    )
+    globalBiosphereLayer.show = false
+    globalBiosphereLayer.alpha = 0.82
+    const globalThermalProvider = createGibsImageryProvider(
+      'MODIS_Terra_Land_Surface_Temp_Day',
+      'GoogleMapsCompatible_Level7',
+      7,
+      `NASA GIBS: MODIS Terra daytime land-surface temperature · ${GIBS_GLOBAL_LAYER_DATE}`,
+    )
+    const globalThermalLayer = viewer.imageryLayers.addImageryProvider(
+      globalThermalProvider,
+    )
+    globalThermalLayer.show = false
+    globalThermalLayer.alpha = 0.82
+    const reportGlobalTileError = (message: string) => {
+      setGlobalTileError(message.slice(0, 96))
+      setGlobalTileStatus('TILE REQUEST FAILED')
+    }
+    const removeBiosphereErrorListener = globalBiosphereProvider.errorEvent.addEventListener(
+      (error) => reportGlobalTileError(error.message),
+    )
+    const removeThermalErrorListener = globalThermalProvider.errorEvent.addEventListener(
+      (error) => reportGlobalTileError(error.message),
+    )
     let isDilithiumDepositRequested = false
     let depositRevealTimer: number | undefined
     const sentinel2Layers = new Map<string, ImageryLayer>()
-    let refreshTimer: number | undefined
     let requestSequence = 0
     let disposed = false
 
@@ -208,17 +276,13 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
       const activeMode = modeRef.current
       setImageryStatus(
         activeMode === 'terrain'
-          ? 'DETAIL · SELECTING COPERNICUS DEM TILES'
-          : activeMode === 'thermal'
-            ? 'DETAIL · SELECTING MODIS TEMPERATURE TILES'
-          : 'DETAIL · SELECTING LATEST LOW-CLOUD SCENES',
+        ? 'DETAIL · SELECTING COPERNICUS DEM TILES'
+        : 'DETAIL · SELECTING LATEST LOW-CLOUD SENTINEL-2 SCENES',
       )
       onCoverageChange('ANALYSING VIEWPORT')
       const endpoint = activeMode === 'terrain'
         ? '/imagery/copernicus-dem/scenes'
-        : activeMode === 'thermal'
-          ? '/imagery/modis-lst/scenes'
-        : `/imagery/sentinel-2/scenes?mode=${activeMode}`
+        : '/imagery/sentinel-2/scenes?mode=imagery'
       const response = await fetch(
         `${endpoint}${activeMode === 'imagery' || activeMode === 'biosphere' ? '&' : '?'}${query}`,
       )
@@ -254,10 +318,9 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
           }
           return image
         }
-        sentinel2Layers.set(
-          scene.item_id,
-          viewer.imageryLayers.addImageryProvider(imageryProvider),
-        )
+        const detailLayer = viewer.imageryLayers.addImageryProvider(imageryProvider)
+        viewer.imageryLayers.raiseToTop(detailLayer)
+        sentinel2Layers.set(scene.item_id, detailLayer)
       }
       setImageryStatus(
         scenes.length === 0
@@ -274,8 +337,8 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
     }
 
     const requestDetailScenes = () => {
-      if (refreshTimer !== undefined) {
-        window.clearTimeout(refreshTimer)
+      if (modeRef.current !== 'imagery' && modeRef.current !== 'terrain') {
+        return
       }
       const isCloseEnoughToScan =
         viewer.camera.positionCartographic.height <= SENTINEL_2_DISPLAY_HEIGHT_METERS
@@ -283,26 +346,52 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
       if (!isCloseEnoughToScan) {
         requestSequence += 1
         removeSentinel2Layers()
+        setIsDetailDiscoveryLoading(false)
         setImageryStatus('DETAIL · ZOOM BELOW 200 KM TO SCAN')
         onCoverageChange('GLOBAL BASELINE')
         return
       }
-      refreshTimer = window.setTimeout(() => {
-        void refreshDetailLayers().catch(() => {
+      setIsDetailDiscoveryLoading(true)
+      void refreshDetailLayers()
+        .catch(() => {
           if (!disposed) {
             removeSentinel2Layers()
-            setImageryStatus('DETAIL · SENTINEL-2 DISCOVERY UNAVAILABLE')
+            setImageryStatus('DETAIL · SCENE DISCOVERY UNAVAILABLE')
             onCoverageChange('DISCOVERY UNAVAILABLE')
           }
         })
-      }, SCENE_SEARCH_DEBOUNCE_MILLISECONDS)
+        .finally(() => {
+          if (!disposed) {
+            setIsDetailDiscoveryLoading(false)
+          }
+        })
     }
     const clearDetailScenesForNavigation = () => {
-      if (refreshTimer !== undefined) {
-        window.clearTimeout(refreshTimer)
-      }
       requestSequence += 1
       removeSentinel2Layers()
+      setIsDetailDiscoveryLoading(false)
+      if (
+        modeRef.current === 'relief'
+        || modeRef.current === 'biosphere'
+        || modeRef.current === 'thermal'
+      ) {
+        setCameraAltitude(viewer.camera.positionCartographic.height)
+        setScanAvailable(false)
+        const globalStatus = modeRef.current === 'relief'
+            ? 'GEBCO_2026 · GLOBAL RELIEF & BATHYMETRY'
+            : modeRef.current === 'biosphere'
+              ? `MODIS TERRA NDVI · 8-DAY · ${GIBS_GLOBAL_LAYER_DATE}`
+              : `MODIS TERRA DAYTIME LST · DAILY · ${GIBS_GLOBAL_LAYER_DATE}`
+        setImageryStatus(globalStatus)
+        onCoverageChange(
+          modeRef.current === 'relief'
+              ? 'GEBCO GLOBAL WMS · VISIBLE TILES'
+              : modeRef.current === 'biosphere'
+                ? 'MODIS NDVI GLOBAL TILES'
+                : 'MODIS LST GLOBAL TILES',
+        )
+        return
+      }
       const isCloseEnoughToScan =
         viewer.camera.positionCartographic.height <= SENTINEL_2_DISPLAY_HEIGHT_METERS
       setCameraAltitude(viewer.camera.positionCartographic.height)
@@ -320,9 +409,36 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
     const removeCameraMoveEndListener = viewer.camera.moveEnd.addEventListener(
       clearDetailScenesForNavigation,
     )
+    const removeTileLoadProgressListener = viewer.scene.globe.tileLoadProgressEvent.addEventListener(
+      (pendingTileCount: number) => {
+        if (
+          modeRef.current === 'relief'
+          || modeRef.current === 'biosphere'
+          || modeRef.current === 'thermal'
+        ) {
+          setGlobalTileStatus(
+            pendingTileCount > 0 ? `LOADING ${pendingTileCount} TILES` : 'READY',
+          )
+        }
+      },
+    )
     const updateViewerMode = (nextMode: ViewerMode) => {
       modeRef.current = nextMode
       setViewerMode(nextMode)
+      globalSurfaceLayer.show = (
+        nextMode === 'imagery'
+        || nextMode === 'biosphere'
+        || nextMode === 'thermal'
+      )
+      reliefLayer.show = nextMode === 'relief'
+      globalBiosphereLayer.show = nextMode === 'biosphere'
+      globalThermalLayer.show = nextMode === 'thermal'
+      setGlobalTileStatus(
+        nextMode === 'relief' || nextMode === 'biosphere' || nextMode === 'thermal'
+          ? 'LOADING TILES'
+          : 'READY',
+      )
+      setGlobalTileError(null)
       clearDetailScenesForNavigation()
     }
     requestSentinel2ScenesRef.current = requestDetailScenes
@@ -384,9 +500,6 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
     return () => {
       disposed = true
       requestSequence += 1
-      if (refreshTimer !== undefined) {
-        window.clearTimeout(refreshTimer)
-      }
       if (depositRevealTimer !== undefined) {
         window.clearTimeout(depositRevealTimer)
       }
@@ -395,6 +508,9 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
       focusDilithiumDepositRef.current = null
       removeCameraChangedListener()
       removeCameraMoveEndListener()
+      removeTileLoadProgressListener()
+      removeBiosphereErrorListener()
+      removeThermalErrorListener()
       removeSentinel2Layers()
       viewer.destroy()
     }
@@ -413,28 +529,51 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
   return (
     <div className="earth-viewer">
       <div ref={viewerContainerRef} className="earth-viewer__canvas" />
-      <button
+      {(viewerMode === 'relief' || viewerMode === 'biosphere' || viewerMode === 'thermal')
+        && globalTileStatus !== 'READY'
+        && !globalTileError && (
+          <div className="viewer-tile-loading" role="status" aria-live="polite">
+            <i className="viewer-tile-loading__spinner" aria-hidden="true" />
+            <strong>STREAMING GLOBAL TILES</strong>
+            <span>{globalTileStatus}</span>
+          </div>
+        )}
+      {(viewerMode === 'imagery' || viewerMode === 'terrain')
+        && (isDetailDiscoveryLoading || activeScenes.some((scene) => !scene.imageryLoaded)) && (
+          <div className="viewer-tile-loading" role="status" aria-live="polite">
+            <i className="viewer-tile-loading__spinner" aria-hidden="true" />
+            <strong>
+              {isDetailDiscoveryLoading ? 'DISCOVERING DETAIL SCENES' : 'STREAMING DETAIL TILES'}
+            </strong>
+            <span>{viewerMode === 'terrain' ? 'COPERNICUS DEM' : 'SENTINEL-2 L2A'}</span>
+          </div>
+        )}
+      {(viewerMode === 'imagery' || viewerMode === 'terrain') && <button
         className="viewer-scan-button"
         type="button"
         disabled={!scanAvailable}
         onClick={() => requestSentinel2ScenesRef.current?.()}
       >
         SCAN VIEW
-      </button>
+      </button>}
       <div className="viewer-directive">
         <strong>PRIMARY OBSERVATION</strong>
         <span>
-          {activeScenes.length
-            ? viewerMode === 'terrain'
-              ? 'COPERNICUS DEM · COLOURIZED ELEVATION'
+          {viewerMode === 'relief'
+            ? 'GEBCO_2026 · GLOBAL RELIEF & BATHYMETRY'
+            : viewerMode === 'biosphere'
+              ? `MODIS TERRA NDVI · 8-DAY · ${GIBS_GLOBAL_LAYER_DATE}`
               : viewerMode === 'thermal'
-                ? 'MODIS · 8-DAY DAYTIME LAND-SURFACE TEMPERATURE'
-              : viewerMode === 'biosphere'
-                ? 'SENTINEL-2 L2A · NDVI MOSAIC'
-                : 'SENTINEL-2 L2A · VISUAL RGB MOSAIC'
-            : 'EOX SENTINEL-2 CLOUDLESS'}
+                ? `MODIS TERRA DAYTIME LST · ${GIBS_GLOBAL_LAYER_DATE}`
+                : activeScenes.length
+                  ? viewerMode === 'terrain'
+                    ? 'COPERNICUS DEM · COLOURIZED ELEVATION'
+                    : 'SENTINEL-2 L2A · VISUAL RGB MOSAIC'
+                  : viewerMode === 'terrain'
+                      ? 'COPERNICUS DEM · SCAN CURRENT VIEW'
+                      : 'EOX SENTINEL-2 CLOUDLESS'}
         </span>
-        <span>{imageryStatus}</span>
+        <span>{viewerMode === 'relief' ? '15 ARC-SECOND GRID · VISUALIZATION ONLY · NOT FOR NAVIGATION' : viewerMode === 'biosphere' ? '250 M VEGETATION INDEX · GLOBAL TILES' : viewerMode === 'thermal' ? '1 KM LAND-SURFACE TEMPERATURE · GLOBAL TILES' : imageryStatus}</span>
         <span>{`ALTITUDE · ${formatCameraAltitude(cameraAltitude)}`}</span>
       </div>
       <div className="hud hud--left">
@@ -458,36 +597,46 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
           <small>DISPLAY RANGE</small>
         </aside>
       )}
-      {viewerMode === 'biosphere' && activeScenes.length > 0 && (
-        <aside className="biosphere-legend" aria-label="Sentinel-2 NDVI display scale">
-          <span>NDVI</span>
+      {viewerMode === 'relief' && (
+        <aside className="relief-legend" aria-label="GEBCO global relief color scale">
+          <span>GLOBAL RELIEF</span>
+          <div className="relief-legend__scale">
+            <div className="relief-legend__gradient" aria-hidden="true" />
+            <div className="relief-legend__labels">
+              <span>HIGH LAND</span>
+              <span>SEA LEVEL</span>
+              <span>DEEP OCEAN</span>
+            </div>
+          </div>
+          <small>GEBCO PROVIDER RENDERING</small>
+        </aside>
+      )}
+      {viewerMode === 'biosphere' && (
+        <aside className="biosphere-legend" aria-label="MODIS NDVI color scale">
+          <span>VEGETATION INDEX</span>
           <div className="biosphere-legend__scale">
             <div className="biosphere-legend__gradient" aria-hidden="true" />
             <div className="biosphere-legend__labels">
-              <span>+1.0</span>
-              <span>+0.5</span>
-              <span>0.0</span>
-              <span>−0.5</span>
-              <span>−1.0</span>
+              <span>HIGH NDVI</span>
+              <span>MODERATE</span>
+              <span>LOW NDVI</span>
             </div>
           </div>
-          <small>VEGETATION INDEX</small>
+          <small>MODIS PROVIDER RENDERING</small>
         </aside>
       )}
-      {viewerMode === 'thermal' && thermalDisplayRange && (
-        <aside className="thermal-legend" aria-label="MODIS land-surface temperature display scale">
-          <span>LAND-SURFACE TEMP.</span>
+      {viewerMode === 'thermal' && (
+        <aside className="thermal-legend" aria-label="MODIS daytime land-surface temperature color scale">
+          <span>DAYTIME LST</span>
           <div className="thermal-legend__scale">
             <div className="thermal-legend__gradient" aria-hidden="true" />
             <div className="thermal-legend__labels">
-              <span>{formatTemperature(thermalDisplayRange.display_max_c)}</span>
-              <span>{formatTemperature(thermalDisplayRange.display_min_c + (thermalDisplayRange.display_max_c - thermalDisplayRange.display_min_c) * 0.75)}</span>
-              <span>{formatTemperature((thermalDisplayRange.display_min_c + thermalDisplayRange.display_max_c) / 2)}</span>
-              <span>{formatTemperature(thermalDisplayRange.display_min_c + (thermalDisplayRange.display_max_c - thermalDisplayRange.display_min_c) * 0.25)}</span>
-              <span>{formatTemperature(thermalDisplayRange.display_min_c)}</span>
+              <span>WARMER</span>
+              <span>MODERATE</span>
+              <span>COOLER</span>
             </div>
           </div>
-          <small>8-DAY DAYTIME · 1 KM</small>
+          <small>MODIS PROVIDER RENDERING</small>
         </aside>
       )}
       {isDilithiumDepositVisible && (
@@ -505,24 +654,42 @@ function EarthViewer({ mode, depositFocusRequest, onCoverageChange }: EarthViewe
         </aside>
       )}
       <div className="imagery-provenance">
-        <span>GLOBAL BASE · EOX SENTINEL-2 CLOUDLESS 2024</span>
+        <span>{viewerMode === 'relief' ? 'GLOBAL RELIEF · GEBCO_2026 · 15 ARC-SECOND GRID' : viewerMode === 'biosphere' ? `GLOBAL BIOSPHERE · MODIS TERRA NDVI · ${GIBS_GLOBAL_LAYER_DATE}` : viewerMode === 'thermal' ? `GLOBAL THERMAL · MODIS TERRA DAYTIME LST · ${GIBS_GLOBAL_LAYER_DATE}` : 'GLOBAL BASE · EOX SENTINEL-2 CLOUDLESS 2024'}</span>
         {activeScenes.map((scene) => (
           <span className="scene-status" key={scene.item_id}>
             {!scene.imageryLoaded && <i className="scene-status__spinner" aria-label="Loading scene imagery" />}
             {`DETAIL · ${scene.mgrs_tile ?? scene.tile_id ?? scene.item_id} · ${scene.observed_at?.slice(0, 10) ?? 'COPERNICUS DEM'}${scene.cloud_cover === undefined ? '' : ` · CLOUD ${scene.cloud_cover.toFixed(1)}%`} · ${scene.imageryLoaded ? 'READY' : 'LOADING'}`}
           </span>
         ))}
-        {activeScenes.length ? (
+        {(viewerMode === 'relief' || viewerMode === 'biosphere' || viewerMode === 'thermal') && (
+          <span className="scene-status">
+            {globalTileStatus !== 'READY' && <i className="scene-status__spinner" aria-label="Loading global imagery tiles" />}
+            {`GLOBAL TILES · ${globalTileStatus}`}
+          </span>
+        )}
+        {globalTileError && <span className="scene-status">{`TILE ERROR · ${globalTileError}`}</span>}
+        {viewerMode === 'relief' ? (
+          <>
+            <span>GLOBAL LAND ELEVATION + OCEAN BATHYMETRY · GEBCO</span>
+            <span>DISPLAY-ONLY RELIEF · NOT FOR NAVIGATION</span>
+          </>
+        ) : viewerMode === 'biosphere' ? (
+          <>
+            <span>GLOBAL VEGETATION INDEX · MODIS TERRA · NASA GIBS</span>
+            <span>8-DAY PRODUCT · 250 M · PROVIDER-RENDERED INDEX</span>
+          </>
+        ) : viewerMode === 'thermal' ? (
+          <>
+            <span>GLOBAL DAYTIME LAND-SURFACE TEMPERATURE · MODIS TERRA · NASA GIBS</span>
+            <span>DAILY PRODUCT · 1 KM · PROVIDER-RENDERED TEMPERATURE</span>
+          </>
+        ) : activeScenes.length ? (
           <>
             <span>SURFACE DETAIL · MICROSOFT PLANETARY COMPUTER</span>
             <span>
               {viewerMode === 'terrain'
                 ? 'RESOLUTION · 30 M · COPERNICUS DEM · ESA'
-                : viewerMode === 'thermal'
-                  ? 'PRODUCT · MODIS LST · AQUA · 1 KM · 8-DAY DAYTIME'
-                : viewerMode === 'biosphere'
-                  ? 'INDEX · NDVI = (B08 - B04) / (B08 + B04) · SENTINEL-2 · ESA'
-                  : 'RESOLUTION · 10 M · SENTINEL-2 · ESA'}
+                : 'RESOLUTION · 10 M · SENTINEL-2 · ESA'}
             </span>
           </>
         ) : (

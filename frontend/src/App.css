@@ -95,6 +95,10 @@
 .earth-viewer .cesium-viewer-bottom { right: 8px; bottom: 4px; }
 .earth-viewer .cesium-widget-credits { color: oklch(0.74 0.018 245); font-family: var(--mono); font-size: 8px; }
 .earth-viewer .cesium-widget-credits a { color: var(--cyan); }
+.viewer-tile-loading { position: absolute; z-index: 2; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px; pointer-events: none; color: oklch(0.88 0.09 205); font-family: var(--mono); text-align: center; text-shadow: 0 1px 6px oklch(0.08 0.01 250); }
+.viewer-tile-loading__spinner { width: 58px; height: 58px; border: 4px solid oklch(0.78 0.12 205 / 0.3); border-top-color: var(--cyan); border-radius: 50%; animation: scene-spin 0.8s linear infinite; box-shadow: 0 0 22px oklch(0.78 0.12 205 / 0.28); }
+.viewer-tile-loading strong { font-size: 12px; font-weight: 400; letter-spacing: 0.18em; }
+.viewer-tile-loading span { color: oklch(0.78 0.02 245); font-size: 9px; letter-spacing: 0.14em; }
 .imagery-provenance { position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 3px; max-width: 310px; border-right: 2px solid var(--cyan); background: oklch(0.12 0.012 250 / 0.87); padding: 8px 10px; color: oklch(0.74 0.018 245); font-family: var(--mono); font-size: 8px; letter-spacing: 0.07em; text-align: right; }
 .scene-status { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
 .scene-status__spinner { width: 8px; height: 8px; border: 1px solid oklch(0.78 0.12 205 / 0.35); border-top-color: var(--cyan); border-radius: 50%; animation: scene-spin 0.8s linear infinite; }
@@ -104,6 +108,11 @@
 .terrain-legend__gradient { width: 12px; border: 1px solid oklch(0.76 0.02 250 / 0.35); background: linear-gradient(to top, #0c1c5c 0%, #1e4d8b 20%, #2d7bb6 35%, #3fa855 50%, #7ac74f 65%, #c4d968 78%, #e8c167 88%, #d89a5a 95%, #ffffff 100%); }
 .terrain-legend__labels { display: flex; flex-direction: column; justify-content: space-between; color: oklch(0.75 0.02 250); white-space: nowrap; }
 .terrain-legend small { color: var(--muted); font-size: 7px; letter-spacing: 0.12em; }
+.relief-legend { position: absolute; z-index: 1; top: 72px; right: 16px; display: flex; flex-direction: column; gap: 7px; min-width: 104px; border-right: 2px solid oklch(0.69 0.1 230); background: oklch(0.12 0.012 250 / 0.87); padding: 8px 10px; color: oklch(0.78 0.02 250); font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; text-align: right; }
+.relief-legend__scale { display: flex; align-items: stretch; justify-content: flex-end; gap: 6px; height: 136px; }
+.relief-legend__gradient { width: 12px; border: 1px solid oklch(0.76 0.02 250 / 0.35); background: linear-gradient(to top, #132b7b 0%, #2670ae 24%, #58b7d4 45%, #e8db9d 51%, #9dbf5e 70%, #8a5b39 87%, #ffffff 100%); }
+.relief-legend__labels { display: flex; flex-direction: column; justify-content: space-between; color: oklch(0.75 0.02 250); white-space: nowrap; }
+.relief-legend small { color: var(--muted); font-size: 7px; letter-spacing: 0.12em; }
 .biosphere-legend { position: absolute; z-index: 1; top: 72px; right: 16px; display: flex; flex-direction: column; gap: 7px; min-width: 104px; border-right: 2px solid var(--green); background: oklch(0.12 0.012 250 / 0.87); padding: 8px 10px; color: oklch(0.78 0.02 250); font-family: var(--mono); font-size: 8px; letter-spacing: 0.08em; text-align: right; }
 .biosphere-legend__scale { display: flex; align-items: stretch; justify-content: flex-end; gap: 6px; height: 136px; }
 .biosphere-legend__gradient { width: 12px; border: 1px solid oklch(0.76 0.02 250 / 0.35); background: linear-gradient(to top, #006837 0%, #1a9850 20%, #66bd63 35%, #a6d96a 50%, #d9ef8b 60%, #ffffbf 70%, #fee08b 80%, #f46d43 90%, #a50026 100%); }
