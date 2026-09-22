@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import EarthViewer, { type ViewerMode } from './EarthViewer.tsx'
+import LunaDashboard from './LunaDashboard.tsx'
 import MarsDashboard from './MarsDashboard.tsx'
 
 type PanelProps = {
@@ -127,11 +128,13 @@ function App() {
   const [viewerMode, setViewerMode] = useState<ViewerMode>('imagery')
   const [depositFocusRequest, setDepositFocusRequest] = useState(0)
   const [scanCoverage, setScanCoverage] = useState('GLOBAL BASELINE')
-  const [activeBody, setActiveBody] = useState<'earth' | 'mars'>('earth')
+  const [activeBody, setActiveBody] = useState<'earth' | 'mars' | 'luna'>('earth')
   const [missionClock, setMissionClock] = useState(() => new Date())
   const isActiveReferenceDatasetLoaded = isReferenceApiOnline && referenceBodyId === activeBody
   const activeReferenceRecordCount = isActiveReferenceDatasetLoaded ? referenceFacts.length : 0
-  const scienceComputerQualifier = isActiveReferenceDatasetLoaded && isScienceComputerOnline
+  const scienceComputerQualifier = activeBody === 'luna'
+    ? 'LUNAR REFERENCE DATA PENDING'
+    : isActiveReferenceDatasetLoaded && isScienceComputerOnline
     ? `QWEN2.5:3B · MINILM-L6-V2 · EARTH + MARS`
     : `QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
@@ -144,6 +147,11 @@ function App() {
 
   useEffect(() => {
     let isDisposed = false
+    if (activeBody === 'luna') {
+      return () => {
+        isDisposed = true
+      }
+    }
     async function loadReferenceFacts() {
       try {
         const response = await fetch(`/reference/bodies/${activeBody}`)
@@ -248,11 +256,16 @@ function App() {
     return `${Math.min(100, Math.max(0, ((fact.value - 280) / 220) * 100))}%`
   }
 
-  function selectBody(bodyId: 'earth' | 'mars') {
+  function selectBody(bodyId: 'earth' | 'mars' | 'luna') {
     if (bodyId === activeBody) {
       return
     }
     setActiveBody(bodyId)
+    if (bodyId === 'luna') {
+      setReferenceFacts([])
+      setReferenceBodyId(null)
+      setIsReferenceApiOnline(false)
+    }
     setQuery('')
     setGroundedAnswer(null)
     setRetrievalStatus('Ask a body-specific or Earth–Mars comparison question using cited reference records.')
@@ -261,6 +274,10 @@ function App() {
 
   function submitQuery(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (activeBody === 'luna') {
+      setRetrievalStatus('Lunar reference records and Science Computer support are pending.')
+      return
+    }
     const question = query.trim()
     if (!question) {
       setRetrievalStatus('Enter a question before querying the Science Computer.')
@@ -309,7 +326,7 @@ function App() {
             <span>EARTH<small>SOL III</small></span>
           </button>
           <button className={`body-tab ${activeBody === 'mars' ? 'body-tab--active' : ''}`} type="button" onClick={() => selectBody('mars')}><span className="body-disc body-disc--mars" /><span>MARS<small>SOL IV</small></span></button>
-          <button className="body-tab" type="button" disabled><span className="body-disc body-disc--luna" /><span>LUNA<small>SOL III-a</small></span></button>
+          <button className={`body-tab ${activeBody === 'luna' ? 'body-tab--active' : ''}`} type="button" onClick={() => selectBody('luna')}><span className="body-disc body-disc--luna" /><span>LUNA<small>EARTH I</small></span></button>
           <div className="mission-status">
             <div><span>REFERENCE API</span><strong className={isReferenceApiOnline ? 'status-online' : 'status-offline'}><i />{isReferenceApiOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
           <div><span>SCIENCE COMPUTER</span><strong className={isScienceComputerOnline ? 'status-online' : 'status-offline'}><i />{isScienceComputerOnline ? 'ONLINE' : 'OFFLINE'}</strong></div>
@@ -331,6 +348,8 @@ function App() {
           onQueryChange={setQuery}
           onSubmit={submitQuery}
         />
+      ) : activeBody === 'luna' ? (
+        <LunaDashboard />
       ) : (
       <div className="console__main">
         <aside className="rail">
