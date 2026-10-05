@@ -61,8 +61,10 @@ class ReferenceRetriever:
     def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
         """Retrieve cited records using semantic similarity and exact-term overlap."""
 
-        if _is_bulk_earth_geochemistry_question(question):
-            return self._retrieve_bulk_earth_composition(question)
+        if _is_bulk_geochemistry_question(question):
+            composition = self._retrieve_bulk_composition(question)
+            if composition:
+                return composition
 
         semantic_scores = dict(
             retrieve_reference_document_scores(
@@ -136,7 +138,7 @@ class ReferenceRetriever:
             score=semantic_scores[document.document_id],
         )
 
-    def _retrieve_bulk_earth_composition(self, question: str) -> list[RetrievedReferenceRecord]:
+    def _retrieve_bulk_composition(self, question: str) -> list[RetrievedReferenceRecord]:
         """Return all major-element records needed for a complete composition synthesis."""
 
         semantic_scores = dict(
@@ -152,6 +154,10 @@ class ReferenceRetriever:
                 == "bulk_earth_elemental_mass_fraction_model"
                 or document.metadata.get("scope")
                 == "bulk_earth_elemental_mass_fraction_remainder_after_fe_o_si_mg_s"
+                or document.metadata.get("scope")
+                == "whole_planet_bulk_composition_model_estimate"
+                or document.metadata.get("scope")
+                == "bulk_silicate_moon_warren_2005_model_oxide_mass_percent_core_excluded"
             ),
             key=lambda document_id: semantic_scores[document_id],
             reverse=True,
@@ -169,31 +175,42 @@ def _tokenize(text: str) -> set[str]:
     return set(re.findall(r"[\w.-]+", text.lower()))
 
 
-def _is_bulk_earth_geochemistry_question(question: str) -> bool:
-    """Identify questions that need the complete Earth major-element composition group."""
+def _is_bulk_geochemistry_question(question: str) -> bool:
+    """Identify broad composition questions that need the complete model group."""
 
     question_lower = question.lower()
-    return "earth" in question_lower and (
+    return not any(term in question_lower for term in (
+        "atmospher", "exospher", "crust", "water", "ice", "regolith", "sample"
+    )) and (
         "geochem" in question_lower
-        or ("bulk" in question_lower and "composition" in question_lower)
+        or "composition" in question_lower
+        or "made of" in question_lower
     )
 
 
 def _explicit_intent_fields(question: str) -> tuple[tuple[str, ...], ...]:
     """Return field groups for explicitly named subjects in a compound planetary question."""
     question_lower = question.lower()
-    if not any(body_name in question_lower for body_name in ("earth", "mars")):
-        return ()
     intents: list[tuple[str, ...]] = []
     if any(term in question_lower for term in ("size", "radius", "diameter")):
         intents.append(("mean_radius", "equatorial_radius", "equatorial_diameter"))
+    if "mass" in question_lower and not _is_bulk_geochemistry_question(question) and not any(
+        term in question_lower for term in ("fraction", "percent", "oxide")
+    ):
+        intents.append(("mass",))
+    if "gravit" in question_lower:
+        intents.append(("equatorial_surface_gravity", "surface_gravity"))
+    if "rotation" in question_lower or "day length" in question_lower:
+        intents.append(("rotation_period",))
+    if "escape" in question_lower:
+        intents.append(("equatorial_escape_velocity", "escape_velocity"))
     if "earth" in question_lower and ("population" in question_lower or "people" in question_lower):
         intents.append(("global_human_population",))
     return tuple(intents)
 
 
 class CrossBodyReferenceRetriever:
-    """Retrieve comparison evidence from both curated planetary reference sets."""
+    """Retrieve balanced comparison evidence from the named reference sets."""
 
     def __init__(self, retrievers: dict[str, ReferenceRetriever]) -> None:
         self._retrievers = retrievers
@@ -201,20 +218,26 @@ class CrossBodyReferenceRetriever:
     def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
         """Return balanced evidence from every explicitly named supported body."""
 
-        body_ids = _explicit_body_ids(question)
+        body_ids = question_body_ids(question)
         if len(body_ids) < 2:
             raise ValueError("Cross-body retrieval requires at least two supported bodies")
-        comparison_field = _comparison_field(question)
-        if comparison_field is not None:
+        intent_fields = _explicit_intent_fields(question)
+        if intent_fields:
             return [
                 record
                 for body_id in body_ids
+                for fields in intent_fields
                 if (
-                    record := self._retrievers[body_id].retrieve_field(question, comparison_field)
+                    record := next(
+                        (candidate for field in fields
+                         if (candidate := self._retrievers[body_id].retrieve_field(question, field))
+                         is not None),
+                        None,
+                    )
                 )
                 is not None
             ]
-        records_per_body = max(1, limit // len(body_ids))
+        records_per_body = max(3, limit // len(body_ids))
         return [
             record
             for body_id in body_ids
@@ -225,25 +248,24 @@ class CrossBodyReferenceRetriever:
 def is_cross_body_question(question: str) -> bool:
     """Return whether the question explicitly names more than one supported body."""
 
-    return len(_explicit_body_ids(question)) > 1
+    return len(question_body_ids(question)) > 1
 
 
-def _explicit_body_ids(question: str) -> tuple[str, ...]:
+def question_body_ids(question: str) -> tuple[str, ...]:
+    """Resolve body names, lunar aliases, and requests about all three bodies."""
     question_lower = question.lower()
+    question_lower = re.sub(r"\bearth['’]s\s+moon\b", "moon", question_lower)
+    if re.search(r"\b(?:all\s+(?:three|3|bodies)|(?:three|3)\s+bodies)\b", question_lower):
+        return ("earth", "mars", "luna")
     return tuple(
         body_id
-        for body_id in ("earth", "mars")
-        if re.search(rf"\b{re.escape(body_id)}\b", question_lower)
+        for body_id, pattern in (
+            ("earth", r"\bearth\b"),
+            ("mars", r"\bmars\b"),
+            ("luna", r"\b(?:moon|luna|lunar)\b"),
+        )
+        if re.search(pattern, question_lower)
     )
-
-
-def _comparison_field(question: str) -> str | None:
-    """Map an explicit cross-body comparison to a shared canonical measurement."""
-
-    question_lower = question.lower()
-    if any(term in question_lower for term in ("size", "radius", "diameter")):
-        return "mean_radius"
-    return None
 
 
 def _hybrid_score(

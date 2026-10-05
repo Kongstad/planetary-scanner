@@ -1,6 +1,7 @@
 """Grounded answer generation from retrieved reference records."""
 
 import json
+import os
 from collections.abc import Sequence
 from typing import Protocol
 from urllib.error import HTTPError, URLError
@@ -14,8 +15,9 @@ from planetary_scanner.rag.reference_retrieval import (
 )
 
 DEFAULT_ANSWER_MODEL = "qwen2.5:3b"
-OLLAMA_GENERATE_URL = "http://127.0.0.1:11434/api/generate"
-OLLAMA_TAGS_URL = "http://127.0.0.1:11434/api/tags"
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+OLLAMA_GENERATE_URL = f"{OLLAMA_BASE_URL}/api/generate"
+OLLAMA_TAGS_URL = f"{OLLAMA_BASE_URL}/api/tags"
 
 
 class AnswerGenerator(Protocol):
@@ -61,6 +63,13 @@ def build_grounded_answer_prompt(
 Respond in a concise mission-analysis voice that remains natural and readable. Do not roleplay,
 invent observations, or add dramatic language. Answer the question using only the evidence records
 below. Do not use outside knowledge.
+Luna means Earth's Moon. Name each body when comparing records from different bodies.
+Respect each record's scope: model estimates remain estimates. Lunar bulk silicate oxide
+percentages describe mantle plus crust and exclude the metallic core. Do not treat oxide
+mass percentages as elemental percentages or directly equate them to whole-planet composition.
+When reporting lunar bulk silicate composition, explicitly describe it as a model estimate
+for the mantle and crust, excluding the core. Include this scope in the answer itself.
+Values already expressed in wt% or % are percentages; do not multiply them by 100.
 For a direct factual value stated in an evidence record, answer in one concise, complete sentence
 that names the measured property and reports its exact value and unit, then set
 insufficient_evidence to false. For example: "Earth's bulk iron mass fraction is 32.1%."
@@ -128,6 +137,11 @@ class GroundedAnswerService:
         citations = self._retriever.retrieve(question, limit)
         generated = self._generator.generate(build_grounded_answer_prompt(question, citations))
         answer = generated.answer
+        lunar_summary = _complete_lunar_composition_summary(citations)
+        if lunar_summary is not None and not generated.insufficient_evidence:
+            # Small CPU models can omit a component or the model's physical scope.
+            # Keep this complete numeric group tied to the application-owned evidence.
+            answer = lunar_summary
         if generated.insufficient_evidence and answer.strip().lower() in {
             "insufficient evidence",
             "insufficient_evidence",
@@ -138,3 +152,33 @@ class GroundedAnswerService:
             insufficient_evidence=generated.insufficient_evidence,
             citations=citations,
         )
+
+
+def _complete_lunar_composition_summary(records: Sequence[RetrievedReferenceRecord]) -> str | None:
+    """Render the complete curated oxide group without losing a value or its scope."""
+    labels = {
+        "bulk_silicate_silica_fraction": "silica (SiO₂)",
+        "bulk_silicate_magnesia_fraction": "magnesia (MgO)",
+        "bulk_silicate_iron_oxide_fraction": "iron oxide (FeO)",
+        "bulk_silicate_alumina_fraction": "alumina (Al₂O₃)",
+        "bulk_silicate_lime_fraction": "lime (CaO)",
+        "bulk_silicate_titania_fraction": "titania (TiO₂)",
+    }
+    scope = "bulk_silicate_moon_warren_2005_model_oxide_mass_percent_core_excluded"
+    if len(records) != len(labels) or any(
+        record.document.metadata.get("body_id") != "luna"
+        or record.document.metadata.get("scope") != scope
+        or record.document.metadata.get("unit") != "wt%"
+        or not isinstance(record.document.metadata.get("value"), (int, float))
+        for record in records
+    ):
+        return None
+    facts = {record.document.metadata.get("field"): record.document.metadata for record in records}
+    if facts.keys() != labels.keys():
+        return None
+    components = [f"{label} {facts[field]['value']:g} wt%" for field, label in labels.items()]
+    return (
+        "The Warren (2005) model estimates the Moon's mantle-and-crust composition, "
+        "excluding the metallic core, as " + ", ".join(components[:-1]) + ", and "
+        + components[-1] + "."
+    )

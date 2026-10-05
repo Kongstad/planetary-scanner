@@ -5,11 +5,12 @@
 [![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/)
 [![CesiumJS](https://img.shields.io/badge/CesiumJS-1.145-6CADDF?logo=cesium&logoColor=white)](https://cesium.com/platform/cesiumjs/)
 
-PlanetaryScanner is a local-first planetary science console for exploring Earth and Mars. It combines a CesiumJS viewer, source-backed reference facts, remote-sensing display layers, and a local grounded-answering workflow.
+PlanetaryScanner is a local-first planetary science console for exploring Earth, Mars, and the Moon. It combines a CesiumJS viewer, source-backed reference facts, remote-sensing display layers, and a local grounded-answering workflow.
 
 - **Earth:** interactive imagery, terrain, biosphere, and thermal display layers.
 - **Mars:** a separate Mars ellipsoid and Viking global mosaic with source-backed panels for orbital, environmental, surface, geology, and interior reference data.
-- **Science Computer:** local Qwen and MiniLM components for grounded answers from curated reference records. Raw imagery is never supplied to the language model.
+- **Moon / Luna:** a lunar ellipsoid with LROC imagery and LOLA relief, sourced lunar facts, and model-based bulk silicate composition bars.
+- **Science Computer:** local Qwen and MiniLM components answer questions about all three bodies on CPU or GPU. Explicit body names override the selected tab. “Compare all three bodies by radius” retrieves evidence from Earth, Mars, and Luna. Questions without a body name use the selected tab. Lunar geochemistry retains its oxide-percent, mantle-and-crust model scope. Raw imagery is never supplied to the language model.
 
 Factual records retain their value, unit, scope, date, source locator, and source URL. Fictional Dilithium scenarios are intentionally isolated from reference data and grounded answers.
 
@@ -49,6 +50,8 @@ Factual records retain their value, unit, scope, date, source locator, and sourc
    ```
 
    If Ollama is unavailable, the viewer and reference panels still work; the Science Computer reports its unavailable state.
+
+   To use a different Ollama port, set `OLLAMA_HOST=127.0.0.1:11435` when serving and pulling the model. Start the Reference API with `OLLAMA_BASE_URL=http://127.0.0.1:11435`. These variables must be set in the process environment; the API does not automatically load `.env`.
 
 ## Checks
 

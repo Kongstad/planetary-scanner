@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 import numpy as np
+import pytest
 from numpy.typing import NDArray
 
 from planetary_scanner.models.reference import RagDocument
@@ -12,6 +13,7 @@ from planetary_scanner.rag.reference_retrieval import (
     CrossBodyReferenceRetriever,
     ReferenceRetriever,
     is_cross_body_question,
+    question_body_ids,
 )
 
 
@@ -226,3 +228,64 @@ def test_cross_body_retriever_uses_mean_radius_for_differently_ranked_size_recor
         "earth-mean-radius",
         "mars-mean-radius",
     ]
+
+
+@pytest.mark.parametrize("question, expected", [
+    ("What is the Moon's radius?", ("luna",)),
+    ("Luna surface gravity", ("luna",)),
+    ("What is Earth's Moon made of?", ("luna",)),
+    ("Explain lunar ice", ("luna",)),
+    ("Compare Earth and the Moon", ("earth", "luna")),
+    ("Compare Earth with Earth's Moon", ("earth", "luna")),
+    ("Compare Mars and Luna", ("mars", "luna")),
+    ("Compare all three bodies", ("earth", "mars", "luna")),
+    ("Compare all 3", ("earth", "mars", "luna")),
+    ("How many moons does Mars have?", ("mars",)),
+    ("What is the radius?", ()),
+])
+def test_question_body_routing_handles_lunar_aliases(question: str, expected: tuple[str, ...]) -> None:
+    assert question_body_ids(question) == expected
+
+
+def test_three_body_comparison_preserves_each_body_and_gravity_field_alias() -> None:
+    embedding_model = SimilarityFakeEmbeddingModel()
+    retrievers = {}
+    for body_id in ("earth", "mars", "luna"):
+        gravity_field = "surface_gravity" if body_id == "luna" else "equatorial_surface_gravity"
+        documents = [
+            RagDocument(document_id=f"{body_id}-{field}", content=f"{body_id} {field}",
+                        metadata={"body_id": body_id, "field": field})
+            for field in ("mean_radius", gravity_field, "mass")
+        ]
+        retrievers[body_id] = ReferenceRetriever(
+            embedding_model,
+            build_reference_vector_index(documents, embedding_model, DEFAULT_EMBEDDING_MODEL),
+            {document.document_id: document for document in documents},
+        )
+    results = CrossBodyReferenceRetriever(retrievers).retrieve(
+        "Compare the size and gravity of all three bodies", limit=1
+    )
+    assert len(results) == 6
+    for body_id in retrievers:
+        fields = {record.document.metadata["field"] for record in results
+                  if record.document.metadata["body_id"] == body_id}
+        assert fields == {"mean_radius", "surface_gravity" if body_id == "luna" else "equatorial_surface_gravity"}
+
+
+def test_lunar_bulk_composition_retrieves_complete_model_without_surface_facts() -> None:
+    embedding_model = SimilarityFakeEmbeddingModel()
+    scope = "bulk_silicate_moon_warren_2005_model_oxide_mass_percent_core_excluded"
+    documents = [
+        RagDocument(document_id=f"luna-{oxide}", content=f"Luna bulk silicate {oxide}",
+                    metadata={"body_id": "luna", "scope": scope})
+        for oxide in ("silica", "magnesia", "iron-oxide", "alumina", "lime", "titania")
+    ]
+    documents.append(RagDocument(document_id="luna-crust", content="Luna surface crust", metadata={"scope": "crust"}))
+    retriever = ReferenceRetriever(
+        embedding_model,
+        build_reference_vector_index(documents, embedding_model, DEFAULT_EMBEDDING_MODEL),
+        {document.document_id: document for document in documents},
+    )
+    results = retriever.retrieve("What is the Moon made of?", limit=3)
+    assert len(results) == 6
+    assert all(record.document.metadata["scope"] == scope for record in results)

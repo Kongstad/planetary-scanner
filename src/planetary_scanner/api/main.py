@@ -37,6 +37,7 @@ from planetary_scanner.rag.reference_retrieval import (
     RetrievedReferenceRecord,
     is_cross_body_question,
     load_reference_records,
+    question_body_ids,
 )
 
 app = FastAPI(title="PlanetaryScanner")
@@ -44,11 +45,13 @@ app = FastAPI(title="PlanetaryScanner")
 PROJECT_ROOT = Path(__file__).parents[3]
 SOURCE_REGISTRY_PATH = PROJECT_ROOT / "data" / "reference" / "sources.json"
 REFERENCE_DATASET_PATHS = {
+    "luna": PROJECT_ROOT / "data" / "reference" / "luna.json",
     "earth": PROJECT_ROOT / "data" / "reference" / "earth.json",
     "mars": PROJECT_ROOT / "data" / "reference" / "mars.json",
     "solar-system": PROJECT_ROOT / "data" / "reference" / "solar-system.json",
 }
-ANSWERABLE_BODY_IDS = frozenset({"earth", "mars"})
+AnswerableBodyId = Literal["earth", "mars", "luna"]
+ANSWERABLE_BODY_IDS = frozenset({"earth", "mars", "luna"})
 REFERENCE_RECORD_PATHS = {
     body_id: PROJECT_ROOT / "data" / "reference" / f"{body_id}-reference-records.jsonl"
     for body_id in ANSWERABLE_BODY_IDS
@@ -86,7 +89,7 @@ def get_embedding_model(model_name: str) -> EmbeddingModel:
 
 
 @lru_cache
-def get_reference_retriever(body_id: Literal["earth", "mars"]) -> ReferenceRetriever:
+def get_reference_retriever(body_id: AnswerableBodyId) -> ReferenceRetriever:
     """Load local retrieval resources for one answerable body once per API process."""
 
     index = load_reference_vector_index(REFERENCE_VECTOR_INDEX_PATHS[body_id])
@@ -100,27 +103,29 @@ def get_reference_retriever(body_id: Literal["earth", "mars"]) -> ReferenceRetri
 @app.get("/retrieval/reference", response_model=list[RetrievedReferenceRecord])
 def retrieve_reference_records(
     question: str,
-    body_id: Literal["earth", "mars"] = "earth",
+    body_id: AnswerableBodyId = "earth",
     limit: int = 3,
 ) -> list[RetrievedReferenceRecord]:
-    """Return cited records for one body or an explicitly named Earth--Mars comparison."""
+    """Return evidence for the named bodies, defaulting to the selected body."""
 
     if is_cross_body_question(question):
         return get_cross_body_reference_retriever().retrieve(question, limit)
-    return get_reference_retriever(body_id).retrieve(question, limit)
+    named_bodies = question_body_ids(question)
+    target_body = cast(AnswerableBodyId, named_bodies[0]) if named_bodies else body_id
+    return get_reference_retriever(target_body).retrieve(question, limit)
 
 
 @lru_cache
 def get_cross_body_reference_retriever() -> CrossBodyReferenceRetriever:
-    """Build the Earth--Mars comparison retriever from isolated per-body indexes."""
+    """Build the Earth/Mars/Moon retriever from isolated per-body indexes."""
 
     return CrossBodyReferenceRetriever(
-        {body_id: get_reference_retriever(body_id) for body_id in ANSWERABLE_BODY_IDS}
+        {body_id: get_reference_retriever(cast(AnswerableBodyId, body_id)) for body_id in ANSWERABLE_BODY_IDS}
     )
 
 
 @lru_cache
-def get_grounded_answer_service(body_id: Literal["earth", "mars"]) -> GroundedAnswerService:
+def get_grounded_answer_service(body_id: AnswerableBodyId) -> GroundedAnswerService:
     """Create the local answer layer for one body over its cached retriever."""
 
     return GroundedAnswerService(get_reference_retriever(body_id), OllamaAnswerGenerator())
@@ -128,7 +133,7 @@ def get_grounded_answer_service(body_id: Literal["earth", "mars"]) -> GroundedAn
 
 @lru_cache
 def get_cross_body_grounded_answer_service() -> GroundedAnswerService:
-    """Create the answer layer for evidence-backed Earth--Mars comparisons."""
+    """Create the answer layer for evidence-backed multi-body comparisons."""
 
     return GroundedAnswerService(get_cross_body_reference_retriever(), OllamaAnswerGenerator())
 
@@ -136,14 +141,16 @@ def get_cross_body_grounded_answer_service() -> GroundedAnswerService:
 @app.get("/answers/reference", response_model=GroundedAnswer)
 def answer_reference_question(
     question: str,
-    body_id: Literal["earth", "mars"] = "earth",
+    body_id: AnswerableBodyId = "earth",
     limit: int = 3,
 ) -> GroundedAnswer:
-    """Answer from the selected body, or both when the question names Earth and Mars."""
+    """Answer about Earth, Mars, and Luna from selected or explicitly named bodies."""
 
     if is_cross_body_question(question):
         return get_cross_body_grounded_answer_service().answer(question, limit)
-    return get_grounded_answer_service(body_id).answer(question, limit)
+    named_bodies = question_body_ids(question)
+    target_body = cast(AnswerableBodyId, named_bodies[0]) if named_bodies else body_id
+    return get_grounded_answer_service(target_body).answer(question, limit)
 
 
 @app.get("/health/science-computer", response_model=ScienceComputerStatus)

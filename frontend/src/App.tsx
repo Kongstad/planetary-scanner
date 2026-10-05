@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import EarthViewer, { type ViewerMode } from './EarthViewer.tsx'
 import LunaDashboard from './LunaDashboard.tsx'
 import MarsDashboard from './MarsDashboard.tsx'
+import ScienceComputer from './ScienceComputer.tsx'
 
 type PanelProps = {
   title: string
@@ -26,10 +27,14 @@ type ReferenceFact = {
   field: string
   value: number | string
   unit: string | null
+  source_id: string
+  source_locator: string
+  as_of: string
+  scope: string
 }
 
 type ReferenceDataset = {
-  body_id: 'earth' | 'mars'
+  body_id: 'earth' | 'mars' | 'luna'
   facts: ReferenceFact[]
 }
 
@@ -116,13 +121,14 @@ const volatileInventory = [
 
 function App() {
   const [referenceFacts, setReferenceFacts] = useState<ReferenceFact[]>([])
-  const [referenceBodyId, setReferenceBodyId] = useState<'earth' | 'mars' | null>(null)
+  const [referenceBodyId, setReferenceBodyId] = useState<'earth' | 'mars' | 'luna' | null>(null)
   const [isReferenceApiOnline, setIsReferenceApiOnline] = useState(false)
   const [isScienceComputerOnline, setIsScienceComputerOnline] = useState(false)
   const [query, setQuery] = useState('')
   const [retrievalStatus, setRetrievalStatus] = useState('Enter a question to generate a grounded answer from cited reference records.')
   const [groundedAnswer, setGroundedAnswer] = useState<string | null>(null)
   const [isRetrieving, setIsRetrieving] = useState(false)
+  const answerRequest = useRef<AbortController | null>(null)
   const [queryElapsedSeconds, setQueryElapsedSeconds] = useState(0)
   const [lastQueryElapsedSeconds, setLastQueryElapsedSeconds] = useState<number | null>(null)
   const [viewerMode, setViewerMode] = useState<ViewerMode>('imagery')
@@ -132,10 +138,8 @@ function App() {
   const [missionClock, setMissionClock] = useState(() => new Date())
   const isActiveReferenceDatasetLoaded = isReferenceApiOnline && referenceBodyId === activeBody
   const activeReferenceRecordCount = isActiveReferenceDatasetLoaded ? referenceFacts.length : 0
-  const scienceComputerQualifier = activeBody === 'luna'
-    ? 'LUNAR REFERENCE DATA PENDING'
-    : isActiveReferenceDatasetLoaded && isScienceComputerOnline
-    ? `QWEN2.5:3B · MINILM-L6-V2 · EARTH + MARS`
+  const scienceComputerQualifier = isActiveReferenceDatasetLoaded && isScienceComputerOnline
+    ? 'EARTH + MARS + MOON · ONLINE'
     : `QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
   useEffect(() => {
@@ -147,11 +151,6 @@ function App() {
 
   useEffect(() => {
     let isDisposed = false
-    if (activeBody === 'luna') {
-      return () => {
-        isDisposed = true
-      }
-    }
     async function loadReferenceFacts() {
       try {
         const response = await fetch(`/reference/bodies/${activeBody}`)
@@ -261,35 +260,35 @@ function App() {
       return
     }
     setActiveBody(bodyId)
-    if (bodyId === 'luna') {
-      setReferenceFacts([])
-      setReferenceBodyId(null)
-      setIsReferenceApiOnline(false)
-    }
+    answerRequest.current?.abort()
+    answerRequest.current = null
+    setIsRetrieving(false)
+    setReferenceFacts([])
+    setReferenceBodyId(null)
+    setIsReferenceApiOnline(false)
     setQuery('')
     setGroundedAnswer(null)
-    setRetrievalStatus('Ask a body-specific or Earth–Mars comparison question using cited reference records.')
+    setRetrievalStatus('Ask about Earth, Mars, or the Moon, or compare all three bodies.')
     setLastQueryElapsedSeconds(null)
   }
 
   function submitQuery(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (activeBody === 'luna') {
-      setRetrievalStatus('Lunar reference records and Science Computer support are pending.')
-      return
-    }
+    if (isRetrieving) return
     const question = query.trim()
     if (!question) {
       setRetrievalStatus('Enter a question before querying the Science Computer.')
       return
     }
     const startedAt = Date.now()
+    const controller = new AbortController()
+    answerRequest.current = controller
     setIsRetrieving(true)
     setQueryElapsedSeconds(0)
     setLastQueryElapsedSeconds(null)
     setGroundedAnswer(null)
     setRetrievalStatus('Retrieving cited records and generating a grounded answer...')
-    void fetch(`/answers/reference?${new URLSearchParams({ question, body_id: activeBody, limit: '3' })}`)
+    void fetch(`/answers/reference?${new URLSearchParams({ question, body_id: activeBody, limit: '3' })}`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Answer API returned ${response.status}`)
@@ -297,20 +296,29 @@ function App() {
         return response.json() as Promise<GroundedAnswer>
       })
       .then((response) => {
+        if (answerRequest.current !== controller) return
         setGroundedAnswer(response.answer)
         setRetrievalStatus(response.insufficient_evidence
           ? 'The local model found insufficient evidence in the retrieved records.'
           : '')
       })
       .catch(() => {
+        if (answerRequest.current !== controller) return
         setGroundedAnswer(null)
         setRetrievalStatus('Grounded answering is unavailable. Start the local API and Ollama, then try again.')
       })
       .finally(() => {
+        if (answerRequest.current !== controller) return
+        answerRequest.current = null
         setQueryElapsedSeconds((Date.now() - startedAt) / 1000)
         setLastQueryElapsedSeconds((Date.now() - startedAt) / 1000)
         setIsRetrieving(false)
       })
+  }
+
+  const scienceComputerProps = {
+    scienceComputerQualifier, query, retrievalStatus, groundedAnswer, isRetrieving,
+    queryElapsedSeconds, lastQueryElapsedSeconds, onQueryChange: setQuery, onSubmit: submitQuery,
   }
 
   return (
@@ -338,18 +346,10 @@ function App() {
         <MarsDashboard
           referenceFacts={isActiveReferenceDatasetLoaded ? referenceFacts : []}
           isReferenceApiOnline={isActiveReferenceDatasetLoaded}
-          scienceComputerQualifier={scienceComputerQualifier}
-          query={query}
-          retrievalStatus={retrievalStatus}
-          groundedAnswer={groundedAnswer}
-          isRetrieving={isRetrieving}
-          queryElapsedSeconds={queryElapsedSeconds}
-          lastQueryElapsedSeconds={lastQueryElapsedSeconds}
-          onQueryChange={setQuery}
-          onSubmit={submitQuery}
+          {...scienceComputerProps}
         />
       ) : activeBody === 'luna' ? (
-        <LunaDashboard />
+        <LunaDashboard referenceFacts={isActiveReferenceDatasetLoaded ? referenceFacts : []} isReferenceApiOnline={isActiveReferenceDatasetLoaded} {...scienceComputerProps} />
       ) : (
       <div className="console__main">
         <aside className="rail">
@@ -419,13 +419,7 @@ function App() {
               <span>PHASE ANGLE<strong>38.00°</strong></span><span>SUB-SPACECRAFT<strong>17.02° / −59.12°</strong></span><span>DOWNLINK<strong>UNAVAILABLE</strong></span><span>SOLAR ILLUM.<strong>72%</strong></span><span>SCAN COVERAGE<strong>{scanCoverage}</strong></span>
             </footer>
           </section>
-          <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>
-            <div className="science-computer">
-              <div className="message"><span>RETRIEVAL{isRetrieving ? ` · ${queryElapsedSeconds.toFixed(1)} s` : lastQueryElapsedSeconds !== null ? ` · COMPLETE ${lastQueryElapsedSeconds.toFixed(1)} s` : ''}</span><p>{retrievalStatus}</p></div>
-              {groundedAnswer && <div className="grounded-answer"><span>ANSWER</span><p>{groundedAnswer}</p></div>}
-            </div>
-            <form className="query-form" onSubmit={submitQuery}><label htmlFor="query">&gt;</label><input id="query" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Ask about Earth, or compare Earth and Mars..." /><button type="submit" disabled={isRetrieving}>{isRetrieving ? 'SEARCHING' : 'QUERY'}</button></form>
-          </Panel>
+          <ScienceComputer bodyId="earth" {...scienceComputerProps} />
         </section>
         <aside className="rail">
           <div className="rail-block">SURFACE &amp; WATER<i /></div>

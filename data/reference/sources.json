@@ -2,6 +2,15 @@
   "schema_version": "1.0",
   "sources": [
     {
+      "source_id": "charlier-lunar-bulk-silicate-compositions-2018",
+      "publisher": "Geochimica et Cosmochimica Acta / Elsevier",
+      "title": "Charlier et al. (2018): Crystallization of the lunar magma ocean and the primordial mantle-crust differentiation of the Moon",
+      "url": "https://orbi.uliege.be/bitstream/2268/240256/1/Charlier%20et%20al%202018%20LMO.pdf",
+      "published_or_updated": "2018-08-01",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Table 1 reproduces selected bulk silicate Moon models. Values use only the Warren (2005) model W row and are oxide weight percentages of mantle plus crust, excluding the metallic core. These are model estimates, not elemental whole-Moon fractions or measured global surface abundances. Minor oxides are omitted from the dashboard; values remain as published without renormalization."
+    },
+    {
       "source_id": "nasa-earth-facts-2025",
       "publisher": "NASA Science",
       "title": "Earth",
@@ -351,6 +360,105 @@
       "published_or_updated": "1973-01-01",
       "retrieved_on": "2026-09-05",
       "usage_note": "Sagan's energy-use interpretation of the Kardashev scale. The Type 0.7 value is a historical estimate, not a measured planetary parameter."
+    },
+    {
+      "source_id": "nasa-moon-fact-sheet-2024",
+      "publisher": "NASA Goddard NSSDCA",
+      "title": "Moon Fact Sheet",
+      "url": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/moonfact.html",
+      "published_or_updated": "2024-01-11",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA numerical reference table. Orbital distances are centre-to-centre mean parameters. Exosphere pressure is an approximate nighttime value, not a live measurement."
+    },
+    {
+      "source_id": "nasa-moon-facts-2026",
+      "publisher": "NASA Science",
+      "title": "Moon Facts",
+      "url": "https://science.nasa.gov/moon/facts/",
+      "published_or_updated": "2026-02-12",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA overview. Interior dimensions are simplified inferred estimates. Surface descriptions and qualitative statements retain their scope."
+    },
+    {
+      "source_id": "nasa-lunar-atmosphere-2026",
+      "publisher": "NASA Science",
+      "title": "The Moon’s Atmosphere",
+      "url": "https://science.nasa.gov/moon/lunar-atmosphere/",
+      "published_or_updated": "2026-03-05",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA overview of a variable, surface-bound exosphere. Chemical species are not whole-Moon composition percentages."
+    },
+    {
+      "source_id": "nasa-lunar-solar-wind-2026",
+      "publisher": "NASA Science",
+      "title": "Solar Wind on the Moon",
+      "url": "https://science.nasa.gov/moon/solar-wind/",
+      "published_or_updated": "2026-02-12",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA explanation of local crustal fields, solar wind interactions, hydroxyl formation and surface charging."
+    },
+    {
+      "source_id": "nasa-lunar-weather-2026",
+      "publisher": "NASA Science",
+      "title": "Weather on the Moon",
+      "url": "https://science.nasa.gov/moon/weather-on-the-moon/",
+      "published_or_updated": "2026-02-12",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA explanation of extreme polar cold traps and radiation. Temperature limits refer to particular conditions, not a global average."
+    },
+    {
+      "source_id": "nasa-apollo-samples-2025",
+      "publisher": "NASA Science",
+      "title": "NASA’s Apollo Samples Yield New Information about the Moon",
+      "url": "https://science.nasa.gov/science-research/planetary-science/astrobiology/nasas-apollo-samples-yield-new-information-about-the-moon/",
+      "published_or_updated": "2025-01-22",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA historical overview: six Apollo surface visits, 2196 collected samples and 382 kg returned. These are Apollo totals, not all lunar sample returns."
+    },
+    {
+      "source_id": "nasa-grail-crust-2012",
+      "publisher": "NASA/JPL-Caltech/MIT/GSFC",
+      "title": "Map of Moon’s Crust, PIA16621",
+      "url": "https://science.nasa.gov/photojournal/map-of-moons-crust/",
+      "published_or_updated": "2012-12-05",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA GRAIL-derived crust model. The 34 km average is specific to this published model, not a directly measured universal thickness."
+    },
+    {
+      "source_id": "nasa-lro-overview-2025",
+      "publisher": "NASA Science",
+      "title": "Lunar Reconnaissance Orbiter: About",
+      "url": "https://science.nasa.gov/mission/lro/about/",
+      "published_or_updated": "2025-07-01",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA mission history and instrument overview. Launch and insertion dates are historical; no live spacecraft census is inferred."
+    },
+    {
+      "source_id": "nasa-lcross-overview",
+      "publisher": "NASA Science",
+      "title": "LCROSS",
+      "url": "https://science.nasa.gov/mission/lcross/",
+      "published_or_updated": "2024-11-03",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA historical mission overview. Polar water detections describe local Cabeus observations; no global resource estimate is implied."
+    },
+    {
+      "source_id": "nasa-sofia-clavius-2020",
+      "publisher": "NASA Ames Research Center",
+      "title": "NASA Ames Astrogram – October 2020",
+      "url": "https://www.nasa.gov/centers-and-facilities/ames/nasa-ames-astrogram-october-2020/",
+      "published_or_updated": "2020-10-30",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA report of SOFIA molecular water detection at Clavius. The reported 100–412 ppm range is local to the observed soil, not a global lunar abundance."
+    },
+    {
+      "source_id": "nasa-south-pole-aitken-2026",
+      "publisher": "NASA Science",
+      "title": "What is the South Pole-Aitken Basin?",
+      "url": "https://science.nasa.gov/moon/lunar-craters/what-is-the-south-pole-aitken-basin/",
+      "published_or_updated": "2025-04-08",
+      "retrieved_on": "2026-10-05",
+      "usage_note": "Primary NASA overview. Dimensions are approximate. The source describes proposed origins for an inferred subsurface mass; these are hypotheses, not confirmed metal deposits."
     }
   ]
 }

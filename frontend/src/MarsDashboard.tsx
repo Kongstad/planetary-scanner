@@ -1,6 +1,8 @@
 import MarsViewer from './MarsViewer.tsx'
 import { useState } from 'react'
 import type { MarsViewerMode } from './MarsViewer.tsx'
+import ElevationProfile from './ElevationProfile.tsx'
+import ScienceComputer, { type ScienceComputerProps } from './ScienceComputer.tsx'
 
 type ReferenceFact = {
   field: string
@@ -8,18 +10,9 @@ type ReferenceFact = {
   unit: string | null
 }
 
-type MarsDashboardProps = {
+type MarsDashboardProps = ScienceComputerProps & {
   referenceFacts: ReferenceFact[]
   isReferenceApiOnline: boolean
-  scienceComputerQualifier: string
-  query: string
-  retrievalStatus: string
-  groundedAnswer: string | null
-  isRetrieving: boolean
-  queryElapsedSeconds: number
-  lastQueryElapsedSeconds: number | null
-  onQueryChange: (query: string) => void
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
 }
 
 type PanelProps = {
@@ -109,15 +102,7 @@ function StatusGrid({ entries }: { entries: StatusGridEntry[] }) {
 function MarsDashboard({
   referenceFacts,
   isReferenceApiOnline,
-  scienceComputerQualifier,
-  query,
-  retrievalStatus,
-  groundedAnswer,
-  isRetrieving,
-  queryElapsedSeconds,
-  lastQueryElapsedSeconds,
-  onQueryChange,
-  onSubmit,
+  ...scienceComputerProps
 }: MarsDashboardProps) {
   const [cameraAltitude, setCameraAltitude] = useState('11,000 KM')
   const [imageryCoverage, setImageryCoverage] = useState('GLOBAL BASELINE · ZOOM BELOW 200 KM')
@@ -232,13 +217,7 @@ function MarsDashboard({
             <span>BODY<strong>MARS</strong></span><span>ALTITUDE<strong>{cameraAltitude}</strong></span><span>ACTIVE LAYER<strong>{viewerMode === 'imagery' ? 'MDIM 2.1 COLOUR' : viewerMode === 'infrared' ? 'THEMIS IR' : 'MOLA COLOR RELIEF'}</strong></span><span>RESOLUTION<strong>{viewerMode === 'imagery' ? '231 M' : viewerMode === 'infrared' ? '~100 M' : '~463 M GRID'}</strong></span><span>TILE COVERAGE<strong>{imageryCoverage}</strong></span>
           </footer>
         </section>
-        <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>
-          <div className="science-computer">
-            <div className="message"><span>RETRIEVAL{isRetrieving ? ` · ${queryElapsedSeconds.toFixed(1)} s` : lastQueryElapsedSeconds !== null ? ` · COMPLETE ${lastQueryElapsedSeconds.toFixed(1)} s` : ''}</span><p>{retrievalStatus}</p></div>
-            {groundedAnswer && <div className="grounded-answer"><span>ANSWER</span><p>{groundedAnswer}</p></div>}
-          </div>
-          <form className="query-form" onSubmit={onSubmit}><label htmlFor="mars-query">&gt;</label><input id="mars-query" value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="Ask about Mars, or compare Mars and Earth..." /><button type="submit" disabled={isRetrieving}>{isRetrieving ? 'SEARCHING' : 'QUERY'}</button></form>
-        </Panel>
+        <ScienceComputer bodyId="mars" {...scienceComputerProps} />
       </section>
 
       <aside className="rail">
@@ -266,16 +245,14 @@ function MarsDashboard({
           )}
         </Panel>
         <Panel title="10 · TOPOGRAPHY &amp; RELIEF" qualifier="MOLA AREOID">
-          <div className="mars-elevation-profile" aria-label="MOLA global elevation distribution profile">
-            <div className="mars-elevation-profile__heading"><span>GLOBAL ELEVATION DISTRIBUTION</span><strong>RELATIVE AREA</strong></div>
-            <div className="mars-elevation-profile__bars">
-              {[22, 38, 57, 78, 90, 84, 68, 51, 37, 29, 35, 48, 61, 54, 39, 25, 16].map((height, index) => (
-                <i key={index} style={{ height: `${height}%` }} />
-              ))}
-            </div>
-            <div className="mars-elevation-profile__labels"><span>LOWLANDS</span><span>HIGHLANDS</span></div>
-            <div className="mars-elevation-profile__axis"><span>−8.2 km</span><span>0 km</span><span>+21.2 km</span></div>
-          </div>
+          <ElevationProfile
+            heading="GLOBAL ELEVATION DISTRIBUTION"
+            qualifier="RELATIVE AREA"
+            description="MOLA global elevation distribution profile"
+            heights={[22, 38, 57, 78, 90, 84, 68, 51, 37, 29, 35, 48, 61, 54, 39, 25, 16]}
+            labels={['LOWLANDS', 'HIGHLANDS']}
+            axis={['−8.2 km', '0 km', '+21.2 km']}
+          />
           {facts([{ label: 'HIGHEST ELEVATION', field: 'highest_elevation' }, { label: 'LOWEST ELEVATION', field: 'lowest_elevation' }, { label: 'GLOBAL RELIEF', field: 'global_relief' }, { label: 'MOLA TERRAIN', field: 'mola_terrain' }])}
         </Panel>
         <div className="rail-block">GEOLOGY &amp; INTERIOR<i /></div>
