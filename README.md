@@ -66,29 +66,37 @@ The science computer uses Qwen2.5:3b with MiniLM reference retrieval. CPU infere
 
 ## Architecture
 
+### Viewers
+
 ```mermaid
-flowchart TB
-    Browser["React / CesiumJS"]
-
-    subgraph Backend["Python application"]
-        API["FastAPI and answer service"]
-        Retrieval["MiniLM and retrieval rules"]
-        API <-->|Question / evidence| Retrieval
-    end
-
-    Browser <-->|Questions, data, and results| API
-    Browser -->|Download tiles and disk images| Imagery["Scientific imagery services"]
-    API <-->|Scene / observation lookup| Imagery
-    API <-->|Prompt / generated JSON| Ollama["Ollama / Qwen2.5:3b"]
-    Facts["Reference facts: JSON"] --> API
-    Records["Vectors: NumPy .npz<br/>Evidence: JSONL"] --> Retrieval
+flowchart LR
+    Imagery[Imagery services] -->|Tiles and images| Viewer[React / CesiumJS]
+    Facts[Reference API / JSON] -->|Panel values| Viewer
 ```
 
-Python resolves ambiguous ratio questions, retrieves evidence, and calculates supported numeric ratios directly. Other answers use a model prompt and response validation. The API returns answers with their evidence. Imagery uses a separate path: the API discovers scenes and observations, while the browser loads tiles and disk images directly.
+The browser loads imagery and displays reference facts. FastAPI handles scene and observation lookups. The viewers remain available when Ollama is offline.
+
+### Science computer
+
+```mermaid
+flowchart LR
+    Question[Question] --> Retrieve
+
+    subgraph RAG[RAG]
+        Retrieve[Retrieve evidence<br/>MiniLM]
+        Prompt[Build prompt]
+        Generate[Generate answer<br/>Qwen / Ollama]
+        Retrieve --> Prompt --> Generate
+    end
+
+    Generate --> Check[Check and return<br/>Python]
+```
+
+RAG retrieves reference records, adds their text to the question and instructions, and asks Qwen to generate an answer. Python checks the response and attaches its evidence. Named bodies take priority over the active tab, and comparisons can retrieve evidence for all four bodies. Qwen receives text, not imagery.
+
+Python asks for clarification when a ratio lacks a property and calculates supported numeric ratios directly. These paths do not call Qwen.
 
 Generated answers are checked for unsupported numbers and selected scientific qualifiers. A failed check gets one correction attempt, then an evidence-limitation response if it still fails. These safeguards improve the application around Qwen without training its weights. The [learning guide](docs/ai-pipeline.md#how-the-application-improves-answers) explains the changes and their limits.
-
-Retrieval-augmented generation selects reference records before asking the model to answer. Named bodies take priority over the active tab, and comparisons can retrieve evidence for all four bodies. The model receives reference text, not imagery. The viewer and reference panels remain available when Ollama is offline.
 
 ## Data
 
