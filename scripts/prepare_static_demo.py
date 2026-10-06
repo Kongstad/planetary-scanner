@@ -31,6 +31,13 @@ def prepare(output: Path, solar_date: str) -> None:
             raise ValueError(f"Invalid reference dataset: {body}")
         shutil.copyfile(source, reference / source.name)
     shutil.copyfile(ROOT / "data/reference/sources.json", reference / "sources.json")
+    record_count = sum(
+        sum(1 for line in path.read_text().splitlines() if line.strip())
+        for path in (ROOT / "data/reference").glob("*-reference-records.jsonl")
+    )
+    (output / "status.json").write_text(
+        json.dumps({"online": False, "reference_records": record_count}) + "\n"
+    )
 
     cache = ROOT / "data/cache/static-demo/solar"
     cache.mkdir(parents=True, exist_ok=True)

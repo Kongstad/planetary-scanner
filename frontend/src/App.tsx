@@ -179,10 +179,11 @@ function App() {
   const activeReferenceRecordCount = isActiveReferenceDatasetLoaded
     ? referenceFacts.length
     : 0
-  const scienceComputerQualifier =
-    isActiveReferenceDatasetLoaded &&
-    isScienceComputerOnline &&
-    typeof totalReferenceRecords === 'number'
+  const scienceComputerQualifier = IS_STATIC_DEMO
+    ? `LLM OFFLINE · ${totalReferenceRecords === null ? 'LOADING' : `${totalReferenceRecords.toLocaleString()} RECORDS`}`
+    : isActiveReferenceDatasetLoaded &&
+        isScienceComputerOnline &&
+        typeof totalReferenceRecords === 'number'
       ? `OLLAMA · QWEN2.5:3B · MINILM-L6-V2 · ${totalReferenceRecords.toLocaleString()} RECORDS`
       : `OLLAMA · QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
@@ -240,13 +241,17 @@ function App() {
   }, [activeBody])
 
   useEffect(() => {
-    if (IS_STATIC_DEMO) return
     let isDisposed = false
     async function loadScienceComputerStatus() {
       try {
-        const response = await fetch('/health/science-computer', {
-          cache: 'no-store',
-        })
+        const response = await fetch(
+          IS_STATIC_DEMO
+            ? publicAssetUrl('demo/status.json')
+            : '/health/science-computer',
+          {
+            cache: 'no-store',
+          },
+        )
         if (!response.ok) {
           throw new Error(
             `Science Computer health check returned ${response.status}`,
@@ -268,6 +273,10 @@ function App() {
     }
 
     void loadScienceComputerStatus()
+    if (IS_STATIC_DEMO)
+      return () => {
+        isDisposed = true
+      }
     const retryIntervalId = window.setInterval(() => {
       void loadScienceComputerStatus()
     }, 10_000)
@@ -479,18 +488,20 @@ function App() {
               </strong>
             </div>
             <div>
-              <span>{IS_STATIC_DEMO ? 'VIEWER DEMO' : 'SCIENCE COMPUTER'}</span>
+              <span>SCIENCE COMPUTER</span>
               <strong
                 className={
                   IS_STATIC_DEMO
-                    ? 'status-online'
+                    ? 'status-offline'
                     : isScienceComputerOnline
                       ? 'status-online'
                       : 'status-offline'
                 }
               >
                 {IS_STATIC_DEMO
-                  ? 'NO LLM'
+                  ? totalReferenceRecords === null
+                    ? 'LOADING'
+                    : `${totalReferenceRecords.toLocaleString()} RECORDS · LLM OFFLINE`
                   : isScienceComputerOnline
                     ? totalReferenceRecords === null
                       ? 'LOADING'

@@ -108,9 +108,9 @@ Solar activity data is adapted from WDC-SILSO, Royal Observatory of Belgium, Bru
 
 ## GitHub Pages demo
 
-A GitHub Pages demo is planned but not yet published. It will let visitors explore the planetary viewers and reference panels, with the LLM-powered science computer disabled. Answer generation requires an active model server and compute resources beyond the static website.
+Explore the [live viewer demo](https://kongstad.github.io/planetary-scanner/) on GitHub Pages. The science computer remains visible with the total reference record count, but answer generation is offline. It requires an active model server and compute resources beyond the static website.
 
-Run the full answer pipeline locally using the setup above.
+Run the full answer pipeline locally using the setup above. The [Pages workflow](.github/workflows/pages.yml) publishes the static demo on pushes to `main`. It follows [GitHub's custom workflow setup](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
 ### Static build
 

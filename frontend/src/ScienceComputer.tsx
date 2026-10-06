@@ -26,7 +26,6 @@ function ScienceComputer({
   onQueryChange,
   onSubmit,
 }: ScienceComputerProps & { bodyId: BodyId }) {
-  if (IS_STATIC_DEMO) return null
   const queryId = `${bodyId}-query`
   return (
     <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>
@@ -40,7 +39,11 @@ function ScienceComputer({
                 ? ` · COMPLETE ${lastQueryElapsedSeconds.toFixed(1)} s`
                 : ''}
           </span>
-          <p>{retrievalStatus}</p>
+          <p>
+            {IS_STATIC_DEMO
+              ? 'Answer generation is offline in this viewer demo. Run the project locally to use the LLM, encoder, and RAG pipeline.'
+              : retrievalStatus}
+          </p>
         </div>
         {groundedAnswer && (
           <div className="grounded-answer">
@@ -54,11 +57,12 @@ function ScienceComputer({
         <input
           id={queryId}
           value={query}
+          disabled={IS_STATIC_DEMO}
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Ask about Earth, Mars, the Moon, or the Sun..."
         />
-        <button type="submit" disabled={isRetrieving}>
-          {isRetrieving ? 'SEARCHING' : 'QUERY'}
+        <button type="submit" disabled={IS_STATIC_DEMO || isRetrieving}>
+          {IS_STATIC_DEMO ? 'OFFLINE' : isRetrieving ? 'SEARCHING' : 'QUERY'}
         </button>
       </form>
     </Panel>
