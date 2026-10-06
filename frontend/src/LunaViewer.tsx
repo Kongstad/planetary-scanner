@@ -6,16 +6,19 @@ import {
   GeographicProjection,
   GeographicTilingScheme,
   Globe,
+  SkyBox,
   Viewer,
   WebMapServiceImageryProvider,
 } from 'cesium'
-import { useEffect, useRef, useState } from 'react'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import { useEffect, useRef, useState } from 'react'
+import { stabilizeGlobeZoom } from './globeCamera.ts'
 
 const LUNA_ELLIPSOID = new Ellipsoid(1_737_400, 1_737_400, 1_737_400)
 const LUNA_GLOBAL_VIEW_HEIGHT_METERS = 6_000_000
 
-const USGS_LUNA_WMS_URL = 'https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/earth/moon_simp_cyl.map'
+const USGS_LUNA_WMS_URL =
+  'https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/earth/moon_simp_cyl.map'
 
 export type LunaViewerMode = 'imagery' | 'relief'
 
@@ -39,7 +42,12 @@ function createLunaImageryProvider(mode: LunaViewerMode) {
   return new WebMapServiceImageryProvider({
     url: USGS_LUNA_WMS_URL,
     layers: source.layer,
-    parameters: { format: 'image/jpeg', styles: '', transparent: false, version: '1.1.1' },
+    parameters: {
+      format: 'image/jpeg',
+      styles: '',
+      transparent: false,
+      version: '1.1.1',
+    },
     tilingScheme: new GeographicTilingScheme({ ellipsoid: LUNA_ELLIPSOID }),
     tileWidth: 512,
     tileHeight: 512,
@@ -72,13 +80,19 @@ function getLunaCameraAltitude(viewer: Viewer): number {
   return cartographicPosition.height
 }
 
-function LunaViewer({ mode, onCameraAltitudeChange, onCoverageChange }: LunaViewerProps) {
+function LunaViewer({
+  mode,
+  onCameraAltitudeChange,
+  onCoverageChange,
+}: LunaViewerProps) {
   const viewerContainerRef = useRef<HTMLDivElement>(null)
   const modeRef = useRef<LunaViewerMode>(mode)
   const setViewerModeRef = useRef<((mode: LunaViewerMode) => void) | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [imageryError, setImageryError] = useState(false)
-  const [cameraAltitude, setCameraAltitude] = useState(LUNA_GLOBAL_VIEW_HEIGHT_METERS)
+  const [cameraAltitude, setCameraAltitude] = useState(
+    LUNA_GLOBAL_VIEW_HEIGHT_METERS,
+  )
 
   useEffect(() => {
     const container = viewerContainerRef.current
@@ -99,9 +113,13 @@ function LunaViewer({ mode, onCameraAltitudeChange, onCoverageChange }: LunaView
       navigationHelpButton: false,
       sceneModePicker: false,
       selectionIndicator: false,
-      terrainProvider: new EllipsoidTerrainProvider({ ellipsoid: LUNA_ELLIPSOID }),
+      skyBox: SkyBox.createEarthSkyBox(),
+      terrainProvider: new EllipsoidTerrainProvider({
+        ellipsoid: LUNA_ELLIPSOID,
+      }),
       timeline: false,
     })
+    stabilizeGlobeZoom(viewer)
     viewer.scene.backgroundColor = Color.BLACK
     viewer.scene.globe.baseColor = Color.fromCssColorString('#89909a')
     viewer.scene.globe.showGroundAtmosphere = false
@@ -110,15 +128,19 @@ function LunaViewer({ mode, onCameraAltitudeChange, onCoverageChange }: LunaView
     if (viewer.scene.skyAtmosphere) {
       viewer.scene.skyAtmosphere.show = false
     }
-    let baseLayer = viewer.imageryLayers.addImageryProvider(createLunaImageryProvider(modeRef.current))
+    let baseLayer = viewer.imageryLayers.addImageryProvider(
+      createLunaImageryProvider(modeRef.current),
+    )
     const reportImageryError = () => {
       setImageryError(true)
       onCoverageChange('LUNAR IMAGERY UNAVAILABLE')
     }
-    let removeImageryErrorListener = baseLayer.imageryProvider.errorEvent.addEventListener(reportImageryError)
-    const removeTileProgressListener = viewer.scene.globe.tileLoadProgressEvent.addEventListener(
-      (remaining: number) => setIsLoading(remaining > 0),
-    )
+    let removeImageryErrorListener =
+      baseLayer.imageryProvider.errorEvent.addEventListener(reportImageryError)
+    const removeTileProgressListener =
+      viewer.scene.globe.tileLoadProgressEvent.addEventListener(
+        (remaining: number) => setIsLoading(remaining > 0),
+      )
     setViewerModeRef.current = (nextMode) => {
       if (modeRef.current === nextMode) return
       modeRef.current = nextMode
@@ -126,13 +148,23 @@ function LunaViewer({ mode, onCameraAltitudeChange, onCoverageChange }: LunaView
       viewer.imageryLayers.remove(baseLayer, true)
       setImageryError(false)
       setIsLoading(true)
-      baseLayer = viewer.imageryLayers.addImageryProvider(createLunaImageryProvider(nextMode))
-      removeImageryErrorListener = baseLayer.imageryProvider.errorEvent.addEventListener(reportImageryError)
+      baseLayer = viewer.imageryLayers.addImageryProvider(
+        createLunaImageryProvider(nextMode),
+      )
+      removeImageryErrorListener =
+        baseLayer.imageryProvider.errorEvent.addEventListener(
+          reportImageryError,
+        )
       onCoverageChange(`${lunarLayers[nextMode].title} · VISIBLE TILES`)
     }
     onCoverageChange(`${lunarLayers[modeRef.current].title} · VISIBLE TILES`)
     viewer.camera.setView({
-      destination: Cartesian3.fromDegrees(0, 0, LUNA_GLOBAL_VIEW_HEIGHT_METERS, LUNA_ELLIPSOID),
+      destination: Cartesian3.fromDegrees(
+        0,
+        0,
+        LUNA_GLOBAL_VIEW_HEIGHT_METERS,
+        LUNA_ELLIPSOID,
+      ),
     })
 
     const updateViewerTelemetry = () => {
@@ -167,7 +199,7 @@ function LunaViewer({ mode, onCameraAltitudeChange, onCoverageChange }: LunaView
   const source = lunarLayers[mode]
 
   return (
-    <div className="luna-viewer">
+    <div className="luna-viewer" tabIndex={0}>
       <div ref={viewerContainerRef} className="luna-viewer__canvas" />
       {isLoading && !imageryError && (
         <div className="viewer-tile-loading" role="status">
@@ -179,7 +211,9 @@ function LunaViewer({ mode, onCameraAltitudeChange, onCoverageChange }: LunaView
         <strong>PRIMARY OBSERVATION</strong>
         <span>{source.title}</span>
         <span>{source.detail}</span>
-        {imageryError && <span role="alert">IMAGERY UNAVAILABLE · SWITCH LAYER TO RETRY</span>}
+        {imageryError && (
+          <span role="alert">IMAGERY UNAVAILABLE · SWITCH LAYER TO RETRY</span>
+        )}
         <span>{`ALTITUDE · ${formatCameraAltitude(cameraAltitude)}`}</span>
       </div>
       <div className="hud hud--left">

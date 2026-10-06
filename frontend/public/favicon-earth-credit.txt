@@ -1,0 +1,3 @@
+Earth favicon adapted from NASA/NOAA/GSFC/Suomi NPP/VIIRS, Blue Marble 2012.
+Source: https://science.nasa.gov/image-detail/amf-gsfc_20171208_archive_e001386/
+The globe is supplied as a PNG with a transparent background.

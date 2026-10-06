@@ -24,7 +24,9 @@ class RetrievedReferenceRecord(BaseModel):
 class ReferenceRecordRetriever(Protocol):
     """The retrieval interface used by grounded answer generation."""
 
-    def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]: ...
+    def retrieve(
+        self, question: str, limit: int = 3
+    ) -> list[RetrievedReferenceRecord]: ...
 
 
 def load_reference_records(record_path: Path) -> dict[str, RagDocument]:
@@ -56,7 +58,9 @@ class ReferenceRetriever:
         missing_document_ids = set(index.document_ids) - documents_by_id.keys()
         if missing_document_ids:
             missing_ids = ", ".join(sorted(missing_document_ids))
-            raise ValueError(f"Vector index references unknown documents: {missing_ids}")
+            raise ValueError(
+                f"Vector index references unknown documents: {missing_ids}"
+            )
 
     def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
         """Retrieve cited records using semantic similarity and exact-term overlap."""
@@ -73,7 +77,9 @@ class ReferenceRetriever:
         )
         explicit_intent_fields = _explicit_intent_fields(question)
         if len(explicit_intent_fields) > 1:
-            return self._retrieve_explicit_intents(semantic_scores, explicit_intent_fields, limit)
+            return self._retrieve_explicit_intents(
+                semantic_scores, explicit_intent_fields, limit
+            )
         question_tokens = _tokenize(question)
         ranked_document_ids = sorted(
             semantic_scores,
@@ -108,7 +114,9 @@ class ReferenceRetriever:
             ]
             if not candidates:
                 continue
-            document = max(candidates, key=lambda candidate: semantic_scores[candidate.document_id])
+            document = max(
+                candidates, key=lambda candidate: semantic_scores[candidate.document_id]
+            )
             results.append(
                 RetrievedReferenceRecord(
                     document=document,
@@ -117,7 +125,9 @@ class ReferenceRetriever:
             )
         return results[:limit]
 
-    def retrieve_field(self, question: str, field: str) -> RetrievedReferenceRecord | None:
+    def retrieve_field(
+        self, question: str, field: str
+    ) -> RetrievedReferenceRecord | None:
         """Return the highest-ranked record for one explicitly requested field."""
 
         semantic_scores = dict(
@@ -132,13 +142,17 @@ class ReferenceRetriever:
         ]
         if not candidates:
             return None
-        document = max(candidates, key=lambda candidate: semantic_scores[candidate.document_id])
+        document = max(
+            candidates, key=lambda candidate: semantic_scores[candidate.document_id]
+        )
         return RetrievedReferenceRecord(
             document=document,
             score=semantic_scores[document.document_id],
         )
 
-    def _retrieve_bulk_composition(self, question: str) -> list[RetrievedReferenceRecord]:
+    def _retrieve_bulk_composition(
+        self, question: str
+    ) -> list[RetrievedReferenceRecord]:
         """Return all major-element records needed for a complete composition synthesis."""
 
         semantic_scores = dict(
@@ -158,6 +172,8 @@ class ReferenceRetriever:
                 == "whole_planet_bulk_composition_model_estimate"
                 or document.metadata.get("scope")
                 == "bulk_silicate_moon_warren_2005_model_oxide_mass_percent_core_excluded"
+                or document.metadata.get("scope")
+                == "solar_photosphere_elemental_number_abundance"
             ),
             key=lambda document_id: semantic_scores[document_id],
             reverse=True,
@@ -179,9 +195,18 @@ def _is_bulk_geochemistry_question(question: str) -> bool:
     """Identify broad composition questions that need the complete model group."""
 
     question_lower = question.lower()
-    return not any(term in question_lower for term in (
-        "atmospher", "exospher", "crust", "water", "ice", "regolith", "sample"
-    )) and (
+    return not any(
+        term in question_lower
+        for term in (
+            "atmospher",
+            "exospher",
+            "crust",
+            "water",
+            "ice",
+            "regolith",
+            "sample",
+        )
+    ) and (
         "geochem" in question_lower
         or "composition" in question_lower
         or "made of" in question_lower
@@ -194,8 +219,10 @@ def _explicit_intent_fields(question: str) -> tuple[tuple[str, ...], ...]:
     intents: list[tuple[str, ...]] = []
     if any(term in question_lower for term in ("size", "radius", "diameter")):
         intents.append(("mean_radius", "equatorial_radius", "equatorial_diameter"))
-    if "mass" in question_lower and not _is_bulk_geochemistry_question(question) and not any(
-        term in question_lower for term in ("fraction", "percent", "oxide")
+    if (
+        "mass" in question_lower
+        and not _is_bulk_geochemistry_question(question)
+        and not any(term in question_lower for term in ("fraction", "percent", "oxide"))
     ):
         intents.append(("mass",))
     if "gravit" in question_lower:
@@ -204,7 +231,9 @@ def _explicit_intent_fields(question: str) -> tuple[tuple[str, ...], ...]:
         intents.append(("rotation_period",))
     if "escape" in question_lower:
         intents.append(("equatorial_escape_velocity", "escape_velocity"))
-    if "earth" in question_lower and ("population" in question_lower or "people" in question_lower):
+    if "earth" in question_lower and (
+        "population" in question_lower or "people" in question_lower
+    ):
         intents.append(("global_human_population",))
     return tuple(intents)
 
@@ -220,7 +249,9 @@ class CrossBodyReferenceRetriever:
 
         body_ids = question_body_ids(question)
         if len(body_ids) < 2:
-            raise ValueError("Cross-body retrieval requires at least two supported bodies")
+            raise ValueError(
+                "Cross-body retrieval requires at least two supported bodies"
+            )
         intent_fields = _explicit_intent_fields(question)
         if intent_fields:
             return [
@@ -229,9 +260,16 @@ class CrossBodyReferenceRetriever:
                 for fields in intent_fields
                 if (
                     record := next(
-                        (candidate for field in fields
-                         if (candidate := self._retrievers[body_id].retrieve_field(question, field))
-                         is not None),
+                        (
+                            candidate
+                            for field in fields
+                            if (
+                                candidate := self._retrievers[body_id].retrieve_field(
+                                    question, field
+                                )
+                            )
+                            is not None
+                        ),
                         None,
                     )
                 )
@@ -252,10 +290,14 @@ def is_cross_body_question(question: str) -> bool:
 
 
 def question_body_ids(question: str) -> tuple[str, ...]:
-    """Resolve body names, lunar aliases, and requests about all three bodies."""
+    """Resolve body names and explicit requests about three or four bodies."""
     question_lower = question.lower()
     question_lower = re.sub(r"\bearth['’]s\s+moon\b", "moon", question_lower)
-    if re.search(r"\b(?:all\s+(?:three|3|bodies)|(?:three|3)\s+bodies)\b", question_lower):
+    if re.search(
+        r"\b(?:all\s+(?:four|4|bodies)|(?:four|4)\s+bodies)\b", question_lower
+    ):
+        return ("earth", "mars", "luna", "sol")
+    if re.search(r"\b(?:all\s+(?:three|3)|(?:three|3)\s+bodies)\b", question_lower):
         return ("earth", "mars", "luna")
     return tuple(
         body_id
@@ -263,6 +305,7 @@ def question_body_ids(question: str) -> tuple[str, ...]:
             ("earth", r"\bearth\b"),
             ("mars", r"\bmars\b"),
             ("luna", r"\b(?:moon|luna|lunar)\b"),
+            ("sol", r"\b(?:sun|sol)\b"),
         )
         if re.search(pattern, question_lower)
     )
@@ -273,5 +316,7 @@ def _hybrid_score(
 ) -> float:
     """Blend normalized cosine similarity with exact question-term coverage."""
 
-    lexical_score = len(question_tokens.intersection(document_tokens)) / len(question_tokens)
+    lexical_score = len(question_tokens.intersection(document_tokens)) / len(
+        question_tokens
+    )
     return 0.85 * ((semantic_score + 1) / 2) + 0.15 * lexical_score

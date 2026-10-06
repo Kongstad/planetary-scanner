@@ -20,15 +20,22 @@ class FakeEmbeddingModel:
         self, sentences: Sequence[str], *, normalize_embeddings: bool
     ) -> NDArray[np.float32]:
         assert normalize_embeddings
-        return np.asarray([[index, index + 0.5] for index, _ in enumerate(sentences)], dtype=np.float32)
+        return np.asarray(
+            [[index, index + 0.5] for index, _ in enumerate(sentences)],
+            dtype=np.float32,
+        )
 
 
-def test_reference_vector_index_preserves_document_ids_and_vectors(tmp_path: Path) -> None:
+def test_reference_vector_index_preserves_document_ids_and_vectors(
+    tmp_path: Path,
+) -> None:
     documents = [
         RagDocument(document_id="earth-radius", content="Earth radius", metadata={}),
         RagDocument(document_id="earth-mass", content="Earth mass", metadata={}),
     ]
-    index = build_reference_vector_index(documents, FakeEmbeddingModel(), DEFAULT_EMBEDDING_MODEL)
+    index = build_reference_vector_index(
+        documents, FakeEmbeddingModel(), DEFAULT_EMBEDDING_MODEL
+    )
     index_path = tmp_path / "earth-reference-vectors.npz"
 
     write_reference_vector_index(index_path, index)
@@ -50,7 +57,10 @@ class SimilarityFakeEmbeddingModel:
     ) -> NDArray[np.float32]:
         assert normalize_embeddings
         return np.asarray(
-            [[1.0, 0.0] if "radius" in sentence else [0.0, 1.0] for sentence in sentences],
+            [
+                [1.0, 0.0] if "radius" in sentence else [0.0, 1.0]
+                for sentence in sentences
+            ],
             dtype=np.float32,
         )
 
@@ -61,8 +71,12 @@ def test_reference_vector_index_returns_highest_similarity_record_id() -> None:
         RagDocument(document_id="earth-mass", content="Earth mass", metadata={}),
     ]
     embedding_model = SimilarityFakeEmbeddingModel()
-    index = build_reference_vector_index(documents, embedding_model, DEFAULT_EMBEDDING_MODEL)
+    index = build_reference_vector_index(
+        documents, embedding_model, DEFAULT_EMBEDDING_MODEL
+    )
 
-    results = retrieve_reference_document_ids("What is Earth's radius?", embedding_model, index, limit=1)
+    results = retrieve_reference_document_ids(
+        "What is Earth's radius?", embedding_model, index, limit=1
+    )
 
     assert results == ["earth-radius"]

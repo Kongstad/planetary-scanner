@@ -65,13 +65,19 @@ def evaluate_grounded_answers(
         answer = answer_question(case.question, limit)
         citation_ids = {citation.document.document_id for citation in answer.citations}
         citations_present = set(case.required_citation_ids).issubset(citation_ids)
-        evidence_status_matches = answer.insufficient_evidence == case.expected_insufficient_evidence
+        evidence_status_matches = (
+            answer.insufficient_evidence == case.expected_insufficient_evidence
+        )
         answer_lower = answer.answer.lower()
-        answer_terms_present = all(term.lower() in answer_lower for term in case.required_answer_terms)
+        answer_terms_present = all(
+            term.lower() in answer_lower for term in case.required_answer_terms
+        )
         results.append(
             AnswerEvaluationResult(
                 case_id=case.case_id,
-                passed=citations_present and evidence_status_matches and answer_terms_present,
+                passed=citations_present
+                and evidence_status_matches
+                and answer_terms_present,
                 citations_present=citations_present,
                 evidence_status_matches=evidence_status_matches,
                 answer_terms_present=answer_terms_present,

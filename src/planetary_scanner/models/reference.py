@@ -42,7 +42,11 @@ class ReferenceDataset(BaseModel):
     @model_validator(mode="after")
     def fact_ids_match_body(self) -> "ReferenceDataset":
         expected_prefix = f"{self.body_id}-"
-        invalid_ids = [fact.fact_id for fact in self.facts if not fact.fact_id.startswith(expected_prefix)]
+        invalid_ids = [
+            fact.fact_id
+            for fact in self.facts
+            if not fact.fact_id.startswith(expected_prefix)
+        ]
         if invalid_ids:
             raise ValueError(
                 f"Fact IDs must start with {expected_prefix!r}: {', '.join(invalid_ids)}"
@@ -87,7 +91,9 @@ class RetrievalEvaluationCase(BaseModel):
     @model_validator(mode="after")
     def expected_documents_are_present(self) -> "RetrievalEvaluationCase":
         if not self.expected_document_ids:
-            raise ValueError("Retrieval evaluation cases require an expected document ID")
+            raise ValueError(
+                "Retrieval evaluation cases require an expected document ID"
+            )
         return self
 
 
@@ -136,13 +142,17 @@ def load_validated_reference_dataset(
 ) -> ReferenceDataset:
     """Load a fact dataset only when all cited sources are registered."""
 
-    dataset = ReferenceDataset.model_validate_json(dataset_path.read_text(encoding="utf-8"))
+    dataset = ReferenceDataset.model_validate_json(
+        dataset_path.read_text(encoding="utf-8")
+    )
     registry = ReferenceSourceRegistry.model_validate_json(
         source_registry_path.read_text(encoding="utf-8")
     )
     registered_source_ids = {source.source_id for source in registry.sources}
     unresolved_source_ids = {
-        fact.source_id for fact in dataset.facts if fact.source_id not in registered_source_ids
+        fact.source_id
+        for fact in dataset.facts
+        if fact.source_id not in registered_source_ids
     }
     if unresolved_source_ids:
         missing_sources = ", ".join(sorted(unresolved_source_ids))
@@ -161,7 +171,9 @@ def build_reference_rag_documents(
     )
     sources_by_id = {source.source_id: source for source in registry.sources}
     return [
-        reference_fact_to_rag_document(dataset.body_id, fact, sources_by_id[fact.source_id])
+        reference_fact_to_rag_document(
+            dataset.body_id, fact, sources_by_id[fact.source_id]
+        )
         for fact in dataset.facts
     ]
 
@@ -173,7 +185,9 @@ def write_reference_rag_documents(
 
     document_path.parent.mkdir(parents=True, exist_ok=True)
     contents = "\n".join(
-        json.dumps(document.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+        json.dumps(
+            document.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
+        )
         for document in documents
     )
     document_path.write_text(f"{contents}\n", encoding="utf-8")
@@ -196,5 +210,7 @@ def load_validated_retrieval_evaluation_set(
     }
     if unknown_document_ids:
         unknown_ids = ", ".join(sorted(unknown_document_ids))
-        raise ValueError(f"Evaluation cases reference unknown document IDs: {unknown_ids}")
+        raise ValueError(
+            f"Evaluation cases reference unknown document IDs: {unknown_ids}"
+        )
     return evaluation_set

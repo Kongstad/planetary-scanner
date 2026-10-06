@@ -84,7 +84,9 @@ def _sentinel_2_tile_url(item_id: str, mode: Literal["imagery", "biosphere"]) ->
     return f"{PLANETARY_COMPUTER_ITEM_TILE_URL}?{urlencode(parameters)}"
 
 
-def _copernicus_dem_tile_url(item_id: str, display_min_m: float, display_max_m: float) -> str:
+def _copernicus_dem_tile_url(
+    item_id: str, display_min_m: float, display_max_m: float
+) -> str:
     parameters = [
         ("collection", COPERNICUS_DEM_COLLECTION),
         ("item", item_id),
@@ -95,7 +97,9 @@ def _copernicus_dem_tile_url(item_id: str, display_min_m: float, display_max_m: 
     return f"{PLANETARY_COMPUTER_ITEM_TILE_URL}?{urlencode(parameters)}"
 
 
-def _modis_lst_tile_url(item_id: str, display_min_c: float, display_max_c: float) -> str:
+def _modis_lst_tile_url(
+    item_id: str, display_min_c: float, display_max_c: float
+) -> str:
     parameters = [
         ("collection", MODIS_LST_COLLECTION),
         ("item", item_id),
@@ -118,9 +122,13 @@ def _select_latest_scenes(
         cloud_cover = properties.get("eo:cloud_cover")
         nodata_percent = properties.get("s2:nodata_pixel_percentage")
         item_id = feature.get("id")
-        if not all(
-            isinstance(value, str) for value in (mgrs_tile, observed_at, item_id)
-        ) or not isinstance(cloud_cover, int | float) or not isinstance(nodata_percent, int | float):
+        if (
+            not all(
+                isinstance(value, str) for value in (mgrs_tile, observed_at, item_id)
+            )
+            or not isinstance(cloud_cover, int | float)
+            or not isinstance(nodata_percent, int | float)
+        ):
             continue
         if nodata_percent > MAX_NODATA_PERCENT:
             continue
@@ -202,7 +210,9 @@ def find_copernicus_dem_scenes(
             "Planetary Computer Copernicus DEM search is unavailable"
         ) from error
     item_ids = [
-        feature["id"] for feature in payload["features"][:limit] if isinstance(feature.get("id"), str)
+        feature["id"]
+        for feature in payload["features"][:limit]
+        if isinstance(feature.get("id"), str)
     ]
     if not item_ids:
         return ()
@@ -224,7 +234,10 @@ def _copernicus_dem_display_range(
     item_ids: list[str], west: float, south: float, east: float, north: float
 ) -> tuple[float, float]:
     """Use robust per-item percentiles to avoid a few extreme DEM values flattening color."""
-    ranges = [_copernicus_dem_item_percentiles(item_id, west, south, east, north) for item_id in item_ids]
+    ranges = [
+        _copernicus_dem_item_percentiles(item_id, west, south, east, north)
+        for item_id in item_ids
+    ]
     return min(range_[0] for range_ in ranges), max(range_[1] for range_ in ranges)
 
 
@@ -240,7 +253,9 @@ def _copernicus_dem_item_percentiles(
         ]
     )
     try:
-        with urlopen(f"{PLANETARY_COMPUTER_ITEM_STATISTICS_URL}?{parameters}", timeout=30) as response:
+        with urlopen(
+            f"{PLANETARY_COMPUTER_ITEM_STATISTICS_URL}?{parameters}", timeout=30
+        ) as response:
             statistics = json.load(response)["data_b1"]
     except (HTTPError, URLError, TimeoutError, KeyError) as error:
         raise SentinelImageryUnavailableError(
@@ -326,7 +341,9 @@ def _modis_lst_item_percentiles(
         ]
     )
     try:
-        with urlopen(f"{PLANETARY_COMPUTER_ITEM_STATISTICS_URL}?{parameters}", timeout=30) as response:
+        with urlopen(
+            f"{PLANETARY_COMPUTER_ITEM_STATISTICS_URL}?{parameters}", timeout=30
+        ) as response:
             statistics = json.load(response)["LST_Day_1km_b1"]
     except (HTTPError, URLError, TimeoutError, KeyError) as error:
         raise SentinelImageryUnavailableError(

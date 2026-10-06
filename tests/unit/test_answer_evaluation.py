@@ -24,7 +24,9 @@ def test_evaluate_grounded_answers_checks_citations_status_and_terms() -> None:
         }
     )
     citation = RetrievedReferenceRecord(
-        document=RagDocument(document_id="earth-radius", content="Earth radius", metadata={}),
+        document=RagDocument(
+            document_id="earth-radius", content="Earth radius", metadata={}
+        ),
         score=0.9,
     )
 

@@ -31,7 +31,9 @@ class FakeAnswerGenerator:
 
     def generate(self, prompt: str) -> GeneratedAnswer:
         self.prompts.append(prompt)
-        return GeneratedAnswer(answer="Earth's mean radius is 6371.0084 km.", insufficient_evidence=False)
+        return GeneratedAnswer(
+            answer="Earth's mean radius is 6371.0084 km.", insufficient_evidence=False
+        )
 
 
 def test_grounded_answer_prompt_includes_only_supplied_evidence() -> None:
@@ -74,36 +76,62 @@ def test_grounded_answer_service_returns_application_controlled_citations() -> N
 def test_grounded_answer_service_replaces_insufficient_evidence_placeholder() -> None:
     class PlaceholderAnswerGenerator:
         def generate(self, prompt: str) -> GeneratedAnswer:
-            return GeneratedAnswer(answer="Insufficient evidence", insufficient_evidence=True)
+            return GeneratedAnswer(
+                answer="Insufficient evidence", insufficient_evidence=True
+            )
 
-    answer = GroundedAnswerService(FakeRetriever(), PlaceholderAnswerGenerator()).answer(
-        "What is Earth's mean radius?", limit=1
-    )
+    answer = GroundedAnswerService(
+        FakeRetriever(), PlaceholderAnswerGenerator()
+    ).answer("What is Earth's mean radius?", limit=1)
 
     assert answer.insufficient_evidence
-    assert answer.answer == "The retrieved reference records do not provide enough evidence to answer this question."
+    assert (
+        answer.answer
+        == "The retrieved reference records do not provide enough evidence to answer this question."
+    )
 
 
 def test_lunar_composition_answer_preserves_all_values_and_model_scope() -> None:
     fields = {
-        "silica": 46.8, "magnesia": 36, "iron_oxide": 9.24,
-        "alumina": 3.87, "lime": 3.06, "titania": 0.18,
+        "silica": 46.8,
+        "magnesia": 36,
+        "iron_oxide": 9.24,
+        "alumina": 3.87,
+        "lime": 3.06,
+        "titania": 0.18,
     }
 
     class CompositionRetriever:
-        def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
-            return [RetrievedReferenceRecord(document=RagDocument(
-                document_id=f"luna-{compound}", content=f"Luna {compound} {value} wt%",
-                metadata={"body_id": "luna", "field": f"bulk_silicate_{compound}_fraction",
-                          "value": value, "unit": "wt%",
-                          "scope": "bulk_silicate_moon_warren_2005_model_oxide_mass_percent_core_excluded"},
-            ), score=1.0) for compound, value in fields.items()]
+        def retrieve(
+            self, question: str, limit: int = 3
+        ) -> list[RetrievedReferenceRecord]:
+            return [
+                RetrievedReferenceRecord(
+                    document=RagDocument(
+                        document_id=f"luna-{compound}",
+                        content=f"Luna {compound} {value} wt%",
+                        metadata={
+                            "body_id": "luna",
+                            "field": f"bulk_silicate_{compound}_fraction",
+                            "value": value,
+                            "unit": "wt%",
+                            "scope": "bulk_silicate_moon_warren_2005_model_oxide_mass_percent_core_excluded",
+                        },
+                    ),
+                    score=1.0,
+                )
+                for compound, value in fields.items()
+            ]
 
     class IncompleteGenerator:
         def generate(self, prompt: str) -> GeneratedAnswer:
-            return GeneratedAnswer(answer="The Moon contains 46.8% silica.", insufficient_evidence=False)
+            return GeneratedAnswer(
+                answer="The Moon contains 46.8% silica.", insufficient_evidence=False
+            )
 
-    result = GroundedAnswerService(CompositionRetriever(), IncompleteGenerator()).answer("What is the Moon made of?")
+    result = GroundedAnswerService(
+        CompositionRetriever(), IncompleteGenerator()
+    ).answer("What is the Moon made of?")
     assert "model estimates" in result.answer
     assert "mantle-and-crust" in result.answer
     assert "excluding the metallic core" in result.answer

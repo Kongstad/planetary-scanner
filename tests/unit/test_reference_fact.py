@@ -71,7 +71,9 @@ def test_reference_fact_converts_to_provenance_preserving_rag_document() -> None
     assert document.metadata["unit"] == "km"
 
 
-@pytest.mark.parametrize("required_field", ["unit", "scope", "as_of", "source_id", "source_locator"])
+@pytest.mark.parametrize(
+    "required_field", ["unit", "scope", "as_of", "source_id", "source_locator"]
+)
 def test_missing_required_provenance_field_is_rejected(required_field: str) -> None:
     invalid_fact = VALID_FACT.copy()
     invalid_fact.pop(required_field)
@@ -123,14 +125,20 @@ def test_reference_documents_preserve_fact_provenance() -> None:
         project_root / "data" / "reference" / "earth.json",
         project_root / "data" / "reference" / "sources.json",
     )
-    mean_radius = next(document for document in documents if document.metadata["field"] == "mean_radius")
+    mean_radius = next(
+        document
+        for document in documents
+        if document.metadata["field"] == "mean_radius"
+    )
 
     assert len(documents) == 74
     assert mean_radius.metadata["source_id"] == "jpl-planetary-physical-parameters-2019"
     assert "Locator: Earth row, Mean Radius" in mean_radius.content
 
 
-def test_reference_rag_documents_are_written_as_deterministic_jsonl(tmp_path: Path) -> None:
+def test_reference_rag_documents_are_written_as_deterministic_jsonl(
+    tmp_path: Path,
+) -> None:
     project_root = Path(__file__).parents[2]
     documents = build_reference_rag_documents(
         project_root / "data" / "reference" / "earth.json",
@@ -142,14 +150,21 @@ def test_reference_rag_documents_are_written_as_deterministic_jsonl(tmp_path: Pa
     write_reference_rag_documents(first_output_path, documents)
     write_reference_rag_documents(second_output_path, documents)
 
-    first_record = json.loads(first_output_path.read_text(encoding="utf-8").splitlines()[0])
+    first_record = json.loads(
+        first_output_path.read_text(encoding="utf-8").splitlines()[0]
+    )
     assert first_output_path.read_bytes() == second_output_path.read_bytes()
     assert len(first_output_path.read_text(encoding="utf-8").splitlines()) == 74
     assert first_record["document_id"] == "reference-fact-earth-mean-radius"
-    assert first_record["metadata"]["source_url"] == "https://ssd.jpl.nasa.gov/planets/phys_par.html"
+    assert (
+        first_record["metadata"]["source_url"]
+        == "https://ssd.jpl.nasa.gov/planets/phys_par.html"
+    )
 
 
-def test_mars_reference_rag_documents_are_written_as_deterministic_jsonl(tmp_path: Path) -> None:
+def test_mars_reference_rag_documents_are_written_as_deterministic_jsonl(
+    tmp_path: Path,
+) -> None:
     project_root = Path(__file__).parents[2]
     documents = build_reference_rag_documents(
         project_root / "data" / "reference" / "mars.json",
@@ -161,12 +176,17 @@ def test_mars_reference_rag_documents_are_written_as_deterministic_jsonl(tmp_pat
     write_reference_rag_documents(first_output_path, documents)
     write_reference_rag_documents(second_output_path, documents)
 
-    first_record = json.loads(first_output_path.read_text(encoding="utf-8").splitlines()[0])
+    first_record = json.loads(
+        first_output_path.read_text(encoding="utf-8").splitlines()[0]
+    )
     assert first_output_path.read_bytes() == second_output_path.read_bytes()
     assert len(first_output_path.read_text(encoding="utf-8").splitlines()) == 50
     assert first_record["document_id"] == "reference-fact-mars-mean-radius"
     assert first_record["metadata"]["body_id"] == "mars"
-    assert first_record["metadata"]["source_url"] == "https://ssd.jpl.nasa.gov/planets/phys_par.html"
+    assert (
+        first_record["metadata"]["source_url"]
+        == "https://ssd.jpl.nasa.gov/planets/phys_par.html"
+    )
 
 
 def test_retrieval_evaluation_set_references_known_documents() -> None:
@@ -241,7 +261,9 @@ def test_retrieval_evaluation_set_rejects_unknown_document_ids(tmp_path: Path) -
         encoding="utf-8",
     )
 
-    with pytest.raises(ValueError, match="Evaluation cases reference unknown document IDs"):
+    with pytest.raises(
+        ValueError, match="Evaluation cases reference unknown document IDs"
+    ):
         load_validated_retrieval_evaluation_set(evaluation_path, [])
 
 
@@ -250,12 +272,16 @@ def test_dataset_with_unregistered_source_is_rejected(tmp_path: Path) -> None:
     dataset_path = tmp_path / "earth.json"
     source_registry_path = tmp_path / "sources.json"
     dataset_path.write_text(
-        json.dumps({"schema_version": "1.0", "body_id": "earth", "facts": [invalid_fact]}),
+        json.dumps(
+            {"schema_version": "1.0", "body_id": "earth", "facts": [invalid_fact]}
+        ),
         encoding="utf-8",
     )
     source_registry_path.write_text(
         json.dumps({"schema_version": "1.0", "sources": []}), encoding="utf-8"
     )
 
-    with pytest.raises(ValueError, match="Facts cite unregistered source IDs: unknown-source"):
+    with pytest.raises(
+        ValueError, match="Facts cite unregistered source IDs: unknown-source"
+    ):
         load_validated_reference_dataset(dataset_path, source_registry_path)

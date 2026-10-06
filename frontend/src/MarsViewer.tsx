@@ -6,15 +6,18 @@ import {
   GeographicProjection,
   GeographicTilingScheme,
   Globe,
+  SkyBox,
   Viewer,
   WebMapServiceImageryProvider,
 } from 'cesium'
-import { useEffect, useRef, useState } from 'react'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
+import { useEffect, useRef, useState } from 'react'
+import { stabilizeGlobeZoom } from './globeCamera.ts'
 
 const MARS_ELLIPSOID = new Ellipsoid(3_396_190, 3_396_190, 3_376_200)
 const MARS_GLOBAL_VIEW_HEIGHT_METERS = 11_000_000
-const USGS_MARS_WMS_URL = 'https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/mars_simp_cyl.map'
+const USGS_MARS_WMS_URL =
+  'https://planetarymaps.usgs.gov/cgi-bin/mapserv?map=/maps/mars/mars_simp_cyl.map'
 
 export type MarsViewerMode = 'imagery' | 'infrared' | 'relief'
 
@@ -80,17 +83,23 @@ function createBaseImageryProvider(mode: MarsViewerMode) {
     )
   }
   return createMarsWmsProvider(
-      'MOLA_color',
-      8,
-      'USGS Astrogeology: MOLA color relief WMS',
+    'MOLA_color',
+    8,
+    'USGS Astrogeology: MOLA color relief WMS',
   )
 }
 
-function MarsViewer({ mode, onCameraAltitudeChange, onCoverageChange }: MarsViewerProps) {
+function MarsViewer({
+  mode,
+  onCameraAltitudeChange,
+  onCoverageChange,
+}: MarsViewerProps) {
   const viewerContainerRef = useRef<HTMLDivElement>(null)
   const setViewerModeRef = useRef<((mode: MarsViewerMode) => void) | null>(null)
   const modeRef = useRef<MarsViewerMode>(mode)
-  const [cameraAltitude, setCameraAltitude] = useState(MARS_GLOBAL_VIEW_HEIGHT_METERS)
+  const [cameraAltitude, setCameraAltitude] = useState(
+    MARS_GLOBAL_VIEW_HEIGHT_METERS,
+  )
 
   useEffect(() => {
     const container = viewerContainerRef.current
@@ -111,9 +120,13 @@ function MarsViewer({ mode, onCameraAltitudeChange, onCoverageChange }: MarsView
       navigationHelpButton: false,
       sceneModePicker: false,
       selectionIndicator: false,
-      terrainProvider: new EllipsoidTerrainProvider({ ellipsoid: MARS_ELLIPSOID }),
+      skyBox: SkyBox.createEarthSkyBox(),
+      terrainProvider: new EllipsoidTerrainProvider({
+        ellipsoid: MARS_ELLIPSOID,
+      }),
       timeline: false,
     })
+    stabilizeGlobeZoom(viewer)
     viewer.scene.backgroundColor = Color.BLACK
     viewer.scene.globe.showGroundAtmosphere = false
     viewer.scene.screenSpaceCameraController.enableCollisionDetection = false
@@ -125,7 +138,12 @@ function MarsViewer({ mode, onCameraAltitudeChange, onCoverageChange }: MarsView
       createBaseImageryProvider(modeRef.current),
     )
     viewer.camera.setView({
-      destination: Cartesian3.fromDegrees(0, 10, MARS_GLOBAL_VIEW_HEIGHT_METERS, MARS_ELLIPSOID),
+      destination: Cartesian3.fromDegrees(
+        0,
+        10,
+        MARS_GLOBAL_VIEW_HEIGHT_METERS,
+        MARS_ELLIPSOID,
+      ),
     })
     const updateViewerTelemetry = () => {
       const altitude = getMarsCameraAltitude(viewer)
@@ -145,7 +163,9 @@ function MarsViewer({ mode, onCameraAltitudeChange, onCoverageChange }: MarsView
       }
       modeRef.current = nextMode
       viewer.imageryLayers.remove(baseLayer, true)
-      baseLayer = viewer.imageryLayers.addImageryProvider(createBaseImageryProvider(nextMode))
+      baseLayer = viewer.imageryLayers.addImageryProvider(
+        createBaseImageryProvider(nextMode),
+      )
       updateViewerTelemetry()
     }
 
@@ -171,29 +191,33 @@ function MarsViewer({ mode, onCameraAltitudeChange, onCoverageChange }: MarsView
     setViewerModeRef.current?.(mode)
   }, [mode])
 
-  const sourceText = mode === 'imagery'
-    ? 'MDIM 2.1 COLOUR MOSAIC · 231 M SOURCE PRODUCT'
-    : mode === 'infrared'
-      ? 'THEMIS INFRARED MOSAIC · ~100 M SOURCE PRODUCT'
-      : 'MOLA COLOUR RELIEF · 463 M GRID PRODUCT'
-  const sourceDetail = mode === 'imagery'
-    ? 'USGS ASTROGEOLOGY · MDIM 2.1 WMS'
-    : mode === 'infrared'
-      ? 'USGS ASTROGEOLOGY · THEMIS IR WMS'
-      : 'USGS ASTROGEOLOGY · MOLA ELEVATION VISUALIZATION'
-  const provenance = mode === 'imagery'
-    ? 'GLOBAL IMAGERY · MDIM 2.1 COLOUR MOSAIC · USGS'
-    : mode === 'infrared'
-      ? 'GLOBAL INFRARED · THEMIS MOSAIC · USGS'
-      : 'GLOBAL RELIEF · MOLA COLOR · USGS'
-  const resolution = mode === 'imagery'
-    ? 'RESOLUTION · 231 M · MDIM 2.1 COLOR MOSAIC'
-    : mode === 'infrared'
-      ? 'RESOLUTION · ~100 M · THEMIS INFRARED MOSAIC'
-      : 'GRID SPACING · ~463 M · DISPLAY-ONLY RELIEF'
+  const sourceText =
+    mode === 'imagery'
+      ? 'MDIM 2.1 COLOUR MOSAIC · 231 M SOURCE PRODUCT'
+      : mode === 'infrared'
+        ? 'THEMIS INFRARED MOSAIC · ~100 M SOURCE PRODUCT'
+        : 'MOLA COLOUR RELIEF · 463 M GRID PRODUCT'
+  const sourceDetail =
+    mode === 'imagery'
+      ? 'USGS ASTROGEOLOGY · MDIM 2.1 WMS'
+      : mode === 'infrared'
+        ? 'USGS ASTROGEOLOGY · THEMIS IR WMS'
+        : 'USGS ASTROGEOLOGY · MOLA ELEVATION VISUALIZATION'
+  const provenance =
+    mode === 'imagery'
+      ? 'GLOBAL IMAGERY · MDIM 2.1 COLOUR MOSAIC · USGS'
+      : mode === 'infrared'
+        ? 'GLOBAL INFRARED · THEMIS MOSAIC · USGS'
+        : 'GLOBAL RELIEF · MOLA COLOR · USGS'
+  const resolution =
+    mode === 'imagery'
+      ? 'RESOLUTION · 231 M · MDIM 2.1 COLOR MOSAIC'
+      : mode === 'infrared'
+        ? 'RESOLUTION · ~100 M · THEMIS INFRARED MOSAIC'
+        : 'GRID SPACING · ~463 M · DISPLAY-ONLY RELIEF'
 
   return (
-    <div className="mars-viewer">
+    <div className="mars-viewer" tabIndex={0}>
       <div ref={viewerContainerRef} className="mars-viewer__canvas" />
       <div className="viewer-directive">
         <strong>PRIMARY OBSERVATION</strong>

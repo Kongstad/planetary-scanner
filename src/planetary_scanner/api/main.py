@@ -1,5 +1,6 @@
 """Read-only HTTP endpoints for curated reference data."""
 
+from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal, cast
@@ -16,6 +17,12 @@ from planetary_scanner.api.sentinel_imagery import (
     find_copernicus_dem_scenes,
     find_modis_thermal_scenes,
     find_sentinel_2_scenes,
+)
+from planetary_scanner.api.solar_imagery import (
+    SolarImageryUnavailableError,
+    SolarLayer,
+    SolarObservation,
+    find_solar_observation,
 )
 from planetary_scanner.models.reference import (
     ReferenceDataset,
@@ -45,13 +52,14 @@ app = FastAPI(title="PlanetaryScanner")
 PROJECT_ROOT = Path(__file__).parents[3]
 SOURCE_REGISTRY_PATH = PROJECT_ROOT / "data" / "reference" / "sources.json"
 REFERENCE_DATASET_PATHS = {
+    "sol": PROJECT_ROOT / "data" / "reference" / "sol.json",
     "luna": PROJECT_ROOT / "data" / "reference" / "luna.json",
     "earth": PROJECT_ROOT / "data" / "reference" / "earth.json",
     "mars": PROJECT_ROOT / "data" / "reference" / "mars.json",
     "solar-system": PROJECT_ROOT / "data" / "reference" / "solar-system.json",
 }
-AnswerableBodyId = Literal["earth", "mars", "luna"]
-ANSWERABLE_BODY_IDS = frozenset({"earth", "mars", "luna"})
+AnswerableBodyId = Literal["earth", "mars", "luna", "sol"]
+ANSWERABLE_BODY_IDS = frozenset({"earth", "mars", "luna", "sol"})
 REFERENCE_RECORD_PATHS = {
     body_id: PROJECT_ROOT / "data" / "reference" / f"{body_id}-reference-records.jsonl"
     for body_id in ANSWERABLE_BODY_IDS
@@ -75,13 +83,15 @@ def get_reference_dataset(body_id: str) -> ReferenceDataset:
 
     dataset_path = REFERENCE_DATASET_PATHS.get(body_id)
     if dataset_path is None:
-        raise HTTPException(status_code=404, detail=f"Reference body not found: {body_id}")
+        raise HTTPException(
+            status_code=404, detail=f"Reference body not found: {body_id}"
+        )
     return load_validated_reference_dataset(dataset_path, SOURCE_REGISTRY_PATH)
 
 
 @lru_cache
 def get_embedding_model(model_name: str) -> EmbeddingModel:
-    """Load each local embedding model once, even when searching both bodies."""
+    """Load each embedding model once per API process."""
 
     from sentence_transformers import SentenceTransformer
 
@@ -117,10 +127,13 @@ def retrieve_reference_records(
 
 @lru_cache
 def get_cross_body_reference_retriever() -> CrossBodyReferenceRetriever:
-    """Build the Earth/Mars/Moon retriever from isolated per-body indexes."""
+    """Build the four-body retriever from isolated per-body indexes."""
 
     return CrossBodyReferenceRetriever(
-        {body_id: get_reference_retriever(cast(AnswerableBodyId, body_id)) for body_id in ANSWERABLE_BODY_IDS}
+        {
+            body_id: get_reference_retriever(cast(AnswerableBodyId, body_id))
+            for body_id in ANSWERABLE_BODY_IDS
+        }
     )
 
 
@@ -128,14 +141,18 @@ def get_cross_body_reference_retriever() -> CrossBodyReferenceRetriever:
 def get_grounded_answer_service(body_id: AnswerableBodyId) -> GroundedAnswerService:
     """Create the local answer layer for one body over its cached retriever."""
 
-    return GroundedAnswerService(get_reference_retriever(body_id), OllamaAnswerGenerator())
+    return GroundedAnswerService(
+        get_reference_retriever(body_id), OllamaAnswerGenerator()
+    )
 
 
 @lru_cache
 def get_cross_body_grounded_answer_service() -> GroundedAnswerService:
     """Create the answer layer for evidence-backed multi-body comparisons."""
 
-    return GroundedAnswerService(get_cross_body_reference_retriever(), OllamaAnswerGenerator())
+    return GroundedAnswerService(
+        get_cross_body_reference_retriever(), OllamaAnswerGenerator()
+    )
 
 
 @app.get("/answers/reference", response_model=GroundedAnswer)
@@ -144,7 +161,7 @@ def answer_reference_question(
     body_id: AnswerableBodyId = "earth",
     limit: int = 3,
 ) -> GroundedAnswer:
-    """Answer about Earth, Mars, and Luna from selected or explicitly named bodies."""
+    """Answer about Earth, Mars, Luna, and Sol from selected or explicitly named bodies."""
 
     if is_cross_body_question(question):
         return get_cross_body_grounded_answer_service().answer(question, limit)
@@ -162,6 +179,21 @@ def get_science_computer_status() -> ScienceComputerStatus:
     )
 
 
+@app.get("/imagery/sol/observation", response_model=SolarObservation)
+def get_solar_observation(
+    layer: SolarLayer = "euv", date: datetime | None = None
+) -> SolarObservation:
+    """Return the actual archive timestamp nearest the selected date, defaulting to now."""
+    requested_date = date or datetime.now(UTC)
+    if requested_date.tzinfo is None:
+        requested_date = requested_date.replace(tzinfo=UTC)
+    utc_minute = requested_date.astimezone(UTC).replace(second=0, microsecond=0)
+    try:
+        return find_solar_observation(layer, utc_minute.strftime("%Y-%m-%dT%H:%M:%SZ"))
+    except SolarImageryUnavailableError as error:
+        raise HTTPException(status_code=502, detail=str(error)) from error
+
+
 @app.get("/imagery/sentinel-2/scenes", response_model=list[Sentinel2Scene])
 def get_sentinel_2_scenes(
     west: Annotated[float, Query(ge=-180, le=180)],
@@ -174,7 +206,9 @@ def get_sentinel_2_scenes(
 ) -> list[Sentinel2Scene]:
     """Return latest usable display scenes for one non-wrapping viewer extent."""
     if west >= east or south >= north:
-        raise HTTPException(status_code=422, detail="Viewer extent must have positive area")
+        raise HTTPException(
+            status_code=422, detail="Viewer extent must have positive area"
+        )
     try:
         return list(
             find_sentinel_2_scenes(
@@ -201,7 +235,9 @@ def get_copernicus_dem_scenes(
 ) -> list[CopernicusDemScene]:
     """Return display-only Copernicus DEM tiles for one non-wrapping viewer extent."""
     if west >= east or south >= north:
-        raise HTTPException(status_code=422, detail="Viewer extent must have positive area")
+        raise HTTPException(
+            status_code=422, detail="Viewer extent must have positive area"
+        )
     try:
         return list(
             find_copernicus_dem_scenes(
@@ -222,7 +258,9 @@ def get_modis_thermal_scenes(
 ) -> list[ModisThermalScene]:
     """Return display-only 8-day daytime MODIS LST tiles for the viewer extent."""
     if west >= east or south >= north:
-        raise HTTPException(status_code=422, detail="Viewer extent must have positive area")
+        raise HTTPException(
+            status_code=422, detail="Viewer extent must have positive area"
+        )
     try:
         return list(
             find_modis_thermal_scenes(

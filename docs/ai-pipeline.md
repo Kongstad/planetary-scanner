@@ -31,9 +31,11 @@ flowchart LR
     Question[User question] --> Routing[Body selection and retrieval rules]
     Routing --> Encoder[MiniLM encoder]
     Encoder -->|Question vector| Search[Similarity search over stored vectors]
-    Records[Curated reference records] -->|Document vectors| Search
+    Index[Stored NumPy vector index] -->|Document vectors| Search
     Search -->|Selected record IDs| Evidence[Full reference text and provenance]
+    Records[Curated JSONL reference records] -->|Selected record text| Evidence
     Evidence --> Prompt[Question, evidence, and instructions]
+    Question -->|Question text| Prompt
     Prompt --> LLM[Qwen through local Ollama]
     LLM --> Validation[Parse and validate response]
     Validation -->|Valid| Result[Answer with application-owned evidence]
@@ -41,7 +43,7 @@ flowchart LR
     LLM -->|Connection failure or timeout| Failure
 ```
 
-The encoder selects evidence; the language model generates text from a prompt containing that evidence.
+The encoder represents text as vectors; retrieval selects evidence, and the language model generates text from a prompt containing that evidence.
 
 | Component                    | Implementation                               | Responsibility                                                              |
 | ---------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
@@ -188,11 +190,13 @@ flowchart TD
     end
     subgraph Request[For each question]
         Question[Question and active body] --> Routing[Resolve named bodies]
-        Routing --> Search[Search the corresponding indexes]
+        Routing --> QueryEmbedding[Encode the question with MiniLM]
+        QueryEmbedding -->|Question vector| Search[Search the corresponding indexes]
         Index --> Search
         Search --> Evidence[Load selected record text]
         Records --> Evidence
         Evidence --> Prompt[Add evidence to the question and instructions]
+        Question -->|Question text| Prompt
         Prompt --> Generation[Generate and validate an answer]
         Generation --> Response[Return answer and retrieved records]
     end

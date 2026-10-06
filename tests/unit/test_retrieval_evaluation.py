@@ -26,7 +26,9 @@ def test_evaluate_retrieval_reports_recall_at_limit() -> None:
 
     report = evaluate_retrieval(
         evaluation_set,
-        lambda question, limit: ["earth-radius"] if "radius" in question else ["earth-density"],
+        lambda question, limit: (
+            ["earth-radius"] if "radius" in question else ["earth-density"]
+        ),
         limit=3,
     )
 

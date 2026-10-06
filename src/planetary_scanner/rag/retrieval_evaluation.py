@@ -42,10 +42,12 @@ def evaluate_retrieval(
         retrieved_document_ids = retrieve_document_ids(case.question, limit)
         results.append(
             RetrievalEvaluationResult(
-            case_id=case.case_id,
-            expected_document_ids=case.expected_document_ids,
-            retrieved_document_ids=retrieved_document_ids,
-            passed=bool(set(case.expected_document_ids).intersection(retrieved_document_ids)),
+                case_id=case.case_id,
+                expected_document_ids=case.expected_document_ids,
+                retrieved_document_ids=retrieved_document_ids,
+                passed=bool(
+                    set(case.expected_document_ids).intersection(retrieved_document_ids)
+                ),
             )
         )
     passed_cases = sum(result.passed for result in results)

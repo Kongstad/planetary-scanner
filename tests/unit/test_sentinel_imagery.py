@@ -66,7 +66,9 @@ def test_select_latest_scenes_rejects_incomplete_tiles() -> None:
     assert scenes == []
 
 
-def test_find_modis_thermal_scenes_uses_viewport_percentiles_in_celsius(monkeypatch) -> None:
+def test_find_modis_thermal_scenes_uses_viewport_percentiles_in_celsius(
+    monkeypatch,
+) -> None:
     def fake_urlopen(request, timeout: int):
         url = request.full_url if hasattr(request, "full_url") else request
         if url == imagery.PLANETARY_COMPUTER_STAC_SEARCH_URL:
@@ -89,7 +91,9 @@ def test_find_modis_thermal_scenes_uses_viewport_percentiles_in_celsius(monkeypa
                 ]
             }
         else:
-            payload = {"LST_Day_1km_b1": {"percentile_2": 280.0, "percentile_98": 300.0}}
+            payload = {
+                "LST_Day_1km_b1": {"percentile_2": 280.0, "percentile_98": 300.0}
+            }
         return io.BytesIO(json.dumps(payload).encode("utf-8"))
 
     imagery.find_modis_thermal_scenes.cache_clear()

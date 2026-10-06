@@ -65,19 +65,24 @@ The science computer uses Qwen2.5:3b with MiniLM reference retrieval. CPU infere
 ## Architecture
 
 ```mermaid
-flowchart LR
-    Browser[React / CesiumJS] -->|Facts and questions| API[FastAPI]
-    Imagery[Scientific imagery services] -->|Map layers and solar images| Browser
-    API --> Retriever[MiniLM and retrieval rules]
-    Facts[Curated records and vector indexes] --> Retriever
-    Retriever -->|Evidence and instructions| Model[Qwen2.5:3b through Ollama]
-    Model -->|Structured answer| API
-    API -->|Answer and evidence| Browser
-    Model -->|Unavailable or invalid response| Failure[Request fails]
-    Failure -->|Unavailable message| Browser
+flowchart TB
+    Browser["React / CesiumJS"]
+
+    subgraph Backend["Python application"]
+        API["FastAPI and answer service"]
+        Retrieval["MiniLM and retrieval rules"]
+        API <-->|Question / evidence| Retrieval
+    end
+
+    Browser <-->|Questions, data, and results| API
+    Browser -->|Download tiles and disk images| Imagery["Scientific imagery services"]
+    API <-->|Scene / observation lookup| Imagery
+    API <-->|Prompt / generated JSON| Ollama["Ollama / Qwen2.5:3b"]
+    Facts["Reference facts: JSON"] --> API
+    Records["Vectors: NumPy .npz<br/>Evidence: JSONL"] --> Retrieval
 ```
 
-The viewer loads scientific imagery independently of local answer generation.
+Python retrieves evidence, builds the prompt, validates the response structure, and returns the answer with its evidence. Failed answer requests return through the API. Imagery uses a separate path: the API discovers scenes and observations, while the browser loads tiles and disk images directly.
 
 Retrieval-augmented generation selects reference records before asking the model to answer. Named bodies take priority over the active tab, and comparisons can retrieve evidence for all four bodies. The model receives reference text, not imagery. The viewer and reference panels remain available when Ollama is offline.
 

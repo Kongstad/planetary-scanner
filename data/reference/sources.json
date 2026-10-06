@@ -2,6 +2,24 @@
   "schema_version": "1.0",
   "sources": [
     {
+      "source_id": "nasa-sol-fact-sheet-2024",
+      "publisher": "NASA Goddard / NSSDCA",
+      "title": "Sun Fact Sheet",
+      "url": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html",
+      "published_or_updated": "2024-05-09",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Reference values and central solar model estimates. Photospheric composition percentages and ppm describe elemental number abundances, not mass percentages or whole-star composition. Adopted rotation period applies at 16 degrees latitude; rotation varies with latitude."
+    },
+    {
+      "source_id": "nasa-sol-facts-2026",
+      "publisher": "NASA Science",
+      "title": "Sun: Facts",
+      "url": "https://science.nasa.gov/sun/facts/",
+      "published_or_updated": "2026-09-17",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Rounded solar characteristics and explanations of structure and activity. Activity descriptions are general reference facts, not live space weather measurements or forecasts."
+    },
+    {
       "source_id": "charlier-lunar-bulk-silicate-compositions-2018",
       "publisher": "Geochimica et Cosmochimica Acta / Elsevier",
       "title": "Charlier et al. (2018): Crystallization of the lunar magma ocean and the primordial mantle-crust differentiation of the Moon",

@@ -1,0 +1,4 @@
+IBM Plex Mono and IBM Plex Sans, weights 400, 500, 600.
+Bundled from the Google Fonts CSS API; original glyphs and subsets preserved.
+https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap
+Licensed under the SIL Open Font License 1.1; licenses included alongside the font files.

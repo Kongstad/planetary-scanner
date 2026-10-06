@@ -15,7 +15,9 @@ from planetary_scanner.rag.reference_retrieval import (
 )
 
 DEFAULT_ANSWER_MODEL = "qwen2.5:3b"
-OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip(
+    "/"
+)
 OLLAMA_GENERATE_URL = f"{OLLAMA_BASE_URL}/api/generate"
 OLLAMA_TAGS_URL = f"{OLLAMA_BASE_URL}/api/tags"
 
@@ -57,13 +59,16 @@ def build_grounded_answer_prompt(
     """Build the complete evidence-bounded prompt for a local answer model."""
 
     evidence = "\n\n".join(
-        f"[{record.document.document_id}]\n{record.document.content}" for record in records
+        f"[{record.document.document_id}]\n{record.document.content}"
+        for record in records
     )
     return f"""You are the Planetary Scanner Science Computer: calm, precise, and evidence-first.
 Respond in a concise mission-analysis voice that remains natural and readable. Do not roleplay,
 invent observations, or add dramatic language. Answer the question using only the evidence records
 below. Do not use outside knowledge.
 Luna means Earth's Moon. Name each body when comparing records from different bodies.
+Sol means the Sun. Solar photospheric composition is by number, not whole-star mass.
+Percentages and ppm must retain their units; 10,000 ppm equals 1 percent.
 Respect each record's scope: model estimates remain estimates. Lunar bulk silicate oxide
 percentages describe mantle plus crust and exclude the metallic core. Do not treat oxide
 mass percentages as elemental percentages or directly equate them to whole-planet composition.
@@ -135,7 +140,9 @@ class GroundedAnswerService:
         """Answer a question and return the exact evidence given to the model."""
 
         citations = self._retriever.retrieve(question, limit)
-        generated = self._generator.generate(build_grounded_answer_prompt(question, citations))
+        generated = self._generator.generate(
+            build_grounded_answer_prompt(question, citations)
+        )
         answer = generated.answer
         lunar_summary = _complete_lunar_composition_summary(citations)
         if lunar_summary is not None and not generated.insufficient_evidence:
@@ -154,7 +161,9 @@ class GroundedAnswerService:
         )
 
 
-def _complete_lunar_composition_summary(records: Sequence[RetrievedReferenceRecord]) -> str | None:
+def _complete_lunar_composition_summary(
+    records: Sequence[RetrievedReferenceRecord],
+) -> str | None:
     """Render the complete curated oxide group without losing a value or its scope."""
     labels = {
         "bulk_silicate_silica_fraction": "silica (SiO₂)",
@@ -173,12 +182,20 @@ def _complete_lunar_composition_summary(records: Sequence[RetrievedReferenceReco
         for record in records
     ):
         return None
-    facts = {record.document.metadata.get("field"): record.document.metadata for record in records}
+    facts = {
+        record.document.metadata.get("field"): record.document.metadata
+        for record in records
+    }
     if facts.keys() != labels.keys():
         return None
-    components = [f"{label} {facts[field]['value']:g} wt%" for field, label in labels.items()]
+    components = [
+        f"{label} {facts[field]['value']:g} wt%" for field, label in labels.items()
+    ]
     return (
         "The Warren (2005) model estimates the Moon's mantle-and-crust composition, "
-        "excluding the metallic core, as " + ", ".join(components[:-1]) + ", and "
-        + components[-1] + "."
+        "excluding the metallic core, as "
+        + ", ".join(components[:-1])
+        + ", and "
+        + components[-1]
+        + "."
     )
