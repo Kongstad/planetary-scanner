@@ -10,6 +10,8 @@ The science computer combines a local Qwen language model with MiniLM semantic r
 
 ![PlanetaryScanner Earth view](.github/preview.png)
 
+Full screenshots: [Sol](.github/sol-full.png), [Earth](.github/earth-full.png), [Luna](.github/luna-full.png), [Mars](.github/mars-full.png).
+
 ## Viewers
 
 | Body  | Imagery and layers                                                          |
