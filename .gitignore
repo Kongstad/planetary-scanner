@@ -31,6 +31,9 @@ data/models/
 # Local design handoff archives; runtime assets live under frontend/public/
 visual_design/
 
+# Local article images
+article-assets/
+
 # Private agent guidance
 AGENTS.md
 AGENTS/
