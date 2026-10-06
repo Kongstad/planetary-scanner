@@ -138,6 +138,4 @@ The retrieval evaluation runs 52 saved questions across all six collections with
 
 The frontend lives in `frontend/src`. API and retrieval modules are in `src/planetary_scanner`. Tests cover reference validation, retrieval, grounding, and imagery endpoints.
 
-## License
-
-A project license has not been assigned. Third-party assets retain their credits and licenses.
+<!-- Created by: Peter Kongstad, kongstad25@gmail.com -->
