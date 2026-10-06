@@ -20,17 +20,22 @@ This guide explains the models, the answer pipeline, and its limits. See the [RE
 ## The three responsibilities
 
 ```mermaid
-flowchart LR
-    Browser[React interface] -->|Question| API[FastAPI / Python]
-    API -->|Question| Retrieval[MiniLM and retrieval rules]
-    Records[Reference text and stored vectors] -->|Search resources| Retrieval
-    Retrieval -->|Selected evidence| API
-    API -->|Instructions, question, and evidence| Qwen[Qwen through Ollama]
-    Qwen -->|Generated JSON or request failure| API
-    API -->|Checked answer, direct response, or failure| Browser
+flowchart TD
+    Question[User question] --> Retrieval
+    Knowledge[(Knowledge base<br/>Records + vectors)] --> Retrieval
+
+    subgraph RAG[RAG]
+        Retrieval[Retrieve evidence<br/>MiniLM + rules]
+        Augmentation[Augment prompt<br/>Question + evidence<br/>+ instructions]
+        Generation[Generate answer<br/>Qwen / Ollama]
+        Retrieval --> Augmentation --> Generation
+    end
+
+    Generation --> Validation[Check response<br/>Python]
+    Validation --> Response[Answer or limitation]
 ```
 
-Python selects the evidence and controls the response. Qwen writes answers from the supplied text.
+RAG retrieves relevant records, adds their text to the question and instructions, then asks Qwen to generate an answer. Python checks the result before returning it. The diagram shows the generation path. Clarifications and supported numeric ratios return directly without calling Qwen.
 
 | Component                  | Implementation                           | Responsibility                                                |
 | -------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
