@@ -1,164 +1,123 @@
 # PlanetaryScanner
 
-[![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/)
-[![CesiumJS](https://img.shields.io/badge/CesiumJS-1.145-6CADDF?logo=cesium&logoColor=white)](https://cesium.com/platform/cesiumjs/)
+A learning project in local language models, embeddings, and retrieval-augmented generation (RAG). A fictional planetary scanner provides the interface, with real scientific data for Earth, the Moon, Mars, and the Sun.
 
-**Explore Earth, Mars, and the Moon. Ask a local science computer what the reference data says.**
+The science computer combines a local Qwen language model with MiniLM semantic retrieval and source-backed reference records. React, TypeScript, CesiumJS, and FastAPI connect the interface to the answer pipeline.
 
-PlanetaryScanner combines zoomable CesiumJS globes, compact scientific reference panels, and source-backed answers. The API, reference datasets, and language model run locally; map imagery comes from external scientific services. CPU inference is supported, so a GPU is optional.
+## Learning guide
 
-## Explore the console
+[Local LLMs, embeddings, and RAG](docs/ai-pipeline.md) explains the project in detail: how the two models work, how evidence reaches an answer, how retrieval scores should be read, and how to test the system. It includes diagrams, worked examples, and experiments you can run locally.
 
-| Body | Viewer layers | Reference panels |
-| --- | --- | --- |
-| **Earth** | Sentinel-2 imagery, terrain, GEBCO relief, vegetation, and surface temperature | Orbit, atmosphere, biosphere, civilisation, geochemistry, and interior |
-| **Mars** | Viking MDIM imagery, THEMIS infrared, and MOLA relief | Orbit, magnetic environment, atmosphere, water, geochemistry, and interior |
-| **Moon / Luna** | LROC imagery and LOLA relief on a lunar globe | Orbit, exosphere, water and ice, Apollo exploration, bulk silicate geochemistry, and interior |
+![PlanetaryScanner Earth view](.github/preview.png)
 
-The three viewers share a consistent frame. Lunar panels follow the Mars layout, with gray terrain and geochemistry graphics and a blue-to-red temperature scale.
+## Viewers
 
-## Science computer
+| Body  | Imagery and layers                                                          |
+| ----- | --------------------------------------------------------------------------- |
+| Earth | Sentinel-2, terrain, GEBCO relief, vegetation, and surface temperature      |
+| Luna  | LROC imagery and LOLA relief                                                |
+| Mars  | Viking MDIM, THEMIS infrared, and MOLA relief                               |
+| Sol   | AIA 171 Å synoptic globe, visible light, EUV observations, and magnetograms |
 
-```mermaid
-flowchart LR
-    Console["Earth / Mars / Luna console"] -->|"Question"| API["FastAPI"]
-    API -->|"Select named bodies or active tab"| Retriever["MiniLM reference retrieval"]
-    Facts[("Curated facts and local vector indexes")] -->|"Source-backed records"| Retriever
-    Retriever -->|"Evidence and question"| Availability{"Ollama available?"}
-    Availability -->|"Yes"| Qwen["Qwen2.5:3b"]
-    Availability -->|"No"| Unavailable["Answering unavailable; viewer and panels remain usable"]
-    Qwen --> Result["Grounded answer or insufficient-evidence response"]
-    Result --> Console
-    Unavailable --> Console
-```
-
-The science computer retrieves relevant reference facts before generating an answer; unavailable model services do not prevent globe exploration.
-
-| Question | Evidence selected |
-| --- | --- |
-| “What is the mean radius?” | The body selected in the console |
-| “What is the Moon made of?” | Luna, including its bulk silicate composition model |
-| “Compare Earth and the Moon by gravity.” | Earth and Luna |
-| “Compare the size and gravity of all three bodies.” | Earth, Mars, and Luna |
-
-“Moon,” “Luna,” and “lunar” refer to the same body. Explicit body names override the selected tab. Each factual record retains its value, unit, scope, date, and source metadata. Answers use retrieved reference records; the language model does not receive raw imagery.
-
-Lunar geochemistry bars show **oxide weight percentages for the mantle and crust, excluding the metallic core**, from the Warren (2005) model reproduced by Charlier et al. (2018). These are model estimates. The lunar relief sidebar profile is labeled schematic. Fictional Dilithium scenarios remain separate from factual records and grounded answers.
+Drag a globe to rotate and scroll to zoom. Solar disk images support pan, zoom, and UTC date selection. Reference panels cover physical properties, composition, environment, and interior structure.
 
 ## Run locally
 
-Run the commands below from the repository root.
+Requires Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 22.12+, and npm. Internet access is needed for map services and initial model downloads.
 
-| Requirement | Purpose |
-| --- | --- |
-| Python **3.12+** and [uv](https://docs.astral.sh/uv/) | Reference API and retrieval pipeline |
-| Node.js **22.12+** and npm | React / Vite frontend |
-| [Ollama](https://ollama.com/) | Optional local answer generation |
-| Internet access | Dependencies, initial model downloads, and external map layers |
-
-### 1. Install dependencies
+Install dependencies from the repository root:
 
 ```bash
 uv sync
-(cd frontend && npm ci)
+npm --prefix frontend ci
 ```
 
-### 2. Start the reference API
+Start the API:
 
 ```bash
 uv run uvicorn planetary_scanner.api.main:app --host 127.0.0.1 --port 8000
 ```
 
-### 3. Start the website in another terminal
+In another terminal, start the website:
 
 ```bash
-cd frontend
-npm run dev
+npm --prefix frontend run dev -- --port 5174
 ```
 
-Open **http://localhost:5173**. The frontend proxies API requests to port 8000.
+Open [localhost:5174](http://localhost:5174). The frontend proxies API requests to port 8000. Process environment variables configure the API; see [.env.example](.env.example). Stop services with Ctrl+C.
 
-### 4. Enable local answers
+### Local answers
 
-If Ollama is not already running, start it in a separate terminal:
+Install [Ollama](https://ollama.com/) and start it if needed:
 
 ```bash
 ollama serve
 ```
 
-Then download the answer model:
+Download the answer model in another terminal:
 
 ```bash
 ollama pull qwen2.5:3b
 ```
 
-The first science-computer query also loads the MiniLM embedding model and may download it if it is not cached. The checked-in Earth, Mars, and Luna reference records and vector indexes are ready to use. Later queries use the cached models.
+The science computer uses Qwen2.5:3b with MiniLM reference retrieval. CPU inference is supported. The first query downloads the embedding model if it is not cached. Set `OLLAMA_BASE_URL` on the API process to use an Ollama address other than `http://127.0.0.1:11434`.
 
-<details>
-<summary>Windows / PowerShell setup</summary>
+## Architecture
 
-Install dependencies:
-
-```powershell
-uv sync
-Set-Location frontend
-npm ci
-Set-Location ..
+```mermaid
+flowchart LR
+    Browser[React / CesiumJS] -->|Facts and questions| API[FastAPI]
+    Imagery[Scientific imagery services] -->|Map layers and solar images| Browser
+    API --> Retriever[MiniLM and retrieval rules]
+    Facts[Curated records and vector indexes] --> Retriever
+    Retriever -->|Evidence and instructions| Model[Qwen2.5:3b through Ollama]
+    Model -->|Structured answer| API
+    API -->|Answer and evidence| Browser
+    Model -->|Unavailable or invalid response| Failure[Request fails]
+    Failure -->|Unavailable message| Browser
 ```
 
-Run the same API and Ollama commands shown above in separate terminals. For the frontend:
+The viewer loads scientific imagery independently of local answer generation.
 
-```powershell
-Set-Location frontend
-npm run dev
-```
+Retrieval-augmented generation selects reference records before asking the model to answer. Named bodies take priority over the active tab, and comparisons can retrieve evidence for all four bodies. The model receives reference text, not imagery. The viewer and reference panels remain available when Ollama is offline.
 
-</details>
+## Data
 
-### Ports and configuration
+Facts retain their source, unit, date, and scope in [data/reference](data/reference). The [source registry](data/reference/sources.json) lists the underlying publications and services.
 
-| Service | Default address |
-| --- | --- |
-| Website | `http://localhost:5173` |
-| Reference API | `http://127.0.0.1:8000` |
-| Ollama | `http://127.0.0.1:11434` |
+The solar globe is a false-color Carrington rotation 2311 composite from May 12 to June 9, 2026. It is intended for visual exploration. Observed disks display their actual archive timestamps. [Solar map notes](frontend/public/sol/README.md) document the rendering.
 
-To use Ollama on another port, set `OLLAMA_HOST` for Ollama and `OLLAMA_BASE_URL` for the API. For example, on Linux:
+Lunar geochemistry shows the Warren (2005) bulk silicate model, excluding the metallic core. Schematic terrain profiles are labelled. Dilithium deposits are fictional and excluded from factual answers.
+
+## GitHub Pages demo
+
+A GitHub Pages demo is planned but not yet published. It will let visitors explore the planetary viewers and reference panels, with the LLM-powered science computer disabled. Answer generation requires an active model server and compute resources beyond the static website.
+
+This is a small portfolio project demonstrating practical work with and understanding of local LLMs, text encoders, and RAG. The full answer pipeline can be run locally using the setup above; the [learning guide](docs/ai-pipeline.md) explains its implementation.
+
+### Static build
 
 ```bash
-OLLAMA_HOST=127.0.0.1:11435 ollama serve
-OLLAMA_HOST=127.0.0.1:11435 ollama pull qwen2.5:3b
-OLLAMA_BASE_URL=http://127.0.0.1:11435 uv run uvicorn planetary_scanner.api.main:app --host 127.0.0.1 --port 8000
+npm --prefix frontend run build:demo
 ```
 
-Run the server commands in separate terminals. In PowerShell, set variables with `$env:OLLAMA_HOST = "127.0.0.1:11435"` and `$env:OLLAMA_BASE_URL = "http://127.0.0.1:11435"` before running the respective commands.
+This produces `frontend/dist` with bundled facts, dated solar snapshots, and Cesium assets. It needs no API or language model. Earth scene scanning and live solar date selection require the local app. The default URL prefix is `/planetary-scanner/`; set `PAGES_BASE_PATH` for another path. The build does not publish anything.
 
-The API reads process environment variables; it does **not** automatically load `.env`. See [.env.example](.env.example). If you change the API port, update the proxy targets in [frontend/vite.config.ts](frontend/vite.config.ts) to match.
-
-Stop manually launched services with **Ctrl+C** in their terminals.
-
-## Repository guide
-
-| Location | Contents |
-| --- | --- |
-| [frontend/src](frontend/src) | Console, shared panels, and Earth / Mars / Luna viewers |
-| [src/planetary_scanner/api](src/planetary_scanner/api) | Reference facts, answers, health, and imagery endpoints |
-| [src/planetary_scanner/rag](src/planetary_scanner/rag) | Reference indexing, retrieval, and grounded answer generation |
-| [data/reference](data/reference) | Curated datasets, source registry, and retrieval artifacts |
-| [tests](tests) | Data validation, retrieval, grounding, API, and imagery checks |
-
-## Checks
-
-From the repository root:
+## Development
 
 ```bash
 uv run pytest -q
-uv run ruff check src tests
-(cd frontend && npm run lint && npm run build)
+uv run ruff check src tests scripts
+uv run ruff format --check src tests scripts
+npm --prefix frontend run format:check
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
+
+Use `uv run ruff format src tests scripts` and `npm --prefix frontend run format` to format the source.
+
+The frontend lives in `frontend/src`; API and retrieval modules are in `src/planetary_scanner`. Tests cover reference validation, retrieval, grounding, and imagery endpoints.
 
 ## License
 
-License selection is pending while the repository remains private.
+A project license has not been assigned. Third-party assets retain their credits and licenses.

@@ -35,8 +35,9 @@ visual_design/
 AGENTS.md
 AGENTS/
 
-# Private working documentation
-docs/
+# Private working documentation; retain the public learning guide
+/docs/*
+!/docs/ai-pipeline.md
 
 # Logs and editor state
 *.log
