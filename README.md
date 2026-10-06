@@ -1,5 +1,14 @@
 # PlanetaryScanner
 
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![CesiumJS](https://img.shields.io/badge/CesiumJS-1.145-6CADDF?logo=cesium&logoColor=white)](https://cesium.com/platform/cesiumjs/)
+[![Local LLM: Qwen2.5 3B](https://img.shields.io/badge/Local_LLM-Qwen2.5_3B-7C3AED)](docs/ai-pipeline.md#the-llm-generating-an-answer)
+[![Encoder: MiniLM](https://img.shields.io/badge/Encoder-MiniLM-2563EB)](docs/ai-pipeline.md#the-encoder-finding-related-text)
+[![RAG](https://img.shields.io/badge/RAG-Reference_retrieval-0F766E)](docs/ai-pipeline.md)
+
 A learning project in local language models, embeddings, and retrieval-augmented generation (RAG). A fictional planetary scanner provides the interface, with real scientific data for Earth, the Moon, Mars, and the Sun.
 
 The science computer combines a local Qwen language model with MiniLM semantic retrieval and source-backed reference records. React, TypeScript, CesiumJS, and FastAPI connect the interface to the answer pipeline.
