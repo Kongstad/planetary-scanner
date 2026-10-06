@@ -7,6 +7,7 @@ from typing import Protocol
 from pydantic import BaseModel
 
 from planetary_scanner.models.reference import RagDocument
+from planetary_scanner.rag.corpus_routing import EntityLookup
 from planetary_scanner.rag.reference_index import (
     EmbeddingModel,
     ReferenceVectorIndex,
@@ -51,10 +52,13 @@ class ReferenceRetriever:
         embedding_model: EmbeddingModel,
         index: ReferenceVectorIndex,
         documents_by_id: dict[str, RagDocument],
+        body_level_intents: bool = True,
     ) -> None:
         self._embedding_model = embedding_model
         self._index = index
         self._documents_by_id = documents_by_id
+        self._entities = EntityLookup(documents_by_id.values())
+        self._body_level_intents = body_level_intents
         missing_document_ids = set(index.document_ids) - documents_by_id.keys()
         if missing_document_ids:
             missing_ids = ", ".join(sorted(missing_document_ids))
@@ -65,21 +69,115 @@ class ReferenceRetriever:
     def retrieve(self, question: str, limit: int = 3) -> list[RetrievedReferenceRecord]:
         """Retrieve cited records using semantic similarity and exact-term overlap."""
 
-        if _is_bulk_geochemistry_question(question):
-            composition = self._retrieve_bulk_composition(question)
-            if composition:
-                return composition
-
+        if limit < 1:
+            raise ValueError("Retrieval limit must be positive")
         semantic_scores = dict(
             retrieve_reference_document_scores(
                 question, self._embedding_model, self._index, len(self._documents_by_id)
             )
         )
-        explicit_intent_fields = _explicit_intent_fields(question)
-        if len(explicit_intent_fields) > 1:
+        entities = self._entities.match(question)
+        if entities:
+            return [
+                RetrievedReferenceRecord(
+                    document=document, score=semantic_scores[document.document_id]
+                )
+                for document in entities[:limit]
+            ]
+
+        if re.search(r"\bsunspot", question.lower()):
+            period = re.search(r"\b((?:17|18|19|20)\d{2})(?:-(\d{2}))?\b", question)
+            if period:
+                suffix = period.group(0)
+                document = self._documents_by_id.get(
+                    f"observation-sol-sunspots-{suffix}"
+                )
+                if document is not None:
+                    return [
+                        RetrievedReferenceRecord(
+                            document=document,
+                            score=semantic_scores[document.document_id],
+                        )
+                    ]
+                return []
+
+        if _is_bulk_geochemistry_question(question):
+            composition = self._retrieve_bulk_composition(question)
+            if composition:
+                return composition
+
+        explicit_intent_fields = question_intent_fields(question)
+        moon_names = re.findall(r"\b(?:phobos|deimos)\b", question.lower())
+        if moon_names:
+            candidates = {
+                document_id: score
+                for document_id, score in semantic_scores.items()
+                if any(
+                    name in self._documents_by_id[document_id].content.lower()
+                    for name in moon_names
+                )
+            }
+            if candidates:
+                matched_fields = {
+                    name + "_" + field.removeprefix("mean_")
+                    for name in moon_names
+                    for fields in explicit_intent_fields
+                    for field in fields
+                }
+                if matched_fields:
+                    candidates = {
+                        document_id: score
+                        for document_id, score in candidates.items()
+                        if self._documents_by_id[document_id].metadata.get("field")
+                        in matched_fields
+                    }
+                return self._rank_records(question, candidates, limit)
+        if "earthquake" in question.lower():
+            year = re.search(r"\b(?:19|20)\d{2}\b", question)
+            if year:
+                candidates = {
+                    document_id: score
+                    for document_id, score in semantic_scores.items()
+                    if f"occurred on {year.group(0)}-"
+                    in self._documents_by_id[document_id].content
+                }
+                return self._rank_records(question, candidates, limit)
+        feature_question = re.search(
+            r"\b(?:craters?|mons|montes|mare|maria|vallis|chasma|surface features?)\b",
+            question.lower(),
+        )
+        if explicit_intent_fields and self._body_level_intents and not feature_question:
             return self._retrieve_explicit_intents(
                 semantic_scores, explicit_intent_fields, limit
             )
+        if not self._body_level_intents:
+            definition_fields = {
+                "asteroid": "asteroid_definition",
+                "comet": "comet_nucleus",
+                "meteor": "meteor_definition",
+                "meteoroid": "meteoroid_definition",
+                "meteorite": "meteorite_definition",
+            }
+            requested = [
+                field
+                for term, field in definition_fields.items()
+                if re.search(rf"\b{term}s?\b", question.lower())
+            ]
+            if len(requested) > 1:
+                candidates = {
+                    document_id: score
+                    for document_id, score in semantic_scores.items()
+                    if self._documents_by_id[document_id].metadata.get("field")
+                    in requested
+                }
+                return self._rank_records(
+                    question, candidates, max(limit, len(requested))
+                )
+        return self._rank_records(question, semantic_scores, limit)
+
+    def _rank_records(
+        self, question: str, semantic_scores: dict[str, float], limit: int
+    ) -> list[RetrievedReferenceRecord]:
         question_tokens = _tokenize(question)
         ranked_document_ids = sorted(
             semantic_scores,
@@ -90,6 +188,15 @@ class ReferenceRetriever:
             ),
             reverse=True,
         )[:limit]
+        if ranked_document_ids:
+            best_score = max(
+                semantic_scores[document_id] for document_id in ranked_document_ids
+            )
+            ranked_document_ids = [
+                document_id
+                for document_id in ranked_document_ids
+                if semantic_scores[document_id] >= best_score - 0.2
+            ]
         return [
             RetrievedReferenceRecord(
                 document=self._documents_by_id[document_id],
@@ -104,7 +211,7 @@ class ReferenceRetriever:
         intent_fields: tuple[tuple[str, ...], ...],
         limit: int,
     ) -> list[RetrievedReferenceRecord]:
-        """Select one highest-ranked record for every explicit subject in a compound question."""
+        """Select one highest-ranked record for each explicitly requested property."""
         results: list[RetrievedReferenceRecord] = []
         for fields in intent_fields:
             candidates = [
@@ -213,20 +320,54 @@ def _is_bulk_geochemistry_question(question: str) -> bool:
     )
 
 
-def _explicit_intent_fields(question: str) -> tuple[tuple[str, ...], ...]:
-    """Return field groups for explicitly named subjects in a compound planetary question."""
+def question_intent_fields(question: str) -> tuple[tuple[str, ...], ...]:
+    """Return evidence fields for explicitly requested planetary properties."""
     question_lower = question.lower()
     intents: list[tuple[str, ...]] = []
-    if any(term in question_lower for term in ("size", "radius", "diameter")):
+    if "diameter" in question_lower:
+        intents.append(("mean_diameter", "equatorial_diameter"))
+    elif "core" not in question_lower and any(
+        term in question_lower for term in ("size", "radius", "bigger", "larger")
+    ):
         intents.append(("mean_radius", "equatorial_radius", "equatorial_diameter"))
     if (
-        "mass" in question_lower
+        re.search(r"\b(?:mass|weight|weigh|heavier|heaviest)\b", question_lower)
         and not _is_bulk_geochemistry_question(question)
-        and not any(term in question_lower for term in ("fraction", "percent", "oxide"))
+        and not any(
+            term in question_lower
+            for term in (
+                "fraction",
+                "percent",
+                "oxide",
+                "conversion",
+                "loss",
+                "atmosphere",
+                "hydrosphere",
+                "exosphere",
+                "core",
+                "crust",
+                "mantle",
+            )
+        )
     ):
         intents.append(("mass",))
-    if "gravit" in question_lower:
+    if re.search(r"\b(?:gravity|gravities)\b", question_lower):
         intents.append(("equatorial_surface_gravity", "surface_gravity"))
+    if "dens" in question_lower:
+        if "exospher" in question_lower or "particle" in question_lower:
+            intents.append(("surface_particle_density",))
+        elif "atmospher" in question_lower or "air" in question_lower:
+            intents.append(("surface_air_density", "surface_atmospheric_density"))
+        elif "core" in question_lower:
+            intents.append(("core_density",))
+        else:
+            intents.append(("mean_density",))
+    if "volume" in question_lower:
+        intents.append(("volume",))
+    if "surface area" in question_lower:
+        intents.append(("surface_area",))
+    if "circumference" in question_lower:
+        intents.append(("mean_circumference",))
     if "rotation" in question_lower or "day length" in question_lower:
         intents.append(("rotation_period",))
     if "escape" in question_lower:
@@ -235,6 +376,14 @@ def _explicit_intent_fields(question: str) -> tuple[tuple[str, ...], ...]:
         "population" in question_lower or "people" in question_lower
     ):
         intents.append(("global_human_population",))
+    if (
+        re.search(r"\b(?:sun|sol)\b", question_lower)
+        and ("energy" in question_lower or "power" in question_lower)
+        and re.search(
+            r"\b(?:produce[sd]?|generate[sd]?|source|powered|powers?)\b", question_lower
+        )
+    ):
+        intents.append(("energy_source",))
     return tuple(intents)
 
 
@@ -252,7 +401,7 @@ class CrossBodyReferenceRetriever:
             raise ValueError(
                 "Cross-body retrieval requires at least two supported bodies"
             )
-        intent_fields = _explicit_intent_fields(question)
+        intent_fields = question_intent_fields(question)
         if intent_fields:
             return [
                 record
@@ -294,10 +443,14 @@ def question_body_ids(question: str) -> tuple[str, ...]:
     question_lower = question.lower()
     question_lower = re.sub(r"\bearth['’]s\s+moon\b", "moon", question_lower)
     if re.search(
-        r"\b(?:all\s+(?:four|4|bodies)|(?:four|4)\s+bodies)\b", question_lower
+        r"\b(?:all\s+(?:four|4|bodies)|(?:four|4)\s+(?:(?:different|planetary|celestial)\s+)*bodies|(?:four|4)\s+of\s+them)\b",
+        question_lower,
     ):
         return ("earth", "mars", "luna", "sol")
-    if re.search(r"\b(?:all\s+(?:three|3)|(?:three|3)\s+bodies)\b", question_lower):
+    if re.search(
+        r"\b(?:all\s+(?:three|3)|(?:three|3)\s+(?:(?:different|planetary|celestial)\s+)*bodies|(?:three|3)\s+of\s+them)\b",
+        question_lower,
+    ):
         return ("earth", "mars", "luna")
     return tuple(
         body_id

@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "body_id": "solar-system",
+  "cases": [
+    {
+      "case_id": "solar-venus-heat",
+      "question": "Why is Venus so hot?",
+      "expected_document_ids": ["knowledge-solar-system-venus-hotter"]
+    },
+    {
+      "case_id": "solar-europa-ocean",
+      "question": "Does Europa have an ocean?",
+      "expected_document_ids": ["knowledge-solar-system-europa-ocean"]
+    },
+    {
+      "case_id": "solar-small-body-comparison",
+      "question": "What is the difference between an asteroid and a comet?",
+      "expected_document_ids": ["knowledge-solar-system-comet-nucleus"]
+    },
+    {
+      "case_id": "solar-dwarf-planets",
+      "question": "Why is Pluto a dwarf planet?",
+      "expected_document_ids": [
+        "knowledge-solar-system-dwarf-planet-definition"
+      ]
+    },
+    {
+      "case_id": "solar-ganymede-field",
+      "question": "Does Ganymede have a magnetic field?",
+      "expected_document_ids": ["knowledge-solar-system-ganymede-field"]
+    },
+    {
+      "case_id": "solar-meteorite",
+      "question": "What is a meteorite?",
+      "expected_document_ids": ["knowledge-solar-system-meteorite-definition"]
+    }
+  ]
+}

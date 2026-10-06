@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "body_id": "milky-way",
+  "cases": [
+    {
+      "case_id": "galaxy-exoplanet",
+      "question": "What is an exoplanet?",
+      "expected_document_ids": ["knowledge-milky-way-exoplanet-definition"]
+    },
+    {
+      "case_id": "galaxy-super-earth",
+      "question": "What is a super-Earth?",
+      "expected_document_ids": ["knowledge-milky-way-super-earth-definition"]
+    },
+    {
+      "case_id": "galaxy-habitable-zone",
+      "question": "What is the habitable zone?",
+      "expected_document_ids": ["knowledge-milky-way-habitable-zone-definition"]
+    },
+    {
+      "case_id": "galaxy-sun-location",
+      "question": "Where in the Milky Way is the Sun?",
+      "expected_document_ids": ["knowledge-milky-way-sun-galactic-location"]
+    },
+    {
+      "case_id": "galaxy-center",
+      "question": "What is Sagittarius A*?",
+      "expected_document_ids": ["knowledge-milky-way-sagittarius-identity"]
+    },
+    {
+      "case_id": "galaxy-white-dwarf",
+      "question": "What is a white dwarf?",
+      "expected_document_ids": ["knowledge-milky-way-white-dwarf"]
+    },
+    {
+      "case_id": "galaxy-proxima-minimum-mass",
+      "question": "What is the mass of Proxima Centauri b?",
+      "expected_document_ids": ["catalog-milky-way-exoplanet-proxima-cen-b"]
+    },
+    {
+      "case_id": "galaxy-dark-matter",
+      "question": "What is dark matter?",
+      "expected_document_ids": ["knowledge-milky-way-dark-matter-definition"]
+    },
+    {
+      "case_id": "galaxy-light-year",
+      "question": "What is a light-year?",
+      "expected_document_ids": ["knowledge-milky-way-light-year-definition"]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "body_id": "luna",
+  "cases": [
+    {
+      "case_id": "luna-mass",
+      "question": "How much does the Moon weigh?",
+      "expected_document_ids": ["reference-fact-luna-mass"]
+    },
+    {
+      "case_id": "luna-phase-cause",
+      "question": "Why does the Moon have phases?",
+      "expected_document_ids": ["reference-fact-luna-phase-cause"]
+    },
+    {
+      "case_id": "luna-tidal-locking",
+      "question": "Why does the Moon always show the same side to Earth?",
+      "expected_document_ids": ["reference-fact-luna-tidal-locking-explanation"]
+    },
+    {
+      "case_id": "luna-formation",
+      "question": "How did the Moon form?",
+      "expected_document_ids": ["reference-fact-luna-formation"]
+    },
+    {
+      "case_id": "luna-exosphere-density",
+      "question": "What is the density of the Moon's exosphere?",
+      "expected_document_ids": ["reference-fact-luna-surface-particle-density"]
+    },
+    {
+      "case_id": "luna-volume",
+      "question": "What is the Moon's volume?",
+      "expected_document_ids": ["reference-fact-luna-volume"]
+    },
+    {
+      "case_id": "luna-tycho-feature",
+      "question": "What is Tycho's diameter?",
+      "expected_document_ids": ["catalog-luna-feature-6163"]
+    }
+  ]
+}

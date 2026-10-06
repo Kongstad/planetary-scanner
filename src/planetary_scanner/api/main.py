@@ -5,7 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal, cast
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel
 
 from planetary_scanner.api.sentinel_imagery import (
@@ -24,14 +24,17 @@ from planetary_scanner.api.solar_imagery import (
     SolarObservation,
     find_solar_observation,
 )
+from planetary_scanner.models.corpus import COLLECTIONS
 from planetary_scanner.models.reference import (
     ReferenceDataset,
     load_validated_reference_dataset,
 )
+from planetary_scanner.rag.corpus_routing import EntityLookup, shared_collection
 from planetary_scanner.rag.reference_answers import (
     GroundedAnswer,
     GroundedAnswerService,
     OllamaAnswerGenerator,
+    comparison_clarification,
     is_ollama_model_available,
 )
 from planetary_scanner.rag.reference_index import (
@@ -45,6 +48,7 @@ from planetary_scanner.rag.reference_retrieval import (
     is_cross_body_question,
     load_reference_records,
     question_body_ids,
+    question_intent_fields,
 )
 
 app = FastAPI(title="PlanetaryScanner")
@@ -62,11 +66,11 @@ AnswerableBodyId = Literal["earth", "mars", "luna", "sol"]
 ANSWERABLE_BODY_IDS = frozenset({"earth", "mars", "luna", "sol"})
 REFERENCE_RECORD_PATHS = {
     body_id: PROJECT_ROOT / "data" / "reference" / f"{body_id}-reference-records.jsonl"
-    for body_id in ANSWERABLE_BODY_IDS
+    for body_id in COLLECTIONS
 }
 REFERENCE_VECTOR_INDEX_PATHS = {
     body_id: PROJECT_ROOT / "data" / "reference" / f"{body_id}-reference-vectors.npz"
-    for body_id in ANSWERABLE_BODY_IDS
+    for body_id in COLLECTIONS
 }
 
 
@@ -75,6 +79,7 @@ class ScienceComputerStatus(BaseModel):
 
     online: bool
     model: str
+    reference_records: int
 
 
 @app.get("/reference/bodies/{body_id}", response_model=ReferenceDataset)
@@ -99,7 +104,7 @@ def get_embedding_model(model_name: str) -> EmbeddingModel:
 
 
 @lru_cache
-def get_reference_retriever(body_id: AnswerableBodyId) -> ReferenceRetriever:
+def get_reference_retriever(body_id: str) -> ReferenceRetriever:
     """Load local retrieval resources for one answerable body once per API process."""
 
     index = load_reference_vector_index(REFERENCE_VECTOR_INDEX_PATHS[body_id])
@@ -107,21 +112,61 @@ def get_reference_retriever(body_id: AnswerableBodyId) -> ReferenceRetriever:
         embedding_model=get_embedding_model(index.model_name),
         index=index,
         documents_by_id=load_reference_records(REFERENCE_RECORD_PATHS[body_id]),
+        body_level_intents=body_id in ANSWERABLE_BODY_IDS,
     )
+
+
+@lru_cache
+def get_catalog_lookup() -> EntityLookup:
+    return EntityLookup(
+        document
+        for path in REFERENCE_RECORD_PATHS.values()
+        for document in load_reference_records(path).values()
+    )
+
+
+def total_reference_records() -> int:
+    snapshot = tuple(
+        (str(path), path.stat().st_mtime_ns, path.stat().st_size)
+        for path in REFERENCE_RECORD_PATHS.values()
+    )
+    return _count_reference_snapshot(snapshot)
+
+
+@lru_cache(maxsize=1)
+def _count_reference_snapshot(snapshot: tuple[tuple[str, int, int], ...]) -> int:
+    return sum(len(load_reference_records(Path(path))) for path, _, _ in snapshot)
+
+
+def reference_collection(question: str, selected: str) -> str | None:
+    shared = shared_collection(question)
+    if shared is not None:
+        return shared
+    named = question_body_ids(question)
+    matches = get_catalog_lookup().match(question)
+    if matches:
+        candidates = {str(document.metadata["body_id"]) for document in matches}
+        preferred = named[0] if named else selected
+        if preferred in candidates:
+            return preferred
+        if len(candidates) == 1:
+            return candidates.pop()
+    if is_cross_body_question(question):
+        return None
+    return named[0] if named else selected
 
 
 @app.get("/retrieval/reference", response_model=list[RetrievedReferenceRecord])
 def retrieve_reference_records(
     question: str,
     body_id: AnswerableBodyId = "earth",
-    limit: int = 3,
+    limit: Annotated[int, Query(ge=1, le=12)] = 3,
 ) -> list[RetrievedReferenceRecord]:
     """Return evidence for the named bodies, defaulting to the selected body."""
 
-    if is_cross_body_question(question):
+    target_body = reference_collection(question, body_id)
+    if target_body is None:
         return get_cross_body_reference_retriever().retrieve(question, limit)
-    named_bodies = question_body_ids(question)
-    target_body = cast(AnswerableBodyId, named_bodies[0]) if named_bodies else body_id
     return get_reference_retriever(target_body).retrieve(question, limit)
 
 
@@ -138,7 +183,7 @@ def get_cross_body_reference_retriever() -> CrossBodyReferenceRetriever:
 
 
 @lru_cache
-def get_grounded_answer_service(body_id: AnswerableBodyId) -> GroundedAnswerService:
+def get_grounded_answer_service(body_id: str) -> GroundedAnswerService:
     """Create the local answer layer for one body over its cached retriever."""
 
     return GroundedAnswerService(
@@ -159,23 +204,38 @@ def get_cross_body_grounded_answer_service() -> GroundedAnswerService:
 def answer_reference_question(
     question: str,
     body_id: AnswerableBodyId = "earth",
-    limit: int = 3,
+    limit: Annotated[int, Query(ge=1, le=12)] = 3,
+    previous_question: str | None = None,
 ) -> GroundedAnswer:
     """Answer about Earth, Mars, Luna, and Sol from selected or explicitly named bodies."""
 
-    if is_cross_body_question(question):
+    if (
+        previous_question
+        and comparison_clarification(previous_question)
+        and not question_body_ids(question)
+        and len(question_intent_fields(question)) == 1
+        and len(question.split()) <= 6
+    ):
+        bodies = question_body_ids(previous_question)
+        if bodies:
+            question = f"What is the {question.strip().rstrip('?')} ratio between {' and '.join(bodies)}?"
+    clarification = comparison_clarification(question)
+    if clarification is not None:
+        return clarification
+    target_body = reference_collection(question, body_id)
+    if target_body is None:
         return get_cross_body_grounded_answer_service().answer(question, limit)
-    named_bodies = question_body_ids(question)
-    target_body = cast(AnswerableBodyId, named_bodies[0]) if named_bodies else body_id
     return get_grounded_answer_service(target_body).answer(question, limit)
 
 
 @app.get("/health/science-computer", response_model=ScienceComputerStatus)
-def get_science_computer_status() -> ScienceComputerStatus:
+def get_science_computer_status(response: Response) -> ScienceComputerStatus:
     """Report whether the configured local Ollama answer model is ready."""
+    response.headers["Cache-Control"] = "no-store"
     return ScienceComputerStatus(
         online=is_ollama_model_available(),
         model="qwen2.5:3b",
+        reference_records=total_reference_records(),
     )
 
 

@@ -14,6 +14,7 @@ from planetary_scanner.rag.reference_retrieval import (
     ReferenceRetriever,
     is_cross_body_question,
     question_body_ids,
+    question_intent_fields,
 )
 
 
@@ -31,14 +32,41 @@ class SimilarityFakeEmbeddingModel:
         )
 
 
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("What is the Moon's density?", (("mean_density",),)),
+        (
+            "What is the density of the Moon's exosphere?",
+            (("surface_particle_density",),),
+        ),
+        (
+            "What is the density of Earth's atmosphere?",
+            (("surface_air_density", "surface_atmospheric_density"),),
+        ),
+        ("What is the density of the Sun's core?", (("core_density",),)),
+        ("How does the Sun produce energy?", (("energy_source",),)),
+        ("How does the Sun resist gravitational collapse?", ()),
+        ("How much mass is in the Moon's core?", ()),
+    ],
+)
+def test_property_intents_preserve_physical_scope(question, expected):
+    assert question_intent_fields(question) == expected
+
+
 def test_reference_retriever_returns_full_cited_record() -> None:
     documents = [
         RagDocument(
             document_id="earth-radius",
             content="Earth radius",
-            metadata={"source_url": "https://example.test/radius"},
+            metadata={
+                "field": "mean_radius",
+                "source_url": "https://example.test/radius",
+            },
         ),
-        RagDocument(document_id="earth-mass", content="Earth mass", metadata={}),
+        RagDocument(
+            document_id="earth-mass", content="Earth mass", metadata={"field": "mass"}
+        ),
     ]
     embedding_model = SimilarityFakeEmbeddingModel()
     index = build_reference_vector_index(
@@ -278,6 +306,15 @@ def test_cross_body_retriever_uses_mean_radius_for_differently_ranked_size_recor
         ("Compare all four bodies", ("earth", "mars", "luna", "sol")),
         ("Compare all 4", ("earth", "mars", "luna", "sol")),
         ("Compare all bodies", ("earth", "mars", "luna", "sol")),
+        (
+            "So whats the ratio between the 4 of them, and by 4 of them i mean the 4 different planetary bodies",
+            ("earth", "mars", "luna", "sol"),
+        ),
+        (
+            "Compare four different planetary bodies by mass",
+            ("earth", "mars", "luna", "sol"),
+        ),
+        ("Compare three celestial bodies", ("earth", "mars", "luna")),
         ("Compare Earth and the Sun", ("earth", "sol")),
         ("How does Earth's solar wind interaction work?", ("earth",)),
     ],

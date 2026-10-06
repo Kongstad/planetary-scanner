@@ -33,7 +33,7 @@ function ScienceComputer({
       <div className="science-computer" aria-live="polite">
         <div className="message">
           <span>
-            RETRIEVAL
+            QUERY
             {isRetrieving
               ? ` · ${queryElapsedSeconds.toFixed(1)} s`
               : lastQueryElapsedSeconds !== null

@@ -111,10 +111,10 @@ def reference_fact_to_rag_document(
     """Represent one validated HUD fact as text and structured retrieval metadata."""
 
     human_field = fact.field.replace("_", " ")
+    value_text = f"{fact.value}{' ' + fact.unit if fact.unit else ''}".rstrip(".")
     content = (
-        f"{body_id.title()} reference fact: {human_field} is {fact.value}"
-        f"{' ' + fact.unit if fact.unit else ''}. "
-        f"Scope: {fact.scope}. As of: {fact.as_of.isoformat()}. "
+        f"{body_id.title()} reference fact: {human_field} is {value_text}. "
+        f"Scope: {fact.scope.replace('_', ' ')}. As of: {fact.as_of.isoformat()}. "
         f"Source: {source.publisher}, {source.title}. "
         f"Locator: {fact.source_locator}. URL: {source.url}."
     )

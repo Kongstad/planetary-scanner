@@ -25,12 +25,16 @@
     {
       "case_id": "mars-relay-orbiters",
       "question": "How many operational NASA and ESA Mars relay orbiters were documented in May 2026?",
-      "expected_document_ids": ["reference-fact-mars-operational-relay-orbiter-count-2026-05"]
+      "expected_document_ids": [
+        "reference-fact-mars-operational-relay-orbiter-count-2026-05"
+      ]
     },
     {
       "case_id": "mars-highest-throughput-relay",
       "question": "Which Mars relay orbiter sent the most average data in February through May 2026?",
-      "expected_document_ids": ["reference-fact-mars-highest-throughput-relay-2026-05"]
+      "expected_document_ids": [
+        "reference-fact-mars-highest-throughput-relay-2026-05"
+      ]
     },
     {
       "case_id": "mars-atmosphere",
@@ -40,7 +44,9 @@
     {
       "case_id": "mars-global-magnetic-field",
       "question": "Does Mars have a global magnetic field today?",
-      "expected_document_ids": ["reference-fact-mars-global-magnetic-field-status"]
+      "expected_document_ids": [
+        "reference-fact-mars-global-magnetic-field-status"
+      ]
     },
     {
       "case_id": "mars-solar-wind",
@@ -71,6 +77,16 @@
       "case_id": "mars-current-life",
       "question": "Has current life been confirmed on Mars?",
       "expected_document_ids": ["reference-fact-mars-current-life-status"]
+    },
+    {
+      "case_id": "mars-olympus-feature",
+      "question": "How large is Olympus Mons?",
+      "expected_document_ids": ["catalog-mars-feature-4453"]
+    },
+    {
+      "case_id": "mars-phobos-mass",
+      "question": "What is the mass of Phobos?",
+      "expected_document_ids": ["reference-fact-mars-phobos-mass"]
     }
   ]
 }

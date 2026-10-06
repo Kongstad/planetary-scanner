@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "snapshot_date": "2026-10-06",
+  "downloads": [
+    {
+      "file": "moon.kmz",
+      "url": "https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MOON_nomenclature_center_pts.kmz",
+      "sha256": "c2f02e836931daa8af374e90bf69dff91844781e55816b5c3926058612e99409"
+    },
+    {
+      "file": "mars.kmz",
+      "url": "https://asc-planetarynames-data.s3.us-west-2.amazonaws.com/MARS_nomenclature_center_pts.kmz",
+      "sha256": "63f8e95128e53c41dd668387359ac9ae3683f3d7272ad90fb443d047da76d707"
+    },
+    {
+      "file": "sunspots.txt",
+      "url": "https://www.sidc.be/SILSO/DATA/SN_y_tot_V2.0.txt",
+      "sha256": "7093eb8f5582a2d8e76580f32e6311ec758f0c1b969cadf99bcaba9f99726353"
+    },
+    {
+      "file": "sunspots-monthly.txt",
+      "url": "https://www.sidc.be/SILSO/DATA/SN_m_tot_V2.0.txt",
+      "sha256": "3bb2108d4dd3aa0ea7ca78776be341c150e3a4726f33eba7d863337253f8a369"
+    },
+    {
+      "file": "earthquakes.json",
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=1900-01-01&endtime=2026-01-01&minmagnitude=7.5&orderby=time-asc",
+      "sha256": "136f8de3bbe35407b0f7c20edfa089e1dcf719a85bd271b011d271ae74c147b7"
+    },
+    {
+      "file": "exoplanets.csv",
+      "url": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+pl_name%2Chostname%2Cdiscoverymethod%2Cdisc_year%2Cpl_orbper%2Cpl_orbsmax%2Cpl_rade%2Cpl_bmasse%2Cpl_bmassprov%2Cst_spectype%2Cst_teff%2Csy_dist%2Cpl_orbperlim%2Cpl_orbsmaxlim%2Cpl_radelim%2Cpl_bmasselim%2Cst_tefflim%2Cpl_refname+from+ps+where+default_flag%3D1+and+sy_dist%3C%3D20&format=csv",
+      "sha256": "d9065d6d40cc969daab07850c130f0b532f61b1d426f5cba0267ee9ce5dacdc6"
+    }
+  ],
+  "record_counts": {
+    "surface-features": 4074,
+    "earthquakes": 504,
+    "sunspots": 638,
+    "exoplanets": 150
+  },
+  "selection": {
+    "surface-features": "All IAU-adopted Moon and Mars features excluding lunar satellite letter designations. Each named feature is one record. Zero catalog diameters are unavailable, not measured zero sizes.",
+    "earthquakes": "USGS catalog magnitude >=7.5, UTC 1900-01-01 inclusive to 2026-01-01 exclusive. One preferred catalog solution per event. Historical completeness varies.",
+    "sunspots": "SILSO v2 yearly means 1700-2025 and monthly means 2000-2025. Different aggregation periods are distinct observations. Missing values and 2026 are excluded.",
+    "exoplanets": "150 nearest distinct planets among default PS solutions with reported distance <=20 parsecs, sorted locally by distance then name. Missing measurements are omitted. Bound flags and minimum-mass provenance are retained. This is a sample, not an exoplanet census."
+  },
+  "indexed_record_counts": {
+    "earth": 625,
+    "mars": 2143,
+    "luna": 2134,
+    "sol": 733,
+    "solar-system": 102,
+    "milky-way": 219
+  },
+  "total_indexed_records": 5956
+}

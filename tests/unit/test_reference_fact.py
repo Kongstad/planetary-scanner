@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from planetary_scanner.models.corpus import build_collection_documents
 from planetary_scanner.models.reference import (
     ReferenceFact,
     ReferenceSource,
@@ -82,28 +83,28 @@ def test_missing_required_provenance_field_is_rejected(required_field: str) -> N
         ReferenceFact.model_validate(invalid_fact)
 
 
-def test_earth_reference_dataset_has_registered_sources() -> None:
+@pytest.mark.parametrize("body_id", ["earth", "mars", "luna", "sol"])
+def test_reference_datasets_have_registered_sources_and_comparable_properties(
+    body_id: str,
+) -> None:
     project_root = Path(__file__).parents[2]
 
     dataset = load_validated_reference_dataset(
-        project_root / "data" / "reference" / "earth.json",
+        project_root / "data" / "reference" / f"{body_id}.json",
         project_root / "data" / "reference" / "sources.json",
     )
 
-    assert dataset.body_id == "earth"
-    assert len(dataset.facts) == 74
-
-
-def test_mars_reference_dataset_has_registered_sources() -> None:
-    project_root = Path(__file__).parents[2]
-
-    dataset = load_validated_reference_dataset(
-        project_root / "data" / "reference" / "mars.json",
-        project_root / "data" / "reference" / "sources.json",
-    )
-
-    assert dataset.body_id == "mars"
-    assert len(dataset.facts) == 50
+    assert dataset.body_id == body_id
+    fields = {fact.field for fact in dataset.facts}
+    assert {
+        "mass",
+        "mean_radius",
+        "mean_diameter",
+        "mean_density",
+        "volume",
+        "surface_area",
+    } <= fields
+    assert len({fact.fact_id for fact in dataset.facts}) == len(dataset.facts)
 
 
 def test_solar_system_reference_dataset_has_registered_sources() -> None:
@@ -131,7 +132,6 @@ def test_reference_documents_preserve_fact_provenance() -> None:
         if document.metadata["field"] == "mean_radius"
     )
 
-    assert len(documents) == 74
     assert mean_radius.metadata["source_id"] == "jpl-planetary-physical-parameters-2019"
     assert "Locator: Earth row, Mean Radius" in mean_radius.content
 
@@ -154,7 +154,9 @@ def test_reference_rag_documents_are_written_as_deterministic_jsonl(
         first_output_path.read_text(encoding="utf-8").splitlines()[0]
     )
     assert first_output_path.read_bytes() == second_output_path.read_bytes()
-    assert len(first_output_path.read_text(encoding="utf-8").splitlines()) == 74
+    assert len(first_output_path.read_text(encoding="utf-8").splitlines()) == len(
+        documents
+    )
     assert first_record["document_id"] == "reference-fact-earth-mean-radius"
     assert (
         first_record["metadata"]["source_url"]
@@ -180,7 +182,9 @@ def test_mars_reference_rag_documents_are_written_as_deterministic_jsonl(
         first_output_path.read_text(encoding="utf-8").splitlines()[0]
     )
     assert first_output_path.read_bytes() == second_output_path.read_bytes()
-    assert len(first_output_path.read_text(encoding="utf-8").splitlines()) == 50
+    assert len(first_output_path.read_text(encoding="utf-8").splitlines()) == len(
+        documents
+    )
     assert first_record["document_id"] == "reference-fact-mars-mean-radius"
     assert first_record["metadata"]["body_id"] == "mars"
     assert (
@@ -191,10 +195,7 @@ def test_mars_reference_rag_documents_are_written_as_deterministic_jsonl(
 
 def test_retrieval_evaluation_set_references_known_documents() -> None:
     project_root = Path(__file__).parents[2]
-    documents = build_reference_rag_documents(
-        project_root / "data" / "reference" / "earth.json",
-        project_root / "data" / "reference" / "sources.json",
-    )
+    documents = build_collection_documents(project_root / "data/reference", "earth")
 
     evaluation_set = load_validated_retrieval_evaluation_set(
         project_root / "data" / "evaluation" / "earth-reference-retrieval.json",
@@ -208,15 +209,13 @@ def test_retrieval_evaluation_set_references_known_documents() -> None:
         "earth-axis-tilt",
         "earth-atmospheric-carbon-dioxide",
         "earth-global-heat-flow",
+        "earth-valdivia-1960",
     ]
 
 
 def test_mars_retrieval_evaluation_set_references_known_documents() -> None:
     project_root = Path(__file__).parents[2]
-    documents = build_reference_rag_documents(
-        project_root / "data" / "reference" / "mars.json",
-        project_root / "data" / "reference" / "sources.json",
-    )
+    documents = build_collection_documents(project_root / "data/reference", "mars")
 
     evaluation_set = load_validated_retrieval_evaluation_set(
         project_root / "data" / "evaluation" / "mars-reference-retrieval.json",
@@ -239,7 +238,23 @@ def test_mars_retrieval_evaluation_set_references_known_documents() -> None:
         "mars-mola-relief",
         "mars-core-state",
         "mars-current-life",
+        "mars-olympus-feature",
+        "mars-phobos-mass",
     ]
+
+
+@pytest.mark.parametrize("body_id", ["luna", "sol"])
+def test_new_body_retrieval_evaluation_sets_reference_known_documents(
+    body_id: str,
+) -> None:
+    project_root = Path(__file__).parents[2]
+    documents = build_collection_documents(project_root / "data/reference", body_id)
+    cases = load_validated_retrieval_evaluation_set(
+        project_root / "data" / "evaluation" / f"{body_id}-reference-retrieval.json",
+        documents,
+    )
+    assert cases.body_id == body_id
+    assert cases.cases
 
 
 def test_retrieval_evaluation_set_rejects_unknown_document_ids(tmp_path: Path) -> None:

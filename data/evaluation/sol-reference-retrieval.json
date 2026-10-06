@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "body_id": "sol",
+  "cases": [
+    {
+      "case_id": "sol-mass",
+      "question": "What is the mass of the Sun?",
+      "expected_document_ids": ["reference-fact-sol-mass"]
+    },
+    {
+      "case_id": "sol-energy-source",
+      "question": "How does the Sun produce energy?",
+      "expected_document_ids": ["reference-fact-sol-energy-source"]
+    },
+    {
+      "case_id": "sol-stellar-classification",
+      "question": "What is the Sun's stellar classification?",
+      "expected_document_ids": [
+        "reference-fact-sol-spectral-class",
+        "reference-fact-sol-spectral-type"
+      ]
+    },
+    {
+      "case_id": "sol-core-density",
+      "question": "What is the density of the Sun's core?",
+      "expected_document_ids": ["reference-fact-sol-core-density"]
+    },
+    {
+      "case_id": "sol-volume",
+      "question": "What is the Sun's volume?",
+      "expected_document_ids": ["reference-fact-sol-volume"]
+    },
+    {
+      "case_id": "sol-radius",
+      "question": "What is the Sun's mean radius?",
+      "expected_document_ids": ["reference-fact-sol-mean-radius"]
+    },
+    {
+      "case_id": "sol-sunspots-2024",
+      "question": "What was the sunspot number in 2024?",
+      "expected_document_ids": ["observation-sol-sunspots-2024"]
+    },
+    {
+      "case_id": "sol-sunspots-month",
+      "question": "What was the sunspot number in 2024-05?",
+      "expected_document_ids": ["observation-sol-sunspots-2024-05"]
+    }
+  ]
+}

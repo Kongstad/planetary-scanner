@@ -12,6 +12,7 @@ import { IS_STATIC_DEMO, publicAssetUrl } from './runtime.ts'
 type GroundedAnswer = {
   answer: string
   insufficient_evidence: boolean
+  needs_clarification: boolean
 }
 
 const vitalStatistics: [label: string, field: string][] = [
@@ -151,7 +152,13 @@ function App() {
   const [referenceBodyId, setReferenceBodyId] = useState<BodyId | null>(null)
   const [isReferenceApiOnline, setIsReferenceApiOnline] = useState(false)
   const [isScienceComputerOnline, setIsScienceComputerOnline] = useState(false)
+  const [totalReferenceRecords, setTotalReferenceRecords] = useState<
+    number | null
+  >(null)
   const [query, setQuery] = useState('')
+  const [clarificationQuestion, setClarificationQuestion] = useState<
+    string | null
+  >(null)
   const [retrievalStatus, setRetrievalStatus] = useState(
     'Enter a question to generate a grounded answer from cited reference records.',
   )
@@ -173,9 +180,11 @@ function App() {
     ? referenceFacts.length
     : 0
   const scienceComputerQualifier =
-    isActiveReferenceDatasetLoaded && isScienceComputerOnline
-      ? 'EARTH + MARS + MOON + SOL · ONLINE'
-      : `QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
+    isActiveReferenceDatasetLoaded &&
+    isScienceComputerOnline &&
+    typeof totalReferenceRecords === 'number'
+      ? `OLLAMA · QWEN2.5:3B · MINILM-L6-V2 · ${totalReferenceRecords.toLocaleString()} RECORDS`
+      : `OLLAMA · QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
   useEffect(() => {
     const clockIntervalId = window.setInterval(() => {
@@ -235,15 +244,21 @@ function App() {
     let isDisposed = false
     async function loadScienceComputerStatus() {
       try {
-        const response = await fetch('/health/science-computer')
+        const response = await fetch('/health/science-computer', {
+          cache: 'no-store',
+        })
         if (!response.ok) {
           throw new Error(
             `Science Computer health check returned ${response.status}`,
           )
         }
-        const status = (await response.json()) as { online: boolean }
+        const status = (await response.json()) as {
+          online: boolean
+          reference_records: number
+        }
         if (!isDisposed) {
           setIsScienceComputerOnline(status.online)
+          setTotalReferenceRecords(status.reference_records ?? null)
         }
       } catch {
         if (!isDisposed) {
@@ -256,9 +271,11 @@ function App() {
     const retryIntervalId = window.setInterval(() => {
       void loadScienceComputerStatus()
     }, 10_000)
+    window.addEventListener('focus', loadScienceComputerStatus)
     return () => {
       isDisposed = true
       window.clearInterval(retryIntervalId)
+      window.removeEventListener('focus', loadScienceComputerStatus)
     }
   }, [])
 
@@ -326,6 +343,7 @@ function App() {
     setReferenceBodyId(null)
     setIsReferenceApiOnline(false)
     setQuery('')
+    setClarificationQuestion(null)
     setGroundedAnswer(null)
     setRetrievalStatus(
       'Ask about Earth, Mars, the Moon, or the Sun, or compare all four bodies.',
@@ -353,10 +371,16 @@ function App() {
     setRetrievalStatus(
       'Retrieving cited records and generating a grounded answer...',
     )
-    void fetch(
-      `/answers/reference?${new URLSearchParams({ question, body_id: activeBody, limit: '3' })}`,
-      { signal: controller.signal },
-    )
+    const parameters = new URLSearchParams({
+      question,
+      body_id: activeBody,
+      limit: '3',
+    })
+    if (clarificationQuestion)
+      parameters.set('previous_question', clarificationQuestion)
+    void fetch(`/answers/reference?${parameters}`, {
+      signal: controller.signal,
+    })
       .then((response) => {
         if (!response.ok) {
           throw new Error(`Answer API returned ${response.status}`)
@@ -366,9 +390,10 @@ function App() {
       .then((response) => {
         if (answerRequest.current !== controller) return
         setGroundedAnswer(response.answer)
+        setClarificationQuestion(response.needs_clarification ? question : null)
         setRetrievalStatus(
           response.insufficient_evidence
-            ? 'The local model found insufficient evidence in the retrieved records.'
+            ? 'The reference records do not support an answer to this question.'
             : '',
         )
       })
@@ -467,7 +492,9 @@ function App() {
                 {IS_STATIC_DEMO
                   ? 'NO LLM'
                   : isScienceComputerOnline
-                    ? 'ONLINE'
+                    ? totalReferenceRecords === null
+                      ? 'LOADING'
+                      : `${totalReferenceRecords.toLocaleString()} RECORDS`
                     : 'OFFLINE'}
               </strong>
             </div>

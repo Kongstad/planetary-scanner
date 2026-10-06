@@ -477,6 +477,357 @@
       "published_or_updated": "2025-04-08",
       "retrieved_on": "2026-10-05",
       "usage_note": "Primary NASA overview. Dimensions are approximate. The source describes proposed origins for an inferred subsurface mass; these are hypotheses, not confirmed metal deposits."
+    },
+    {
+      "source_id": "nasa-earth-fact-sheet-2024",
+      "publisher": "NASA Goddard / NSSDCA",
+      "title": "Earth Fact Sheet",
+      "url": "https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html",
+      "published_or_updated": "2024-11-15",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Reference bulk, orbital, and atmospheric parameters. Equilibrium temperature differs from observed surface temperature; atmospheric reference values are not live measurements."
+    },
+    {
+      "source_id": "nasa-moon-phases-2026",
+      "publisher": "NASA Science",
+      "title": "Moon Phases",
+      "url": "https://science.nasa.gov/moon/moon-phases/",
+      "published_or_updated": "2026-08-03",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Explanations of illumination, phase geometry, earthshine, and libration, not a prediction of the current lunar phase."
+    },
+    {
+      "source_id": "nasa-moon-tidal-locking-2026",
+      "publisher": "NASA Science",
+      "title": "Tidal Locking",
+      "url": "https://science.nasa.gov/moon/tidal-locking/",
+      "published_or_updated": "2026-07-23",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Synchronous rotation of the Moon relative to Earth. Earth itself is not synchronously rotating with its lunar orbit."
+    },
+    {
+      "source_id": "usgs-iau-gazetteer-gis",
+      "publisher": "USGS Astrogeology and IAU WGPSN",
+      "title": "Gazetteer of Planetary Nomenclature GIS exports",
+      "url": "https://planetarynames.wr.usgs.gov/GIS_Downloads",
+      "published_or_updated": "2026-10-06",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Nightly GIS snapshot. One record per IAU-adopted lunar or Martian feature, excluding satellite letter designations. Coordinate convention is planetocentric latitude and east longitude. Source update is the export date."
+    },
+    {
+      "source_id": "usgs-earthquake-catalog",
+      "publisher": "US Geological Survey",
+      "title": "FDSN earthquake catalog",
+      "url": "https://earthquake.usgs.gov/fdsnws/event/1/",
+      "published_or_updated": "2026-10-06",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Dynamic catalog snapshot, not a publication date. Preferred earthquake solutions for magnitude >=7.5 in 1900-2025. Historical completeness varies and solutions can be revised."
+    },
+    {
+      "source_id": "silso-sunspot-number-v2",
+      "publisher": "WDC-SILSO, Royal Observatory of Belgium, Brussels",
+      "title": "International Sunspot Number version 2.0",
+      "url": "https://www.sidc.be/SILSO/datafiles",
+      "published_or_updated": "2026-10-01",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Source DOI https://doi.org/10.24414/qnza-ac80. CC BY-NC 4.0 https://creativecommons.org/licenses/by-nc/4.0/. Yearly and monthly numeric means selected and converted into attributed research text. Numerical index values are unchanged. Release date follows the downloaded file Last-Modified header. Early yearly averages have sparse coverage. These are indices, not literal spot counts."
+    },
+    {
+      "source_id": "nasa-exoplanet-archive-ps",
+      "publisher": "NASA Exoplanet Archive, Caltech/IPAC",
+      "title": "Planetary Systems default solutions",
+      "url": "https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html",
+      "published_or_updated": "2026-10-06",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Dynamic archive snapshot, not a publication date. Nearby sample sorted locally from default PS rows within 20 parsecs. Single reference solutions are retained. Missing values are omitted and bound flags and mass provenance are preserved. Cited papers are retained as record locators."
+    },
+    {
+      "source_id": "nasa-knowledge-solar-system-solar-system-facts",
+      "publisher": "NASA",
+      "title": "Solar system facts",
+      "url": "https://science.nasa.gov/solar-system/solar-system-facts/",
+      "published_or_updated": "2026-09-25",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-mercury-facts",
+      "publisher": "NASA",
+      "title": "Mercury facts",
+      "url": "https://science.nasa.gov/mercury/facts/",
+      "published_or_updated": "2025-04-25",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-venus-venus-facts",
+      "publisher": "NASA",
+      "title": "Venus facts",
+      "url": "https://science.nasa.gov/venus/venus-facts/",
+      "published_or_updated": "2026-09-28",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-jupiter-jupiter-facts",
+      "publisher": "NASA",
+      "title": "Jupiter facts",
+      "url": "https://science.nasa.gov/jupiter/jupiter-facts/",
+      "published_or_updated": "2026-09-21",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-saturn-facts",
+      "publisher": "NASA",
+      "title": "Saturn facts",
+      "url": "https://science.nasa.gov/saturn/facts/",
+      "published_or_updated": "2026-09-03",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-uranus-facts",
+      "publisher": "NASA",
+      "title": "Uranus facts",
+      "url": "https://science.nasa.gov/uranus/facts/",
+      "published_or_updated": "2025-04-21",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-neptune-neptune-facts",
+      "publisher": "NASA",
+      "title": "Neptune facts",
+      "url": "https://science.nasa.gov/neptune/neptune-facts/",
+      "published_or_updated": "2025-04-21",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-saturn-moons-titan-facts",
+      "publisher": "NASA",
+      "title": "Titan facts",
+      "url": "https://science.nasa.gov/saturn/moons/titan/facts/",
+      "published_or_updated": "2025-04-25",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-saturn-moons-enceladus",
+      "publisher": "NASA",
+      "title": "Enceladus overview",
+      "url": "https://science.nasa.gov/saturn/moons/enceladus/",
+      "published_or_updated": "2024-11-04",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-solar-system-asteroids-facts",
+      "publisher": "NASA",
+      "title": "Asteroid facts",
+      "url": "https://science.nasa.gov/solar-system/asteroids/facts/",
+      "published_or_updated": "2026-09-21",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-solar-system-comets-facts",
+      "publisher": "NASA",
+      "title": "Comet facts",
+      "url": "https://science.nasa.gov/solar-system/comets/facts/",
+      "published_or_updated": "2026-09-21",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-solar-system-meteors-meteorites",
+      "publisher": "NASA",
+      "title": "Meteors and meteorites",
+      "url": "https://science.nasa.gov/solar-system/meteors-meteorites/",
+      "published_or_updated": "2026-09-21",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-solar-system-kuiper-belt-facts",
+      "publisher": "NASA",
+      "title": "Kuiper Belt facts",
+      "url": "https://science.nasa.gov/solar-system/kuiper-belt/facts/",
+      "published_or_updated": "2025-03-13",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-solar-system-oort-cloud-facts",
+      "publisher": "NASA",
+      "title": "Oort Cloud facts",
+      "url": "https://science.nasa.gov/solar-system/oort-cloud/facts/",
+      "published_or_updated": "2025-01-02",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-exoplanets-what-is-an-exoplanet",
+      "publisher": "NASA",
+      "title": "What is an exoplanet?",
+      "url": "https://science.nasa.gov/exoplanets/what-is-an-exoplanet/",
+      "published_or_updated": "2026-05-18",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-exoplanets-planet-types",
+      "publisher": "NASA",
+      "title": "Types of exoplanets",
+      "url": "https://science.nasa.gov/exoplanets/planet-types/",
+      "published_or_updated": "2026-02-13",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-exoplanets-how-we-find-and-characterize",
+      "publisher": "NASA",
+      "title": "Exoplanet detection and characterization",
+      "url": "https://science.nasa.gov/exoplanets/how-we-find-and-characterize/",
+      "published_or_updated": "2026-09-14",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-exoplanets-habitable-zone",
+      "publisher": "NASA",
+      "title": "The habitable zone",
+      "url": "https://science.nasa.gov/exoplanets/habitable-zone/",
+      "published_or_updated": "2025-09-03",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-universe-galaxies",
+      "publisher": "NASA",
+      "title": "Galaxy basics",
+      "url": "https://science.nasa.gov/universe/galaxies/",
+      "published_or_updated": "2026-08-12",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-universe-galaxies-types",
+      "publisher": "NASA",
+      "title": "Galaxy types",
+      "url": "https://science.nasa.gov/universe/galaxies/types/",
+      "published_or_updated": "2026-08-12",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-universe-stars",
+      "publisher": "NASA",
+      "title": "Star basics",
+      "url": "https://science.nasa.gov/universe/stars/",
+      "published_or_updated": "2026-08-12",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-universe-stars-types",
+      "publisher": "NASA",
+      "title": "Types of stars",
+      "url": "https://science.nasa.gov/universe/stars/types/",
+      "published_or_updated": "2026-08-12",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-universe-black-holes",
+      "publisher": "NASA",
+      "title": "Black hole basics",
+      "url": "https://science.nasa.gov/universe/black-holes/",
+      "published_or_updated": "2026-08-12",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-mission-webb-science-overview-science-explainers-is-the-milky-way-unique",
+      "publisher": "NASA",
+      "title": "Exploring the Milky Way",
+      "url": "https://science.nasa.gov/mission/webb/science-overview/science-explainers/is-the-milky-way-unique/",
+      "published_or_updated": "2026-01-14",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-earth-earth-observatory-the-water-cycle",
+      "publisher": "NASA",
+      "title": "The water cycle",
+      "url": "https://science.nasa.gov/earth/earth-observatory/the-water-cycle/",
+      "published_or_updated": "2025-11-14",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-dwarf-planets",
+      "publisher": "NASA",
+      "title": "Dwarf planets",
+      "url": "https://science.nasa.gov/dwarf-planets/",
+      "published_or_updated": "2026-09-21",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-europa",
+      "publisher": "NASA",
+      "title": "Europa",
+      "url": "https://science.nasa.gov/jupiter/jupiter-moons/europa/",
+      "published_or_updated": "2026-09-24",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Concise paraphrases of the verified NASA educational page. Source update date comes from the page metadata. Numerical statements retain their stated approximation."
+    },
+    {
+      "source_id": "nasa-knowledge-universe-cosmic-distances",
+      "publisher": "NASA",
+      "title": "Cosmic distances",
+      "url": "https://science.nasa.gov/universe/cosmic-distances/",
+      "published_or_updated": "2024-11-06",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Short educational paraphrases of the verified NASA page. Observational inferences and unresolved questions retain their qualifiers."
+    },
+    {
+      "source_id": "nasa-knowledge-dark-matter",
+      "publisher": "NASA",
+      "title": "Dark matter",
+      "url": "https://science.nasa.gov/dark-matter/",
+      "published_or_updated": "2026-08-12",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Short educational paraphrases of the verified NASA page. Observational inferences and unresolved questions retain their qualifiers."
+    },
+    {
+      "source_id": "nasa-knowledge-dark-energy",
+      "publisher": "NASA",
+      "title": "Dark energy",
+      "url": "https://science.nasa.gov/dark-energy/",
+      "published_or_updated": "2026-08-12",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Short educational paraphrases of the verified NASA page. Observational inferences and unresolved questions retain their qualifiers."
+    },
+    {
+      "source_id": "nasa-knowledge-jupiter-jupiter-moons",
+      "publisher": "NASA",
+      "title": "Jupiter moons",
+      "url": "https://science.nasa.gov/jupiter/jupiter-moons/",
+      "published_or_updated": "2026-09-21",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Short educational paraphrases of the verified NASA page. Observational inferences and unresolved questions retain their qualifiers."
+    },
+    {
+      "source_id": "nasa-knowledge-jupiter-jupiter-moons-ganymede-facts",
+      "publisher": "NASA",
+      "title": "Ganymede facts",
+      "url": "https://science.nasa.gov/jupiter/jupiter-moons/ganymede/facts/",
+      "published_or_updated": "2025-04-25",
+      "retrieved_on": "2026-10-06",
+      "usage_note": "Short educational paraphrases of the verified NASA page. Observational inferences and unresolved questions retain their qualifiers."
     }
   ]
 }

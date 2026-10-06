@@ -27,23 +27,23 @@ Start with the [README](../README.md) to install and run the application. The ex
 ## The three responsibilities
 
 ```mermaid
-flowchart LR
-    Question[User question] --> Routing[Body selection and retrieval rules]
-    Routing --> Encoder[MiniLM encoder]
-    Encoder -->|Question vector| Search[Similarity search over stored vectors]
-    Index[Stored NumPy vector index] -->|Document vectors| Search
-    Search -->|Selected record IDs| Evidence[Full reference text and provenance]
-    Records[Curated JSONL reference records] -->|Selected record text| Evidence
-    Evidence --> Prompt[Question, evidence, and instructions]
-    Question -->|Question text| Prompt
-    Prompt --> LLM[Qwen through local Ollama]
-    LLM --> Validation[Parse and validate response]
-    Validation -->|Valid| Result[Answer with application-owned evidence]
-    Validation -->|Invalid| Failure[Request fails]
-    LLM -->|Connection failure or timeout| Failure
+flowchart TD
+    Question[User question] --> Routing[Clarify the property or resolve the subject]
+    Routing -->|Needs clarification| Direct[Response without Qwen]
+    Routing -->|Retrieve evidence| Encoder[MiniLM question encoder]
+    Encoder --> Search[Python retrieval rules and vector search]
+    Records[Stored vectors and reference text] --> Search
+    Search --> Evidence[Selected text and provenance]
+    Evidence --> Service[Python answer service]
+    Service -->|Supported ratio or no evidence| Direct
+    Service -->|Question, evidence, and instructions| LLM[Qwen through local Ollama]
+    LLM --> Validation[Parse, check, and correct once when applicable]
+    Validation -->|Answer or evidence limitation| Result[Response with application-owned evidence]
+    Direct --> Result
+    Validation -->|Invalid JSON or request failure| Failure[Unavailable response]
 ```
 
-The encoder represents text as vectors; retrieval selects evidence, and the language model generates text from a prompt containing that evidence.
+The encoder represents text as vectors. Retrieval selects evidence, and the language model generates text from a prompt containing that evidence.
 
 | Component                    | Implementation                               | Responsibility                                                              |
 | ---------------------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
@@ -54,6 +54,24 @@ The encoder represents text as vectors; retrieval selects evidence, and the lang
 These are separate responsibilities. RAG is the application workflow that connects the models. It is not another model downloaded alongside Qwen and MiniLM.
 
 The current system uses existing model weights. It does not train Qwen or MiniLM on planetary data. The custom work is the evidence collection, indexing, retrieval rules, prompt design, integration, and evaluation.
+
+### How the application improves answers
+
+The improvements change what reaches Qwen and what the application accepts from it. They do not change the model's learned weights.
+
+| Change                                                 | Example                                                                                 | Purpose                                                             |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Clarify an unspecified ratio                           | “What is the ratio between all four bodies?” asks which property to compare             | Avoid guessing that the question means mass, radius, or composition |
+| Select matching properties for each body               | A mass comparison retrieves a mass record for every requested body                      | Prevent unrelated measurements from becoming a comparison           |
+| Calculate supported ratios in Python                   | A four-body mass ratio uses Earth as the baseline of 1                                  | Keep arithmetic outside generated prose                             |
+| Route catalog objects and shared topics                | Tycho selects a lunar feature. Exoplanet questions use the shared astronomy collection  | Find evidence regardless of the active viewer tab                   |
+| Retain scientific scope in the prompt                  | Lunar oxide values exclude the core. Solar composition is by number                     | Reduce changes to the physical meaning of a record                  |
+| Check generated numbers and selected qualifiers        | Unsupported numbers or an omitted minimum-mass qualifier trigger one correction attempt | Reject specific errors before displaying an answer                  |
+| Replace an insufficient answer with a clear limitation | A refusal does not also present unrelated measurements                                  | Avoid confusing partial answers                                     |
+
+For the original four-body ratio question, the first response is now a clarification. A short reply such as “mass” selects the property, retrieves comparable records, and returns a Python calculation. It no longer needs Qwen to infer the property or perform the arithmetic.
+
+The larger corpus gives retrieval more material to search. Most new records describe surface features, so the increased count should not be read as an equal increase in explanatory depth. Targeted retrieval checks and representative CPU answers have been exercised. A broad real-model answer benchmark is still needed to measure overall quality.
 
 ## The LLM: generating an answer
 
@@ -72,7 +90,7 @@ flowchart LR
 
 A generative language model produces a sequence by repeatedly selecting a next token.
 
-A token is a unit of text defined by a model's tokenizer. It may represent a word, part of a word, punctuation, or another text fragment. Token IDs are vocabulary identifiers; they are not the semantic search vectors discussed later. Different models can tokenize the same sentence differently. [Hugging Face's tokenizer documentation](https://huggingface.co/docs/transformers/main/en/tokenizer_summary) explains the common algorithms.
+A token is a unit of text defined by a model's tokenizer. It may represent a word, part of a word, punctuation, or another text fragment. Token IDs are vocabulary identifiers. They are not the semantic search vectors discussed later. Different models can tokenize the same sentence differently. [Hugging Face's tokenizer documentation](https://huggingface.co/docs/transformers/main/en/tokenizer_summary) explains the common algorithms.
 
 At each generation step, the model processes the prompt and the text generated so far, then scores possible next tokens. A decoding method selects one of them. Repeating this process produces an answer. This is called autoregressive generation. [Hugging Face's text generation documentation](https://huggingface.co/docs/transformers/main/en/llm_tutorial) describes this process and its controls.
 
@@ -82,17 +100,19 @@ For this application, the prompt contains the question, retrieved reference fact
 
 Parameters are the numerical weights learned during model training. They encode patterns that let a model relate input text to possible continuations. They are separate from the reference records stored in this repository.
 
-Qwen is a Transformer language model. Attention is part of how a Transformer combines information from different token positions. In a causal language model, a generated token can depend on the preceding context. Attention weights are internal calculations; they do not provide a certificate that a scientific claim is true. The original architecture is described in [Attention Is All You Need](https://arxiv.org/html/1706.03762v7).
+Qwen is a Transformer language model. Attention is part of how a Transformer combines information from different token positions. In a causal language model, a generated token can depend on the preceding context. Attention weights are internal calculations. They do not provide a certificate that a scientific claim is true. The original architecture is described in [Attention Is All You Need](https://arxiv.org/html/1706.03762v7).
 
 The context window is the amount of tokenized text the runtime can process for a request. Instructions, evidence, the question, and generated output consume space. A model's published maximum and a local runtime's configured context can differ. This application does not explicitly set Ollama's `num_ctx`, so its effective context depends on the installed runtime and configuration.
 
-Each question is submitted as a fresh prompt. The application does not forward conversation history or Ollama's returned generation context. A previous answer therefore does not become evidence for the next question.
+Each generated answer uses a fresh prompt. The application does not forward conversation history or Ollama's returned generation context. It retains one ambiguous ratio question so a short follow-up such as “mass” can resolve the requested property and bodies. This context is used for routing, not as scientific evidence.
 
 ### The model used here
 
 The default answer model is `qwen2.5:3b`. The associated Qwen2.5 instruction model has approximately 3.09 billion parameters. Instruction tuning prepares a pretrained model to respond to requests rather than only continue arbitrary text. See the [Qwen model card](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct) for the underlying model details.
 
-Ollama runs the model and exposes an HTTP interface. The Python application sends requests to Ollama; it does not implement Qwen's neural network itself.
+Ollama runs the model and exposes an HTTP interface. The Python application sends requests to Ollama. It does not implement Qwen's neural network itself.
+
+A larger model in the same family may follow instructions and combine evidence more reliably, but this remains an expectation until measured on this application's questions. More parameters do not repair missing evidence or an incorrect reference record. Replacing Qwen also leaves the MiniLM retrieval stage unchanged. Compare answer correctness, retained qualifiers, refusals, and response times before selecting a larger default. No 7B or 14B answer benchmark has been run for this project.
 
 The [Ollama model listing](https://ollama.com/library/qwen2.5:3b) identifies the distributed `3b` artifact as `Q4_K_M`. This is a quantized representation of the model weights. Quantization reduces the storage and memory needed for weights by representing them with lower precision. The exact local artifact should be inspected when comparing results, because a model tag alone is not a complete reproducibility record.
 
@@ -109,7 +129,7 @@ The prompt instructs Qwen to use only the supplied records. That is an instructi
 | Setting                         | Current value                  | Effect in this application                                                                                        |
 | ------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
 | Model                           | `qwen2.5:3b`                   | Default model requested by the adapter                                                                            |
-| Temperature                     | `0`                            | Uses a low-variability generation setting; it does not guarantee correctness or identical results across runtimes |
+| Temperature                     | `0`                            | Uses a low-variability generation setting. It does not guarantee correctness or identical results across runtimes |
 | Output format                   | Pydantic-generated JSON schema | Requests an `answer` string and an `insufficient_evidence` boolean                                                |
 | Streaming                       | `False`                        | Waits for the full result before returning it to the browser                                                      |
 | HTTP timeout                    | 120 seconds                    | Limits how long the adapter waits for Ollama                                                                      |
@@ -165,7 +185,7 @@ When ||q|| = ||d|| = 1:
 cosine(q, d) = q · d
 ```
 
-Here, `q` is a question vector and `d` is a document vector. Cosine similarity compares their directions. Its mathematical range is from `-1` to `1`; a larger score indicates greater directional similarity.
+Here, `q` is a question vector and `d` is a document vector. Cosine similarity compares their directions. Its mathematical range is from `-1` to `1`. A larger score indicates greater directional similarity.
 
 The actual search operation is short:
 
@@ -175,7 +195,7 @@ scores = index.vectors @ question_vector[0]
 
 Each row of `index.vectors` is one document embedding. Matrix multiplication compares the question against every row. The code then ranks document IDs by their scores.
 
-For a simple two-dimensional illustration, let `q = [1, 0]`. A unit document vector `[0.8, 0.6]` has similarity `0.8`; `[0, 1]` has similarity `0`. These are teaching vectors, not real MiniLM outputs.
+For a simple two-dimensional illustration, let `q = [1, 0]`. A unit document vector `[0.8, 0.6]` has similarity `0.8`. `[0, 1]` has similarity `0`. These are teaching vectors, not real MiniLM outputs.
 
 Similarity measures relatedness according to the encoder. It does not measure whether a fact is true, whether a question is answerable, or whether an answer is scientifically valid.
 
@@ -184,12 +204,12 @@ Similarity measures relatedness according to the encoder. It does not measure wh
 ```mermaid
 flowchart TD
     subgraph Preparation[Preparation when data or the encoder changes]
-        Facts[Validated facts and source registry] --> Records[One text record per fact]
+        Facts[Validated facts, corpus, and source registry] --> Records[One text record per retrieval unit]
         Records --> Embeddings[Encode the record text]
         Embeddings --> Index[Persist vectors and document IDs]
     end
     subgraph Request[For each question]
-        Question[Question and active body] --> Routing[Resolve named bodies]
+        Question[Question and active body] --> Routing[Resolve subject and collection]
         Routing --> QueryEmbedding[Encode the question with MiniLM]
         QueryEmbedding -->|Question vector| Search[Search the corresponding indexes]
         Index --> Search
@@ -206,7 +226,7 @@ RAG separates preparing searchable evidence from using that evidence during a re
 
 Retrieval-augmented generation means generating an answer with information retrieved for the current question. Retrieval selects evidence. Augmentation places that evidence into the model's input. Generation produces the response. The approach is introduced in [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401).
 
-This repository implements a fixed retrieve-then-generate workflow over curated reference records. It does not reproduce the paper's training system. The encoder and answer model remain pretrained components.
+The diagram shows the generation path over validated reference records. The application also asks for clarification before retrieval and calculates supported numeric ratios directly from retrieved metadata. These paths do not call Qwen. The encoder and answer model remain pretrained components. The repository does not reproduce the paper's training system.
 
 RAG lets the application change its reference data without retraining the answer model. Updating a fact requires updating its retrieval record and embedding index so that the new text reaches later prompts. Changing a JSON file alone does not update the cached retrieval resources.
 
@@ -226,7 +246,7 @@ The visible globe and the answer pipeline use separate data paths. Qwen receives
 
 ### Facts carry meaning and provenance
 
-The source data lives in [`data/reference`](../data/reference). Each body has a JSON dataset, a JSON Lines retrieval file, and a NumPy vector archive. A shared source registry records publications and services.
+The source data lives in [`data/reference`](../data/reference). Small body JSON datasets supply the viewer panels. Larger research records live in `corpus/*.jsonl`. The index builder merges both into six searchable collections, each with a JSON Lines retrieval file and a NumPy vector archive. A shared source registry records publications and services.
 
 | Fact field       | Purpose                               | Example from the Mars mean-radius fact   |
 | ---------------- | ------------------------------------- | ---------------------------------------- |
@@ -248,7 +268,7 @@ The builder creates a `RagDocument` with an ID, searchable text, and structured 
 
 ```text
 Mars reference fact: mean radius is 3389.5 km.
-Scope: volume_equivalent_sphere. As of: 2019-12-12.
+Scope: volume equivalent sphere. As of: 2019-12-12.
 Source: NASA Jet Propulsion Laboratory Solar System Dynamics,
 Planetary Physical Parameters. Locator: Mars row, Mean Radius.
 URL: https://ssd.jpl.nasa.gov/planets/phys_par.html.
@@ -262,20 +282,32 @@ The encoder embeds the complete `content` string, including scope and source tex
 
 ### What is stored in the index
 
-An `.npz` archive contains `document_ids`, `vectors`, and `model_name`. Search returns IDs, which are joined to the full JSON Lines records. The vector archive is a derived search resource; the record text supplies the evidence sent to Qwen.
+An `.npz` archive contains `document_ids`, `vectors`, and `model_name`. Search returns IDs, which are joined to the full JSON Lines records. The vector archive is a derived search resource. The record text supplies the evidence sent to Qwen.
 
-The current four answerable datasets contain:
+The indexed snapshot contains 5,956 records:
 
-| Body  | Reference records | Vector matrix shape |
-| ----- | ----------------- | ------------------- |
-| Earth | 74                | `74 × 384`          |
-| Luna  | 79                | `79 × 384`          |
-| Mars  | 50                | `50 × 384`          |
-| Sol   | 66                | `66 × 384`          |
+| Collection   | Reference records | Vector matrix shape |
+| ------------ | ----------------- | ------------------- |
+| Earth        | 625               | `625 × 384`         |
+| Luna         | 2,134             | `2134 × 384`        |
+| Mars         | 2,143             | `2143 × 384`        |
+| Sol          | 733               | `733 × 384`         |
+| Solar system | 102               | `102 × 384`         |
+| Milky Way    | 219               | `219 × 384`         |
 
-These counts describe the current files and will change as facts are added. The API can also serve a `solar-system` reference dataset, but that dataset is not an answerable body index in the current RAG endpoints.
+The four viewer tabs remain the selectable subjects. The two shared collections are internal retrieval resources, available from every tab. The header counts indexed records across all six collections. The frontend requests this count from `/health/science-computer` every ten seconds and when the browser window regains focus. The API recalculates the count when a record file's modification time or size changes. That count can update without a restart, while cached retrieval resources still require a restart after an index rebuild.
 
-Search is an exact scan of the vectors with NumPy. It is practical for these small datasets and easy to inspect. The repository includes PostgreSQL/pgvector scaffolding, but the active answer path uses local `.npz` indexes and JSON Lines records. Running the database is not required for this path.
+The corpus adds 4,074 named surface features from the USGS/IAU Gazetteer, 504 USGS earthquakes, 638 SILSO solar observations, 150 nearby NASA archive exoplanets, and 178 NASA educational explanations to the original 412 stored facts. Most of the increase is geographic coverage. A catalog entry is one record even when it contains several measurements. It is not a separate scientific paper or a new independent observation for every coordinate.
+
+The Gazetteer import excludes lunar satellite letter designations and removes identical repeated feature IDs. Zero catalog diameters are treated as unavailable. Coordinates use the export's planetocentric latitude and east longitude convention. Earthquake records cover catalog events of magnitude at least 7.5 from 1900 through 2025, with variable historical completeness. A missing depth remains unavailable.
+
+SILSO records cover yearly means from 1700 through 2025 and monthly means from 2000 through 2025. These are different aggregation periods, not literal counts of spots visible at one instant. Early yearly averages can have sparse coverage. The adapted records credit WDC-SILSO and retain its [CC BY-NC 4.0 license](https://creativecommons.org/licenses/by-nc/4.0/).
+
+The exoplanet sample contains 150 nearest planets selected from default Planetary Systems solutions with reported distance at most 20 parsecs. Each profile retains one reference solution. Missing fields are omitted, limit flags stay limits, and radial-velocity minimum masses remain `M sin i` rather than true masses. Catalog measurements do not establish habitability or life.
+
+[`corpus/manifest.json`](../data/reference/corpus/manifest.json) stores the download URLs, SHA-256 hashes, selection rules, and indexed counts. NASA explanations retain page citations and update dates. `KnowledgeRecord` validates collection names, identifiers, text, dates, and provenance. The builder rejects unregistered sources and duplicate IDs. The importer rejects non-finite numbers and invalid coordinates. These structural checks complement source review, rather than proving every scientific claim.
+
+Search is an exact scan of the vectors with NumPy. At this scale it remains practical on CPU. The repository includes PostgreSQL/pgvector scaffolding, but the active answer path uses local `.npz` indexes and JSON Lines records. Running the database is not required for this path.
 
 ## Choosing evidence for a question
 
@@ -283,20 +315,26 @@ Search is an exact scan of the vectors with NumPy. It is practical for these sma
 
 ```mermaid
 flowchart TD
-    Question[Question and active tab] --> Named{How many supported bodies are named?}
+    Question[Question and active tab] --> Shared{Recognized shared topic?}
+    Shared -->|Yes| Context[Use astronomy or observation collection]
+    Shared -->|No| Object{Named catalog object?}
+    Object -->|Yes| Catalog[Use object's collection]
+    Object -->|No| Named{How many supported bodies are named?}
     Named -->|None| Selected[Use active tab's body index]
     Named -->|One| Explicit[Use named body's index]
     Named -->|Two or more| Comparison[Use balanced cross-body retrieval]
     Selected --> Evidence[Retrieve reference records]
     Explicit --> Evidence
     Comparison --> Evidence
+    Context --> Evidence
+    Catalog --> Evidence
 ```
 
-The question's explicit body names take priority over the tab selected in the interface.
+Shared-topic rules route exoplanets, stellar concepts, the Milky Way, and related solar-system bodies to their collections. Named catalog objects can select Luna, Mars, or Milky Way records from another tab. For ordinary body questions, explicit body names take priority over the selected tab.
 
 The routing function recognizes Earth, Mars, Moon/Luna/lunar, and Sun/Sol. It interprets “all three” as Earth, Mars, and Luna, and “all four” as those bodies plus Sol. “Earth's Moon” is normalized to avoid treating it as a request about two bodies.
 
-For example, asking “What is Mars's mean radius?” while looking at Earth uses Mars's records. Asking “What is its mean radius?” uses the active tab. This is rule-based routing in Python; Qwen does not choose which body index to search. The generic word “star” is not currently a Sun/Sol routing alias.
+For example, asking “What is Mars's mean radius?” while looking at Earth uses Mars's records. Asking “What is its mean radius?” uses the active tab. “What is Tycho's diameter?” selects the lunar crater. “Where in the Milky Way is the Sun?” uses galactic context. The generic word “star” routes to shared stellar explanations, rather than acting as a Sun/Sol alias. Qwen does not choose which collection to search.
 
 ### The default ranking blends semantics and words
 
@@ -313,11 +351,15 @@ The first term rescales cosine similarity. The second measures coverage of the q
 
 Tokenization for this exact-term check lowercases the text and uses a regular expression. It is different from the neural models' tokenizers. It performs no sophisticated language analysis or stop-word removal.
 
-The default limit is three records. A crucial detail is that the returned `score` is the original cosine similarity, while the default ordering uses the hybrid score. The visible score therefore does not fully explain the ranking. Calling the lower-level vector search directly also bypasses these retrieval rules.
+The default limit is three records. Ordinary retrieval removes selected records whose cosine score is more than 0.2 below the strongest selected cosine score. This reduces unrelated context in focused explanatory answers. The gap is an application rule, not a confidence threshold. The returned `score` is the original cosine similarity, while default ordering uses the hybrid score. The visible score therefore does not fully explain ranking. Calling the lower-level vector search directly also bypasses these retrieval rules.
 
 ### Explicit subjects and complete groups
 
-The retriever also has targeted behavior. Compound questions can request several subjects, such as size and population. When it recognizes more than one subject, it selects evidence for each rather than allowing one subject to dominate the top results.
+Exact catalog names are normalized for case, accents, and word boundaries. A named feature or exoplanet selects its profile before whole-body property filters run. The displayed score remains its actual question-to-record cosine similarity. Dated solar queries select the requested annual or monthly observation, and an unavailable period returns no evidence. Earthquake queries with a year restrict candidates to events from that year. Phobos and Deimos queries select their own properties rather than Mars's mass or radius.
+
+Shared collections skip whole-body property filters. An exoplanet radius or galactic mass question must not silently become a radius or mass lookup for the active planet. Comparisons of asteroids, comets, meteors, meteoroids, and meteorites collect the requested definitions together.
+
+The retriever also has targeted behavior. A recognized property, such as mass or mean density, restricts selection to matching metadata fields. Compound questions can request several subjects, such as size and population. The retriever selects evidence for each. Density rules distinguish a body's average density from core, atmospheric, and exospheric density.
 
 Broad composition questions retrieve the complete recognized composition group. This can exceed the requested limit of three. Without that expansion, a summary could omit some of the components simply because only three records reached the model.
 
@@ -334,27 +376,38 @@ sequenceDiagram
     participant Retriever as ReferenceRetriever
     participant Service as GroundedAnswerService
     participant Ollama as Ollama / Qwen
-    Browser->>API: GET /answers/reference with question, body, limit
-    API->>Service: answer(question, limit)
-    Service->>Retriever: retrieve(question, limit)
-    Retriever-->>Service: Full records with provenance and scores
-    Service->>Service: Build evidence-bounded prompt
-    Service->>Ollama: POST /api/generate with JSON schema
-    alt Valid structured response
-        Ollama-->>Service: Generated answer and evidence-status flag
-        Service->>Service: Validate JSON and apply any matching scope safeguard
-        Service-->>API: Answer with retrieved records as citations
-        API-->>Browser: GroundedAnswer JSON
-    else Connection, timeout, or invalid output
-        Ollama-->>Service: Failure or unusable response
-        API-->>Browser: Failed request
-        Browser->>Browser: Display an unavailable message
+    Browser->>API: Question, body, limit, optional previous question
+    API->>API: Resolve a short clarification follow-up
+    alt Ratio lacks a property
+        API-->>Browser: Clarification question, no citations
+    else Property is specified or generation is needed
+        API->>Service: answer(question, limit)
+        Service->>Retriever: retrieve(question, limit)
+        Retriever-->>Service: Full records with provenance and scores
+        alt Supported numeric ratio
+            Service->>Service: Validate matching values and calculate ratios
+        else No evidence
+            Service->>Service: Return insufficient evidence
+        else Generate from evidence
+            Service->>Service: Build evidence-bounded prompt
+            Service->>Ollama: POST /api/generate with JSON schema
+            Ollama-->>Service: Structured answer or request failure
+            Service->>Service: Parse JSON and check numbers and selected qualifiers
+            opt Unsupported number or missing required qualifier
+                Service->>Ollama: One fresh prompt with correction instructions
+                Ollama-->>Service: Corrected structured answer or request failure
+                Service->>Service: Validate again and reject a still unsupported answer
+            end
+            Service->>Service: Apply lunar summary or evidence-limitation message when applicable
+        end
+        Service-->>API: Answer and selected evidence, or request failure
+        API-->>Browser: GroundedAnswer JSON, or failed request
     end
 ```
 
-A request combines application-owned evidence with model-generated text, then returns both through the API.
+A request returns a clarification, a calculated ratio, a generated answer, or an evidence-limitation message. Connection failures, timeouts, or invalid JSON fail the request. The browser displays an unavailable message.
 
-The prompt includes the question and each selected record's ID and full content. Its instructions cover factual answers, comparisons, units, model estimates, and insufficient evidence. Several rules address observed failure cases: percentages must retain their units, lunar oxide percentages exclude the core, and solar photospheric composition is measured by number.
+The prompt includes the question and each selected record's ID and full content. The Ollama adapter sends the instructions in the `system` field and the question and evidence in the `prompt` field. Its instructions cover factual answers, comparisons, units, model estimates, and insufficient evidence. Several rules address observed failure cases: percentages must retain their units, lunar oxide percentages exclude the core, and solar photospheric composition is measured by number.
 
 The model may return only two fields:
 
@@ -367,7 +420,11 @@ The model may return only two fields:
 
 This is an illustrative valid response, not a promise of exact wording from a model run.
 
-The application attaches the retrieved records as `citations`. Qwen does not invent or choose their URLs. This ensures that the returned evidence is exactly what entered the prompt. It does not prove that every sentence in the answer is supported by that evidence. The service currently attaches all selected records, including any that the answer did not use.
+The application attaches selected records as `citations`. Qwen does not invent or choose their URLs. For generated answers, these are the records supplied in the prompt, including any that the answer did not use. For calculated ratios, they are the records used in the calculation. Citations alone do not prove that every generated sentence is supported.
+
+Generated answers also pass a numeric-grounding check. It compares numbers in the answer with numbers in the supplied evidence, allowing common fraction-to-percent and ppm-to-percent conversions and a 0.5% relative rounding tolerance. A value absent from the evidence triggers one fresh correction request to Qwen with the same question and evidence. The rejected prose is not included in that request. If the corrected answer still adds unsupported numbers, the application rejects it. This check does not verify units or prove that a supported number was applied to the correct property, and it cannot detect every unsupported claim made without numbers.
+
+Two catalog-specific checks also require explicit qualifiers. Answers about `M sin i` must describe a minimum mass, and dated sunspot answers must identify a mean activity index. Missing qualifiers trigger the same single correction attempt. These text checks cover those specific cases and do not constitute general semantic verification.
 
 The UI displays the answer text and an insufficient-evidence message when applicable. The API response also contains citations and scores, but the current science-computer panel does not render those details.
 
@@ -379,9 +436,11 @@ This prevents an omission or a missing core-exclusion qualifier in that specific
 
 ### Insufficient evidence and failures
 
-The `insufficient_evidence` flag is supplied by the model. There is no minimum retrieval-score threshold that automatically rejects unsupported questions. The retriever can return the nearest records even when none answers the question, so Qwen must recognize the mismatch.
+For generated answers, Qwen supplies the `insufficient_evidence` flag. When it is true, the application replaces the generated prose with an evidence-limitation message, preventing a refusal from also presenting unrelated figures. Empty retrieval results and missing or incompatible ratio values are rejected before generation. There is no minimum retrieval-score threshold for ordinary semantic search, so Qwen must still recognize when nearby records do not answer a question.
 
-An unavailable Ollama service, a timeout, or invalid generated JSON fails the request. The current UI shows a generic unavailable message. There is no automatic retry or second-model fallback. The health endpoint checks whether the model appears in Ollama's model list; it does not run a full retrieval or generation test.
+The API also returns `needs_clarification`. An unspecified ratio has this flag set to true, `insufficient_evidence` set to false, and no citations. Asking for a property is a normal clarification, not a failed evidence search.
+
+An unavailable Ollama service, a timeout, or invalid generated JSON fails the request. The current UI shows a generic unavailable message. Connection and parsing failures are not retried, and there is no second-model fallback. The health endpoint checks whether the model appears in Ollama's model list. It does not run a full retrieval or generation test.
 
 ## A question from start to finish
 
@@ -392,20 +451,18 @@ Ask:
 1. The browser sends the question, active body, and a limit of three to `/answers/reference`.
 2. Body routing finds “Mars” and selects the Mars retriever, even if Earth is the active tab.
 3. MiniLM encodes the question into a normalized 384-dimensional vector.
-4. The search calculates cosine similarity against the 50 Mars vectors. Default retrieval ranks them with the hybrid formula.
-5. The selected IDs are resolved to full records. The prompt includes their values, units, scopes, dates, and sources.
+4. The search calculates cosine similarity against the 2,143 Mars vectors. The explicit radius rule selects the highest-scoring matching radius record.
+5. The selected ID is resolved to its full record. The prompt includes its value, unit, scope, date, and source.
 6. Qwen receives that prompt through Ollama and generates a structured response.
-7. Pydantic validates the response. The service attaches the records and returns the answer to the browser.
+7. Pydantic validates the response, and the service checks its numbers and applicable qualifiers. The service attaches the records and returns the answer to the browser.
 
 A retrieval-only check against the current files returned:
 
-| Selected record                         | Cosine score, rounded | Recorded value |
-| --------------------------------------- | --------------------- | -------------- |
-| `reference-fact-mars-mean-radius`       | 0.7380                | 3389.5 km      |
-| `reference-fact-mars-equatorial-radius` | 0.6833                | 3396.19 km     |
-| `reference-fact-mars-surface-pressure`  | 0.6190                | 6.36 hPa       |
+| Selected record                   | Cosine score, rounded | Recorded value |
+| --------------------------------- | --------------------- | -------------- |
+| `reference-fact-mars-mean-radius` | 0.7341                | 3389.5 km      |
 
-The mean-radius record answers the question. Equatorial radius is related but measures a different property. Surface pressure is irrelevant to the requested value. This example shows why retrieving three records does not imply that three useful facts were found. The generator must use the appropriate evidence rather than turn every retrieved value into part of the answer.
+The requested limit is three, but the explicit property rule returns one relevant record. Equatorial radius and surface pressure are excluded from this answer's evidence rather than adding related or irrelevant measurements to the prompt.
 
 The scores are observations from this repository's current index and encoder. They are not fixed expectations for every model revision, query wording, or future dataset.
 
@@ -417,7 +474,15 @@ For “Compare all four bodies by radius,” the comparison retriever selects a 
 
 For size comparisons, the cross-body rule prefers mean radius where it is available. It avoids comparing one body's radius to another body's diameter just because those records happened to rank highly.
 
-All returned values use kilometres, but their scope still matters. Sol's record is a solar reference mean radius, while the terrestrial-body records use their stated mean-radius definitions. Shared units make a comparison possible; they do not erase the definitions behind the measurements.
+All returned values use kilometres, but their scope still matters. Sol's record is a solar reference mean radius, while the terrestrial-body records use their stated mean-radius definitions. Shared units make a comparison possible. They do not erase the definitions behind the measurements.
+
+### A ratio needs a property and a baseline
+
+“What is the ratio between the four bodies?” has no single numeric answer. Mass, radius, volume, density, and gravity give different ratios. The API asks which property to compare before loading retrieval resources or calling Qwen.
+
+If the visitor then replies “mass”, the browser supplies the previous question, and the API resolves it into a four-body mass comparison. This is a narrow clarification mechanism, not general conversation memory. Changing tabs clears it.
+
+For a ratio of one recognized numeric property, Python selects one matching record per requested body, checks that every body is covered, verifies matching units and compatible property fields, and rejects non-positive or non-finite values. It divides each value by Earth's value when Earth is included, otherwise by the first resolved body's value. The answer states that baseline and returns the calculation's records as citations. Qwen does not perform this arithmetic. Unit conversion and arbitrary composition ratios are not implemented by this calculation path.
 
 ### Composition records use different denominators
 
@@ -448,13 +513,13 @@ A returned cosine score of `0.738` is not 73.8% confidence. It is not an accurac
 
 Several details matter when reading a result:
 
-| Observation                    | What it means                                                                                     |
-| ------------------------------ | ------------------------------------------------------------------------------------------------- |
-| High score                     | The encoder found the record semantically related; the record can still answer the wrong property |
-| Low score in a comparison      | A field rule may deliberately select matching properties despite modest similarity                |
-| Scores not in descending order | Default ranking can include a lexical boost, while the response exposes only cosine scores        |
-| More records than the limit    | A composition or cross-body rule expanded the evidence set                                        |
-| Citations present              | Those records reached the model; support for every generated claim remains a separate question    |
+| Observation                    | What it means                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| High score                     | The encoder found the record semantically related. The record can still answer the wrong property      |
+| Low score in a comparison      | A field rule may deliberately select matching properties despite modest similarity                     |
+| Scores not in descending order | Default ranking can include a lexical boost, while the response exposes only cosine scores             |
+| More records than the limit    | A composition or cross-body rule expanded the evidence set                                             |
+| Citations present              | Those records were selected as evidence. Support for every generated claim remains a separate question |
 
 The diagrams in this guide show software components, data flow, and request order. Their arrows describe operations or information passed between stages. They do not represent relationships learned from planetary data.
 
@@ -464,7 +529,7 @@ The current implementation has no knowledge graph and does not use GraphRAG. Its
 
 ### Test retrieval separately from generation
 
-The repository provides retrieval evaluation sets for Earth and Mars. Each case contains a question and expected document IDs. `evaluate_retrieval` runs the supplied retriever at a chosen limit and records whether an expected ID appears.
+The repository provides 52 retrieval evaluation cases across six collections: six Earth, sixteen Mars, seven Luna, eight Sol, six solar-system, and nine Milky Way cases. They cover existing planetary facts, named features, dated observations, related bodies, and astronomy concepts. Each case contains a question and expected document IDs. `evaluate_retrieval` records whether at least one expected ID appears.
 
 The current metric named `recall_at_limit` is the fraction of cases with at least one expected ID in the returned results. For five cases with four hits, it reports `0.8`. If a case expects several records, retrieving just one passes that case. It is therefore a case-level hit rate, not a complete measure of evidence coverage for compound questions.
 
@@ -482,7 +547,7 @@ The Earth grounded-answer evaluation set records required citations, required an
 
 For example, a wrong sentence can contain the expected number and unit. A substring check will not necessarily detect that it applies them to the wrong property. These evaluations are useful regression checks with defined limits.
 
-Versioned retrieval evaluation sets for Luna and Sol and broader answer evaluation sets have not yet been added. Their functionality is covered in part by unit tests and routing tests, but that is different from a measured real-model benchmark over representative questions.
+Broader answer evaluation sets have not yet been added. The retrieval expectations and controlled unit tests are useful regression checks, but they are different from a measured real-model answer benchmark over representative questions.
 
 ### What the automated tests establish
 
@@ -540,7 +605,7 @@ with np.load(path, allow_pickle=False) as index:
 PY
 ```
 
-The current Mars matrix has shape `(50, 384)`. Its vector lengths should be close to one, allowing small floating-point differences.
+The current Mars matrix has shape `(2143, 384)`. Its vector lengths should be close to one, allowing small floating-point differences.
 
 ### 4. Evaluate real retrieval
 
@@ -594,25 +659,41 @@ These are exploratory checks, not promised pass cases. Save the question, retrie
 
 The application can run on a CPU. Model loading, prompt processing, and token generation contribute to response time. A GPU can accelerate model computation, but availability of a GPU does not change the evidence-selection rules or guarantee better answers.
 
-The API caches embedding models and per-body retrievers within each process. A first request may load the encoder or download uncached model files. Later requests reuse those objects. Multiple API worker processes can each load their own copies.
+The API caches embedding models and collection retrievers within each process. A first request may load the encoder or download uncached model files. Later requests reuse those objects. Multiple API worker processes can each load their own copies.
 
 Reference vectors are precomputed, so document embedding is not repeated for every question. The question still needs encoding, and Qwen still needs to process the assembled prompt and generate its response.
 
 Model files and memory usage are different quantities. Inference also needs runtime buffers and context-related memory, so the downloaded model's file size is not a complete RAM requirement. Ollama's [FAQ](https://docs.ollama.com/faq) covers runtime configuration and context-related memory considerations.
 
-The UI's elapsed timer covers the complete answer request. It includes retrieval, possible initialization, generation, and transport. The label “RETRIEVAL” therefore should not be read as a measurement of the encoder alone.
+The UI's QUERY timer covers the complete answer request. It includes retrieval, possible initialization, generation, and transport, or the shorter clarification and calculation paths. It does not measure the encoder alone.
 
 ### Reference updates require coordinated changes
 
 To update the evidence consistently:
 
-1. Edit the body dataset and, if needed, its source registry entry.
-2. Validate the dataset and regenerate its JSON Lines records with `build_reference_rag_documents`.
+1. Edit the body dataset or validated corpus records and their source registry entries.
+2. Validate sources and regenerate retrieval text with `build_collection_documents`.
 3. Rebuild its vector archive with the matching embedding model.
 4. Re-run retrieval and answer evaluations for affected questions.
 5. Restart the API so its cached retrievers use the updated files.
 
-These are implementation steps using the functions linked below; the repository does not currently provide a dedicated indexing command-line tool.
+Run the indexing command from the repository root after editing reference data:
+
+```bash
+uv run python scripts/rebuild_reference_indexes.py
+```
+
+It validates source registrations and regenerates the JSON Lines records and vector archives for all six collections. Use `--body luna` to rebuild one collection, or repeat `--body` for a subset. `--model` selects the encoder. Changing it requires rebuilding every index used together. Restart the API after rebuilding.
+
+To import fresh catalog snapshots and run real-encoder retrieval checks:
+
+```bash
+uv run python scripts/import_reference_corpus.py --refresh
+uv run python scripts/rebuild_reference_indexes.py
+uv run python scripts/evaluate_reference_retrieval.py
+```
+
+The import caches downloads under ignored `data/downloads/reference-corpus`. It preserves fixed selection ranges and saves hashes of the downloaded bytes. Upstream catalogs change, so fetching them again is an update, not a guarantee of the same historical snapshot. Keep the cached files and use `--snapshot-date` when reproducing a saved import. The NASA explanations are curated records and are not rewritten by the download command.
 
 The index stores a model name, but it does not store a content hash for every record or a pinned model revision. The retriever checks that indexed IDs exist in the records. It does not detect every case where text changes while IDs remain the same. An old vector joined to revised text can therefore rank evidence using an outdated representation.
 
@@ -629,6 +710,9 @@ The static demo build bundles reference data and selected imagery assets while r
 | File                                                                                  | What to read there                                                                 |
 | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | [`models/reference.py`](../src/planetary_scanner/models/reference.py)                 | Fact and source contracts, validation, and conversion to retrieval documents       |
+| [`models/corpus.py`](../src/planetary_scanner/models/corpus.py)                       | Research-record contracts and merging summary facts with the larger corpus         |
+| [`reference_import.py`](../src/planetary_scanner/reference_import.py)                 | Source downloads, catalog parsing, selection, and snapshot manifest                |
+| [`rag/corpus_routing.py`](../src/planetary_scanner/rag/corpus_routing.py)             | Shared-topic routing and normalized catalog-name lookup                            |
 | [`rag/reference_index.py`](../src/planetary_scanner/rag/reference_index.py)           | Embedding-model interface, vector creation, persistence, and cosine search         |
 | [`rag/reference_retrieval.py`](../src/planetary_scanner/rag/reference_retrieval.py)   | Hybrid ranking, explicit subjects, composition expansion, and cross-body retrieval |
 | [`rag/reference_answers.py`](../src/planetary_scanner/rag/reference_answers.py)       | Prompt, Ollama adapter, structured answer schema, citations, and lunar safeguard   |
@@ -642,25 +726,25 @@ The static demo build bundles reference data and selected imagery assets while r
 
 ## Glossary
 
-| Term              | Meaning in this project                                                     |
-| ----------------- | --------------------------------------------------------------------------- |
-| LLM               | The generative language model used to write an answer                       |
-| Encoder           | The model used to convert text into a semantic-search representation        |
-| Embedding         | A numerical vector representing a text input                                |
-| Token             | A text unit defined by a model's tokenizer                                  |
-| Parameter         | A learned numerical weight inside a model                                   |
-| Inference         | Running a trained model on an input                                         |
-| Training          | Adjusting model parameters using training data                              |
-| Fine-tuning       | Further training of an existing model; not implemented here                 |
-| Quantization      | Representing model weights at lower precision                               |
-| Context window    | Token capacity available to a model during a request                        |
-| Chunk             | A retrieval unit; currently one curated reference fact                      |
-| Vector index      | Stored document vectors and IDs used for similarity search                  |
-| Cosine similarity | A comparison of vector directions                                           |
-| Hybrid retrieval  | Ranking that combines semantic similarity and exact-term coverage           |
-| Provenance        | The source, locator, date, and context retained with a fact                 |
-| Scope             | What a measurement or statement physically describes                        |
-| Grounding         | Tying an answer to supplied evidence; something to evaluate, not assume     |
-| RAG               | Retrieving evidence and supplying it to a model before generating an answer |
-| Hallucination     | Generated content that is unsupported or incorrect in its context           |
-| Evaluation case   | A question with explicit expectations used to check behavior                |
+| Term              | Meaning in this project                                                          |
+| ----------------- | -------------------------------------------------------------------------------- |
+| LLM               | The generative language model used to write an answer                            |
+| Encoder           | The model used to convert text into a semantic-search representation             |
+| Embedding         | A numerical vector representing a text input                                     |
+| Token             | A text unit defined by a model's tokenizer                                       |
+| Parameter         | A learned numerical weight inside a model                                        |
+| Inference         | Running a trained model on an input                                              |
+| Training          | Adjusting model parameters using training data                                   |
+| Fine-tuning       | Further training of an existing model. Not implemented here                      |
+| Quantization      | Representing model weights at lower precision                                    |
+| Context window    | Token capacity available to a model during a request                             |
+| Chunk             | A retrieval unit. One summary fact, catalog profile, observation, or explanation |
+| Vector index      | Stored document vectors and IDs used for similarity search                       |
+| Cosine similarity | A comparison of vector directions                                                |
+| Hybrid retrieval  | Ranking that combines semantic similarity and exact-term coverage                |
+| Provenance        | The source, locator, date, and context retained with a fact                      |
+| Scope             | What a measurement or statement physically describes                             |
+| Grounding         | Tying an answer to supplied evidence. Something to evaluate, not assume          |
+| RAG               | Retrieving evidence and supplying it to a model before generating an answer      |
+| Hallucination     | Generated content that is unsupported or incorrect in its context                |
+| Evaluation case   | A question with explicit expectations used to check behavior                     |

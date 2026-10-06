@@ -316,7 +316,9 @@ def test_three_body_answer_routes_to_comparison_service(monkeypatch) -> None:
     assert "Moon" in response.json()["answer"]
 
 
-def test_science_computer_status_reports_model_availability(monkeypatch) -> None:
+def test_science_computer_status_reports_model_availability_and_total_records(
+    monkeypatch,
+) -> None:
     monkeypatch.setattr(
         "planetary_scanner.api.main.is_ollama_model_available",
         lambda: True,
@@ -325,4 +327,102 @@ def test_science_computer_status_reports_model_availability(monkeypatch) -> None
     response = client.get("/health/science-computer")
 
     assert response.status_code == 200
-    assert response.json() == {"online": True, "model": "qwen2.5:3b"}
+    from planetary_scanner.api.main import REFERENCE_RECORD_PATHS
+    from planetary_scanner.rag.reference_retrieval import load_reference_records
+
+    reference_count = sum(
+        len(load_reference_records(path)) for path in REFERENCE_RECORD_PATHS.values()
+    )
+    assert reference_count >= 5000
+    assert response.json() == {
+        "online": True,
+        "model": "qwen2.5:3b",
+        "reference_records": reference_count,
+    }
+
+
+def test_ambiguous_comparison_is_clarified_before_loading_models(monkeypatch):
+    def unused_service():
+        raise AssertionError("Clarifications must not load the model stack")
+
+    monkeypatch.setattr(
+        "planetary_scanner.api.main.get_cross_body_grounded_answer_service",
+        unused_service,
+    )
+    response = client.get(
+        "/answers/reference",
+        params={
+            "question": "What is the ratio between the 4 different planetary bodies?"
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["needs_clarification"]
+    assert not response.json()["insufficient_evidence"]
+
+
+def test_short_clarification_reply_retains_four_body_context(monkeypatch):
+    class ComparisonService:
+        def answer(self, question, limit):
+            assert (
+                question
+                == "What is the mass ratio between earth and mars and luna and sol?"
+            )
+            return GroundedAnswer(
+                answer="Mass ratios", insufficient_evidence=False, citations=[]
+            )
+
+    monkeypatch.setattr(
+        "planetary_scanner.api.main.get_cross_body_grounded_answer_service",
+        lambda: ComparisonService(),
+    )
+    response = client.get(
+        "/answers/reference",
+        params={
+            "question": "mass",
+            "previous_question": "What is the ratio between the 4 of them?",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json()["answer"] == "Mass ratios"
+
+
+@pytest.mark.parametrize("selected", ["earth", "mars", "luna", "sol"])
+@pytest.mark.parametrize(
+    "question,expected",
+    [
+        ("What is an exoplanet?", "milky-way"),
+        ("Does Europa have an ocean?", "solar-system"),
+        ("What is Tycho's diameter?", "luna"),
+        ("What is Proxima Centauri b's mass?", "milky-way"),
+    ],
+)
+def test_shared_and_named_object_answers_work_from_every_tab(
+    monkeypatch, selected, question, expected
+):
+    class Service:
+        def answer(self, received_question, limit):
+            assert received_question == question
+            return GroundedAnswer(
+                answer="Cited answer", insufficient_evidence=False, citations=[]
+            )
+
+    def service(collection):
+        assert collection == expected
+        return Service()
+
+    monkeypatch.setattr(
+        "planetary_scanner.api.main.get_grounded_answer_service", service
+    )
+    response = client.get(
+        "/answers/reference", params={"question": question, "body_id": selected}
+    )
+    assert response.status_code == 200
+    assert not response.json()["insufficient_evidence"]
+
+
+@pytest.mark.parametrize("endpoint", ["/answers/reference", "/retrieval/reference"])
+def test_reference_query_rejects_invalid_result_limit(endpoint):
+    response = client.get(
+        endpoint, params={"question": "What is an exoplanet?", "limit": 0}
+    )
+    assert response.status_code == 422

@@ -82,7 +82,9 @@ flowchart TB
     Records["Vectors: NumPy .npz<br/>Evidence: JSONL"] --> Retrieval
 ```
 
-Python retrieves evidence, builds the prompt, validates the response structure, and returns the answer with its evidence. Failed answer requests return through the API. Imagery uses a separate path: the API discovers scenes and observations, while the browser loads tiles and disk images directly.
+Python resolves ambiguous ratio questions, retrieves evidence, and calculates supported numeric ratios directly. Other answers use a model prompt and response validation. The API returns answers with their evidence. Imagery uses a separate path: the API discovers scenes and observations, while the browser loads tiles and disk images directly.
+
+Generated answers are checked for unsupported numbers and selected scientific qualifiers. A failed check gets one correction attempt, then an evidence-limitation response if it still fails. These safeguards improve the application around Qwen without training its weights. The [learning guide](docs/ai-pipeline.md#how-the-application-improves-answers) explains the changes and their limits.
 
 Retrieval-augmented generation selects reference records before asking the model to answer. Named bodies take priority over the active tab, and comparisons can retrieve evidence for all four bodies. The model receives reference text, not imagery. The viewer and reference panels remain available when Ollama is offline.
 
@@ -90,11 +92,15 @@ Retrieval-augmented generation selects reference records before asking the model
 
 Facts retain their source, unit, date, and scope in [data/reference](data/reference). The [source registry](data/reference/sources.json) lists the underlying publications and services.
 
+The searchable collection contains **5,956 records**: summary facts, lunar and Martian surface features, historical earthquakes, solar activity observations, nearby exoplanets, and astronomy explanations. Solar-system and Milky Way questions are available from every tab. The [corpus manifest](data/reference/corpus/manifest.json) records snapshot dates, download hashes, selection rules, and counts.
+
+Solar activity data is adapted from WDC-SILSO, Royal Observatory of Belgium, Brussels, [International Sunspot Number](https://doi.org/10.24414/qnza-ac80), under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/). Numeric means are retained and converted into attributed reference text.
+
 ## GitHub Pages demo
 
 A GitHub Pages demo is planned but not yet published. It will let visitors explore the planetary viewers and reference panels, with the LLM-powered science computer disabled. Answer generation requires an active model server and compute resources beyond the static website.
 
-This is a small portfolio project demonstrating practical work with and understanding of local LLMs, text encoders, and RAG. The full answer pipeline can be run locally using the setup above; the [learning guide](docs/ai-pipeline.md) explains its implementation.
+This is a small portfolio project demonstrating practical work with and understanding of local LLMs, text encoders, and RAG. The full answer pipeline can be run locally using the setup above. The [learning guide](docs/ai-pipeline.md) explains its implementation.
 
 ### Static build
 
@@ -110,12 +116,15 @@ This produces `frontend/dist` with bundled facts, dated solar snapshots, and Ces
 uv run pytest -q
 uv run ruff check src tests scripts
 uv run ruff format --check src tests scripts
+uv run python scripts/evaluate_reference_retrieval.py
 npm --prefix frontend run format:check
 npm --prefix frontend run lint
 npm --prefix frontend run build
 ```
 
 Use `uv run ruff format src tests scripts` and `npm --prefix frontend run format` to format the source.
+
+The retrieval evaluation runs 52 saved questions across all six collections with the real MiniLM encoder. It needs cached model files or an initial download, but does not call Qwen. Passing retrieval checks does not establish generated-answer accuracy.
 
 The frontend lives in `frontend/src`; API and retrieval modules are in `src/planetary_scanner`. Tests cover reference validation, retrieval, grounding, and imagery endpoints.
 
