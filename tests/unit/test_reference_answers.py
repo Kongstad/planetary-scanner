@@ -47,8 +47,7 @@ def test_grounded_answer_prompt_includes_only_supplied_evidence() -> None:
 
     assert "[reference-fact-earth-mean-radius]" in prompt
     assert "Earth mean radius is 6371.0084 km." in prompt
-    assert "Planetary Scanner Science Computer" in prompt
-    assert "concise mission-analysis voice" in prompt
+    assert "using only the evidence records" in prompt
     assert "Do not use outside knowledge." in prompt
     assert "answer in one concise, complete sentence" in prompt
     assert "synthesize the relevant evidence" in prompt
@@ -58,7 +57,7 @@ def test_grounded_answer_prompt_includes_only_supplied_evidence() -> None:
     assert "Never use a boolean as the answer value." in prompt
     assert "Luna means Earth's Moon" in prompt
     assert "exclude the metallic core" in prompt
-    assert "do not multiply them by 100" in prompt
+    assert "do not multiply them by 100" in prompt.lower()
 
 
 def test_grounded_answer_service_returns_application_controlled_citations() -> None:

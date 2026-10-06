@@ -403,27 +403,17 @@ class CrossBodyReferenceRetriever:
             )
         intent_fields = question_intent_fields(question)
         if intent_fields:
-            return [
-                record
-                for body_id in body_ids
-                for fields in intent_fields
-                if (
-                    record := next(
-                        (
-                            candidate
-                            for field in fields
-                            if (
-                                candidate := self._retrievers[body_id].retrieve_field(
-                                    question, field
-                                )
-                            )
-                            is not None
-                        ),
-                        None,
-                    )
-                )
-                is not None
-            ]
+            records = []
+            for body_id in body_ids:
+                for fields in intent_fields:
+                    for field in fields:
+                        record = self._retrievers[body_id].retrieve_field(
+                            question, field
+                        )
+                        if record is not None:
+                            records.append(record)
+                            break
+            return records
         records_per_body = max(3, limit // len(body_ids))
         return [
             record

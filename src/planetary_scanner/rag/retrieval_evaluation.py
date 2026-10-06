@@ -19,7 +19,7 @@ class RetrievalEvaluationResult(BaseModel):
 
 
 class RetrievalEvaluationReport(BaseModel):
-    """Aggregate recall outcome for a versioned evaluation set."""
+    """Case-level hit rate for a versioned evaluation set."""
 
     limit: int
     total_cases: int
@@ -33,7 +33,7 @@ def evaluate_retrieval(
     retrieve_document_ids: RetrieveDocumentIds,
     limit: int,
 ) -> RetrievalEvaluationReport:
-    """Measure whether each expected record appears among the top retrieval results."""
+    """Check whether each question retrieves at least one expected record."""
 
     if limit < 1:
         raise ValueError("Evaluation limit must be at least 1")

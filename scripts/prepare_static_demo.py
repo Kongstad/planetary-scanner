@@ -84,7 +84,7 @@ def prepare(output: Path, solar_date: str) -> None:
     (output.parent / ".nojekyll").touch()
     (output.parent / "README.md").write_text(
         "# PlanetaryScanner viewer demo\n\n"
-        "Explore Earth, Luna, Mars, and Sol. Drag to rotate and scroll to zoom; "
+        "Explore Earth, Luna, Mars, and Sol. Drag to rotate and scroll to zoom. "
         "Earth has Reset View, and Sol also offers globe controls and disk pan/zoom.\n\n"
         "This static demo requires no API, language model, GPU, or EC2 instance. "
         "Reference facts and dated SDO snapshots are bundled. Global map layers "

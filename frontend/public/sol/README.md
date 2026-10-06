@@ -12,6 +12,6 @@ The FITS header gives rotation start May 12, 2026, stop June 9, 2026, and center
 
 The rendering reads the uncompressed 3,600 × 1,080 primary FITS array, reverses rows to put north at the top, and shifts longitude by 180° for Cesium's −180–180° domain. It applies log intensity scaling between the positive finite 1st and 99.5th percentiles and a custom gold display palette. Missing or nonpositive values remain transparent. The globe uses the reference solar radius of 695,700 km.
 
-The initial view faces Carrington longitude 180°. Differences across the rotation's time boundary are retained; no seam blending or synthetic filling is applied.
+The initial view faces Carrington longitude 180°. Differences across the rotation's time boundary are retained. No seam blending or synthetic filling is applied.
 
 `aia-171-cr2311-globe.json` records the original header, source checksum, normalization limits, and missing-pixel count. Reproduce the PNG with `uv run python scripts/render_solar_globe.py /path/to/CR2311.fits`. The generated display image contains no axes, labels, inferred far-side pixels, or additional detail beyond the input map.

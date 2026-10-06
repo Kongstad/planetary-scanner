@@ -1,4 +1,4 @@
-"""Read-only HTTP endpoints for curated reference data."""
+"""Reference, retrieval, answer, and imagery endpoints."""
 
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -105,7 +105,7 @@ def get_embedding_model(model_name: str) -> EmbeddingModel:
 
 @lru_cache
 def get_reference_retriever(body_id: str) -> ReferenceRetriever:
-    """Load local retrieval resources for one answerable body once per API process."""
+    """Load a collection's retrieval resources once per API process."""
 
     index = load_reference_vector_index(REFERENCE_VECTOR_INDEX_PATHS[body_id])
     return ReferenceRetriever(
@@ -184,7 +184,7 @@ def get_cross_body_reference_retriever() -> CrossBodyReferenceRetriever:
 
 @lru_cache
 def get_grounded_answer_service(body_id: str) -> GroundedAnswerService:
-    """Create the local answer layer for one body over its cached retriever."""
+    """Create an answer service over a collection's cached retriever."""
 
     return GroundedAnswerService(
         get_reference_retriever(body_id), OllamaAnswerGenerator()
@@ -207,7 +207,7 @@ def answer_reference_question(
     limit: Annotated[int, Query(ge=1, le=12)] = 3,
     previous_question: str | None = None,
 ) -> GroundedAnswer:
-    """Answer about Earth, Mars, Luna, and Sol from selected or explicitly named bodies."""
+    """Answer using body facts or shared astronomy records."""
 
     if (
         previous_question

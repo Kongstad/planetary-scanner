@@ -159,7 +159,7 @@ function SolGlobeViewer({
     <div
       className="sol-globe-viewer"
       role="region"
-      aria-label="Rotating solar globe. Drag to rotate, scroll to zoom, or use the controls."
+      aria-label="Solar globe. Drag to rotate, scroll to zoom, or use the controls."
       tabIndex={0}
       onKeyDown={(event) => {
         const directions = {

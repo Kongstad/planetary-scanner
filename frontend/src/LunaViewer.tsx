@@ -12,7 +12,7 @@ import {
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { useEffect, useRef, useState } from 'react'
-import { stabilizeGlobeZoom } from './globeCamera.ts'
+import { formatCameraAltitude, stabilizeGlobeZoom } from './globeCamera.ts'
 
 const LUNA_ELLIPSOID = new Ellipsoid(1_737_400, 1_737_400, 1_737_400)
 const LUNA_GLOBAL_VIEW_HEIGHT_METERS = 6_000_000
@@ -61,13 +61,6 @@ type LunaViewerProps = {
   mode: LunaViewerMode
   onCoverageChange: (coverage: string) => void
   onCameraAltitudeChange: (altitude: string) => void
-}
-
-function formatCameraAltitude(heightMeters: number): string {
-  if (heightMeters < 1_000) {
-    return `${Math.round(heightMeters)} M`
-  }
-  return `${(heightMeters / 1_000).toFixed(heightMeters < 10_000 ? 1 : 0)} KM`
 }
 
 function getLunaCameraAltitude(viewer: Viewer): number {

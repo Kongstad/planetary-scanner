@@ -12,7 +12,7 @@ import {
 } from 'cesium'
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { useEffect, useRef, useState } from 'react'
-import { stabilizeGlobeZoom } from './globeCamera.ts'
+import { formatCameraAltitude, stabilizeGlobeZoom } from './globeCamera.ts'
 
 const MARS_ELLIPSOID = new Ellipsoid(3_396_190, 3_396_190, 3_376_200)
 const MARS_GLOBAL_VIEW_HEIGHT_METERS = 11_000_000
@@ -25,13 +25,6 @@ type MarsViewerProps = {
   mode: MarsViewerMode
   onCameraAltitudeChange: (altitude: string) => void
   onCoverageChange: (coverage: string) => void
-}
-
-function formatCameraAltitude(heightMeters: number): string {
-  if (heightMeters < 1_000) {
-    return `${Math.round(heightMeters)} M`
-  }
-  return `${(heightMeters / 1_000).toFixed(heightMeters < 10_000 ? 1 : 0)} KM`
 }
 
 function getMarsCameraAltitude(viewer: Viewer): number {

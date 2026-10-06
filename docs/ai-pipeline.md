@@ -197,7 +197,7 @@ URL: https://ssd.jpl.nasa.gov/planets/phys_par.html.
 
 Line breaks are added here for readability. The encoder embeds the record's full content, subject to its input limit. Metadata remains available for property selection and calculations.
 
-Each collection has a JSONL record file and an `.npz` archive containing `document_ids`, `vectors`, and `model_name`. The Mars vector matrix is `(2143, 384)`. Search scans these vectors with NumPy and joins selected IDs to their text. PostgreSQL/pgvector scaffolding exists in the repository, but the active answer path does not require a database.
+Each collection has a JSONL record file and an `.npz` archive containing `document_ids`, `vectors`, and `model_name`. The Mars vector matrix is `(2143, 384)`. Search scans these vectors with NumPy and joins selected IDs to their text. This pipeline does not require a database.
 
 ### Source coverage and limits
 
@@ -302,8 +302,8 @@ A request can return a clarification, a calculation, a generated answer, an evid
 The instructions require relevant answers, compatible comparisons, accurate units, and retained qualifiers. Examples include:
 
 ```text
-Answer the question using only the evidence records below.
-Do not use outside knowledge.
+Answer scientific questions in concise, plain language using only the evidence records
+below. Do not use outside knowledge. Do not roleplay or invent observations.
 
 For comparisons, cover every requested body and compare the same
 property and compatible units.

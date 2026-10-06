@@ -89,19 +89,17 @@ def build_grounded_answer_prompt(
         quantitative_note = "These records contain no quantitative measurements. Do not include numbers, dates, or percentages in the answer."
     catalog_note = _catalog_scope_note(question, records)
     quantitative_note += " " + catalog_note
-    return f"""You are the Planetary Scanner Science Computer: calm, precise, and evidence-first.
-Respond in a concise mission-analysis voice that remains natural and readable. Do not roleplay,
-invent observations, or add dramatic language. Answer the question using only the evidence records
-below. Do not use outside knowledge.
+    return f"""Answer scientific questions in concise, plain language using only the evidence records
+below. Do not use outside knowledge. Do not roleplay or invent observations.
 Luna means Earth's Moon. Name each body when comparing records from different bodies.
 Sol means the Sun. Solar photospheric composition is by number, not whole-star mass.
-Percentages and ppm must retain their units; 10,000 ppm equals 1 percent.
+Percentages and ppm must retain their units. 10,000 ppm equals 1 percent.
 Respect each record's scope: model estimates remain estimates. Lunar bulk silicate oxide
 percentages describe mantle plus crust and exclude the metallic core. Do not treat oxide
 mass percentages as elemental percentages or directly equate them to whole-planet composition.
 When reporting lunar bulk silicate composition, explicitly describe it as a model estimate
 for the mantle and crust, excluding the core. Include this scope in the answer itself.
-Values already expressed in wt% or % are percentages; do not multiply them by 100.
+Values already expressed in wt% or % are percentages. Do not multiply them by 100.
 Retain qualifiers such as approximate, upper limit, nighttime, and variable when they affect
 the measurement. An upper-limit estimate must not be described as a fixed exact value.
 Catalog masses labeled M sin i are minimum masses, not true masses. Named-feature diameters
@@ -114,7 +112,7 @@ insufficient_evidence to false. For example: "Earth's bulk iron mass fraction is
 For a broad question, synthesize the relevant evidence into one or two natural, scientifically
 useful sentences. Focus on the requested property or explanation and omit unrelated facts.
 Do not name publishers or publications unless asked. Do not mechanically list every retrieved fact. Translate categorical values into
-ordinary prose, or omit them when they add no useful information; never quote UI-style labels such
+ordinary prose, or omit them when they add no useful information. Never quote UI-style labels such
 as "LIFE ABUNDANT". Present dimensionless fractions used for composition or abundance as percentages
 (for example, 0.321 as 32.1%), retaining the source precision. Mention dates only when they are
 needed to interpret a measurement. When summarizing components that form a complete group, account
@@ -171,7 +169,7 @@ class OllamaAnswerGenerator:
 
 
 class GroundedAnswerService:
-    """Retrieves evidence and generates an answer constrained to that evidence."""
+    """Retrieve evidence, calculate ratios, and check generated answers."""
 
     def __init__(
         self,
@@ -227,8 +225,6 @@ class GroundedAnswerService:
         answer = generated.answer
         lunar_summary = _complete_lunar_composition_summary(citations)
         if lunar_summary is not None and not generated.insufficient_evidence:
-            # Small CPU models can omit a component or the model's physical scope.
-            # Keep this complete numeric group tied to the application-owned evidence.
             answer = lunar_summary
         if generated.insufficient_evidence:
             answer = "The retrieved reference records do not provide enough evidence to answer this question. Try naming a specific property, or asking about a narrower topic."

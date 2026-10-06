@@ -15,7 +15,7 @@ import {
 import 'cesium/Build/Cesium/Widgets/widgets.css'
 import { useEffect, useRef, useState } from 'react'
 import { DILITHIUM_DEPOSIT } from './dilithiumDeposit.ts'
-import { stabilizeGlobeZoom } from './globeCamera.ts'
+import { formatCameraAltitude, stabilizeGlobeZoom } from './globeCamera.ts'
 import { IS_STATIC_DEMO } from './runtime.ts'
 
 const COPENHAGEN_LONGITUDE = 12.5683
@@ -53,13 +53,6 @@ type EarthViewerProps = {
   mode: ViewerMode
   depositFocusRequest: number
   onCoverageChange: (coverage: string) => void
-}
-
-function formatCameraAltitude(heightMeters: number): string {
-  if (heightMeters < 1_000) {
-    return `${Math.round(heightMeters)} M`
-  }
-  return `${(heightMeters / 1_000).toFixed(heightMeters < 10_000 ? 1 : 0)} KM`
 }
 
 function formatElevation(heightMeters: number): string {

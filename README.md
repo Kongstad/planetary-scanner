@@ -46,7 +46,7 @@ In another terminal, start the website:
 npm --prefix frontend run dev -- --port 5174
 ```
 
-Open [localhost:5174](http://localhost:5174). The frontend proxies API requests to port 8000. Process environment variables configure the API; see [.env.example](.env.example). Stop services with Ctrl+C.
+Open [localhost:5174](http://localhost:5174). The frontend proxies API requests to port 8000. Process environment variables configure the API. See [.env.example](.env.example). Stop services with Ctrl+C.
 
 ### Local answers
 
@@ -110,7 +110,7 @@ Solar activity data is adapted from WDC-SILSO, Royal Observatory of Belgium, Bru
 
 A GitHub Pages demo is planned but not yet published. It will let visitors explore the planetary viewers and reference panels, with the LLM-powered science computer disabled. Answer generation requires an active model server and compute resources beyond the static website.
 
-This is a small portfolio project demonstrating practical work with and understanding of local LLMs, text encoders, and RAG. The full answer pipeline can be run locally using the setup above. The [learning guide](docs/ai-pipeline.md) explains its implementation.
+Run the full answer pipeline locally using the setup above.
 
 ### Static build
 
@@ -118,7 +118,7 @@ This is a small portfolio project demonstrating practical work with and understa
 npm --prefix frontend run build:demo
 ```
 
-This produces `frontend/dist` with bundled facts, dated solar snapshots, and Cesium assets. It needs no API or language model. Earth scene scanning and live solar date selection require the local app. The default URL prefix is `/planetary-scanner/`; set `PAGES_BASE_PATH` for another path. The build does not publish anything.
+This produces `frontend/dist` with bundled facts, dated solar snapshots, and Cesium assets. It needs no API or language model. Earth scene scanning and live solar date selection require the local app. The default URL prefix is `/planetary-scanner/`. Set `PAGES_BASE_PATH` for another path. The build does not publish anything.
 
 ## Development
 
@@ -136,7 +136,7 @@ Use `uv run ruff format src tests scripts` and `npm --prefix frontend run format
 
 The retrieval evaluation runs 52 saved questions across all six collections with the real MiniLM encoder. It needs cached model files or an initial download, but does not call Qwen. Passing retrieval checks does not establish generated-answer accuracy.
 
-The frontend lives in `frontend/src`; API and retrieval modules are in `src/planetary_scanner`. Tests cover reference validation, retrieval, grounding, and imagery endpoints.
+The frontend lives in `frontend/src`. API and retrieval modules are in `src/planetary_scanner`. Tests cover reference validation, retrieval, grounding, and imagery endpoints.
 
 ## License
 
