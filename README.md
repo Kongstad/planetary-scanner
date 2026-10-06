@@ -90,10 +90,6 @@ Retrieval-augmented generation selects reference records before asking the model
 
 Facts retain their source, unit, date, and scope in [data/reference](data/reference). The [source registry](data/reference/sources.json) lists the underlying publications and services.
 
-The solar globe is a false-color Carrington rotation 2311 composite from May 12 to June 9, 2026. It is intended for visual exploration. Observed disks display their actual archive timestamps. [Solar map notes](frontend/public/sol/README.md) document the rendering.
-
-Lunar geochemistry shows the Warren (2005) bulk silicate model, excluding the metallic core. Schematic terrain profiles are labelled. Dilithium deposits are fictional and excluded from factual answers.
-
 ## GitHub Pages demo
 
 A GitHub Pages demo is planned but not yet published. It will let visitors explore the planetary viewers and reference panels, with the LLM-powered science computer disabled. Answer generation requires an active model server and compute resources beyond the static website.
