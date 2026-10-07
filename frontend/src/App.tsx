@@ -4,7 +4,9 @@ import EarthViewer, { type ViewerMode } from './EarthViewer.tsx'
 import LunaDashboard from './LunaDashboard.tsx'
 import MarsDashboard from './MarsDashboard.tsx'
 import Panel from './Panel.tsx'
-import ScienceComputer from './ScienceComputer.tsx'
+import ScienceComputer, {
+  type ScienceComputerExchange,
+} from './ScienceComputer.tsx'
 import SolDashboard from './SolDashboard.tsx'
 import type { BodyId, ReferenceDataset, ReferenceFact } from './reference.ts'
 import { IS_STATIC_DEMO, publicAssetUrl } from './runtime.ts'
@@ -163,9 +165,12 @@ function App() {
   const [retrievalStatus, setRetrievalStatus] = useState(
     'Enter a question to generate a grounded answer from cited reference records.',
   )
-  const [groundedAnswer, setGroundedAnswer] = useState<string | null>(null)
+  const [conversation, setConversation] = useState<ScienceComputerExchange[]>(
+    [],
+  )
   const [isRetrieving, setIsRetrieving] = useState(false)
   const answerRequest = useRef<AbortController | null>(null)
+  const nextExchangeId = useRef(0)
   const [queryElapsedSeconds, setQueryElapsedSeconds] = useState(0)
   const [lastQueryElapsedSeconds, setLastQueryElapsedSeconds] = useState<
     number | null
@@ -356,7 +361,7 @@ function App() {
     setIsReferenceApiOnline(false)
     setQuery('')
     setClarificationQuestion(null)
-    setGroundedAnswer(null)
+    setConversation([])
     setRetrievalStatus(
       'Ask about Earth, Mars, the Moon, or the Sun, or compare all four bodies.',
     )
@@ -379,7 +384,12 @@ function App() {
     setIsRetrieving(true)
     setQueryElapsedSeconds(0)
     setLastQueryElapsedSeconds(null)
-    setGroundedAnswer(null)
+    const exchangeId = nextExchangeId.current++
+    setQuery('')
+    setConversation((history) => [
+      ...history,
+      { id: exchangeId, question, answer: null, error: null },
+    ])
     setRetrievalStatus(
       'Retrieving cited records and generating a grounded answer...',
     )
@@ -401,7 +411,13 @@ function App() {
       })
       .then((response) => {
         if (answerRequest.current !== controller) return
-        setGroundedAnswer(response.answer)
+        setConversation((history) =>
+          history.map((entry) =>
+            entry.id === exchangeId
+              ? { ...entry, answer: response.answer }
+              : entry,
+          ),
+        )
         setClarificationQuestion(response.needs_clarification ? question : null)
         setRetrievalStatus(
           response.insufficient_evidence
@@ -411,10 +427,18 @@ function App() {
       })
       .catch(() => {
         if (answerRequest.current !== controller) return
-        setGroundedAnswer(null)
-        setRetrievalStatus(
-          'Grounded answering is unavailable. Start the local API and Ollama, then try again.',
+        setConversation((history) =>
+          history.map((entry) =>
+            entry.id === exchangeId
+              ? {
+                  ...entry,
+                  error:
+                    'Grounded answering is unavailable. Start the local API and Ollama, then try again.',
+                }
+              : entry,
+          ),
         )
+        setRetrievalStatus('')
       })
       .finally(() => {
         if (answerRequest.current !== controller) return
@@ -430,7 +454,7 @@ function App() {
     scienceComputerQualifier,
     query,
     retrievalStatus,
-    groundedAnswer,
+    conversation,
     isRetrieving,
     queryElapsedSeconds,
     lastQueryElapsedSeconds,

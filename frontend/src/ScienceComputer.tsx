@@ -1,12 +1,20 @@
+import { useEffect, useRef } from 'react'
 import Panel from './Panel.tsx'
 import type { BodyId } from './reference.ts'
 import { IS_STATIC_DEMO } from './runtime.ts'
+
+export type ScienceComputerExchange = {
+  id: number
+  question: string
+  answer: string | null
+  error: string | null
+}
 
 export type ScienceComputerProps = {
   scienceComputerQualifier: string
   query: string
   retrievalStatus: string
-  groundedAnswer: string | null
+  conversation: ScienceComputerExchange[]
   isRetrieving: boolean
   queryElapsedSeconds: number
   lastQueryElapsedSeconds: number | null
@@ -19,20 +27,31 @@ function ScienceComputer({
   scienceComputerQualifier,
   query,
   retrievalStatus,
-  groundedAnswer,
+  conversation,
   isRetrieving,
   queryElapsedSeconds,
   lastQueryElapsedSeconds,
   onQueryChange,
   onSubmit,
 }: ScienceComputerProps & { bodyId: BodyId }) {
+  const log = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (log.current) log.current.scrollTop = log.current.scrollHeight
+  }, [conversation])
+
   const queryId = `${bodyId}-query`
   return (
     <Panel title="SCIENCE COMPUTER" qualifier={scienceComputerQualifier}>
-      <div className="science-computer" aria-live="polite">
+      <div
+        className="science-computer"
+        ref={log}
+        role="log"
+        aria-label="Science computer conversation"
+        aria-live="polite"
+      >
         <div className="message">
           <span>
-            QUERY
+            STATUS
             {isRetrieving
               ? ` · ${queryElapsedSeconds.toFixed(1)} s`
               : lastQueryElapsedSeconds !== null
@@ -45,12 +64,22 @@ function ScienceComputer({
               : retrievalStatus}
           </p>
         </div>
-        {groundedAnswer && (
-          <div className="grounded-answer">
-            <span>ANSWER</span>
-            <p>{groundedAnswer}</p>
+        {conversation.map((entry) => (
+          <div className="science-exchange" key={entry.id}>
+            <div className="message">
+              <span>Query:</span>
+              <p>{entry.question}</p>
+            </div>
+            <div className="grounded-answer">
+              <span>{entry.error ? 'Error:' : 'Answer:'}</span>
+              <p>
+                {entry.answer ??
+                  entry.error ??
+                  'Retrieving records and generating an answer...'}
+              </p>
+            </div>
           </div>
-        )}
+        ))}
       </div>
       <form className="query-form" onSubmit={onSubmit}>
         <label htmlFor={queryId}>&gt;</label>

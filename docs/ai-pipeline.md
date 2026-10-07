@@ -83,7 +83,7 @@ A **token** can be a word, part of a word, punctuation, or another text fragment
 
 **Parameters** are numerical weights learned during training. Ministral uses a Transformer architecture, whose attention calculations combine information from token positions. These calculations support generation but do not verify scientific claims. The architecture is described in [Attention Is All You Need](https://arxiv.org/html/1706.03762v7).
 
-The **context window** is the token capacity available to a request. Instructions, evidence, the question, and output consume that capacity. Each generated answer here uses a fresh prompt. General conversation history and Ollama's returned generation context are not forwarded. One ambiguous ratio question can be retained to interpret a short clarification reply such as “mass”. Changing tabs clears it.
+The **context window** is the token capacity available to a request. Instructions, evidence, the question, and output consume that capacity. Each generated answer here uses a fresh prompt. The interface keeps a visible query and answer log and clears the input after submission. This display history is not sent to the model and is cleared when switching bodies or reloading the page. General conversation history and Ollama's returned generation context are not forwarded. One ambiguous ratio question can be retained to interpret a short clarification reply such as “mass”. Changing tabs clears it.
 
 ### Model and generation settings
 
