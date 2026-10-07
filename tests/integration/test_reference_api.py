@@ -336,7 +336,7 @@ def test_science_computer_status_reports_model_availability_and_total_records(
     assert reference_count >= 5000
     assert response.json() == {
         "online": True,
-        "model": "qwen2.5:3b",
+        "model": "ministral-3:3b",
         "reference_records": reference_count,
     }
 

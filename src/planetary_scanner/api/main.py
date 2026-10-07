@@ -31,6 +31,7 @@ from planetary_scanner.models.reference import (
 )
 from planetary_scanner.rag.corpus_routing import EntityLookup, shared_collection
 from planetary_scanner.rag.reference_answers import (
+    DEFAULT_ANSWER_MODEL,
     GroundedAnswer,
     GroundedAnswerService,
     OllamaAnswerGenerator,
@@ -234,7 +235,7 @@ def get_science_computer_status(response: Response) -> ScienceComputerStatus:
     response.headers["Cache-Control"] = "no-store"
     return ScienceComputerStatus(
         online=is_ollama_model_available(),
-        model="qwen2.5:3b",
+        model=DEFAULT_ANSWER_MODEL,
         reference_records=total_reference_records(),
     )
 

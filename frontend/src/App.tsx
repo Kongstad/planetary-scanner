@@ -152,6 +152,7 @@ function App() {
   const [referenceBodyId, setReferenceBodyId] = useState<BodyId | null>(null)
   const [isReferenceApiOnline, setIsReferenceApiOnline] = useState(false)
   const [isScienceComputerOnline, setIsScienceComputerOnline] = useState(false)
+  const [answerModel, setAnswerModel] = useState<string | null>(null)
   const [totalReferenceRecords, setTotalReferenceRecords] = useState<
     number | null
   >(null)
@@ -184,8 +185,8 @@ function App() {
     : isActiveReferenceDatasetLoaded &&
         isScienceComputerOnline &&
         typeof totalReferenceRecords === 'number'
-      ? `OLLAMA · QWEN2.5:3B · MINILM-L6-V2 · ${totalReferenceRecords.toLocaleString()} RECORDS`
-      : `OLLAMA · QWEN2.5:3B · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
+      ? `OLLAMA · ${answerModel?.toUpperCase() ?? 'MODEL LOADING'} · MINILM-L6-V2 · ${totalReferenceRecords.toLocaleString()} RECORDS`
+      : `OLLAMA · ${answerModel?.toUpperCase() ?? 'MODEL LOADING'} · MINILM-L6-V2 · ${activeReferenceRecordCount === 0 ? 'LOADING' : 'UNAVAILABLE'}`
 
   useEffect(() => {
     const clockIntervalId = window.setInterval(() => {
@@ -259,10 +260,12 @@ function App() {
         }
         const status = (await response.json()) as {
           online: boolean
+          model?: string
           reference_records: number
         }
         if (!isDisposed) {
           setIsScienceComputerOnline(status.online)
+          setAnswerModel(status.model ?? null)
           setTotalReferenceRecords(status.reference_records ?? null)
         }
       } catch {

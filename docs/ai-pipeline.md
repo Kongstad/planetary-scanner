@@ -27,7 +27,7 @@ flowchart TD
     subgraph RAG[RAG]
         Retrieval[Retrieve evidence<br/>MiniLM + rules]
         Augmentation[Augment prompt<br/>Question + evidence<br/>+ instructions]
-        Generation[Generate answer<br/>Qwen / Ollama]
+        Generation[Generate answer<br/>Ministral / Ollama]
         Retrieval --> Augmentation --> Generation
     end
 
@@ -35,23 +35,23 @@ flowchart TD
     Validation --> Response[Answer or limitation]
 ```
 
-RAG retrieves relevant records, adds their text to the question and instructions, then asks Qwen to generate an answer. Python checks the result before returning it. The diagram shows the generation path. Clarifications and supported numeric ratios return directly without calling Qwen.
+RAG retrieves relevant records, adds their text to the question and instructions, then asks Ministral to generate an answer. Python checks the result before returning it. The diagram shows the generation path. Clarifications and supported numeric ratios return directly without calling Ministral.
 
 | Component                  | Implementation                           | Responsibility                                                |
 | -------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
-| Large language model (LLM) | `qwen2.5:3b` through Ollama              | Generate readable answers                                     |
+| Large language model (LLM) | `ministral-3:3b` through Ollama          | Generate readable answers                                     |
 | Text encoder               | `sentence-transformers/all-MiniLM-L6-v2` | Represent questions and records as vectors for search         |
 | RAG pipeline               | Python retrieval and answer modules      | Choose evidence, construct the prompt, and check the response |
 
 RAG means retrieving information for a question and including it in the model's input. It lets reference data change without retraining the answer model. The [original RAG paper](https://arxiv.org/abs/2005.11401) describes the research approach. This application uses pretrained models and its own retrieval rules, rather than reproducing that training system.
 
-The repository does not train or fine-tune Qwen or MiniLM. The custom work is data preparation, indexing, routing, prompt design, validation, and evaluation. Reference panels use direct data lookup. Generated answers use retrieval and a model prompt. Supported numeric ratios use a Python calculation.
+The repository does not train or fine-tune Ministral or MiniLM. The custom work is data preparation, indexing, routing, prompt design, validation, and evaluation. Reference panels use direct data lookup. Generated answers use retrieval and a model prompt. Supported numeric ratios use a Python calculation.
 
-Qwen receives reference text, not imagery. It does not inspect the globe, read pixels, or discover deposits from the map. Fictional dilithium deposits are excluded from factual retrieval.
+Ministral receives reference text, not imagery. It does not inspect the globe, read pixels, or discover deposits from the map. Fictional dilithium deposits are excluded from factual retrieval.
 
 ### How the application improves answers
 
-The improvements change which evidence reaches Qwen and which responses the application accepts.
+The improvements change which evidence reaches Ministral and which responses the application accepts.
 
 | Change                                               | Effect                                                              |
 | ---------------------------------------------------- | ------------------------------------------------------------------- |
@@ -63,37 +63,37 @@ The improvements change which evidence reaches Qwen and which responses the appl
 | Check numbers and selected qualifiers                | Request one correction, then reject an answer that still fails      |
 | Replace insufficient answers with a clear limitation | Prevent refusals from also presenting unrelated measurements        |
 
-These changes address specific failures. They do not change Qwen's weights or establish that every answer is correct.
+These changes address specific failures. They do not change Ministral's weights or establish that every answer is correct.
 
 ## The LLM: generating an answer
 
 ```mermaid
 flowchart LR
     Prompt[Instructions, evidence, and question] --> Tokens[Tokenizer produces token IDs]
-    Tokens --> Qwen[Qwen processes the context]
-    Qwen --> Next[Select the next token]
+    Tokens --> Ministral[Ministral processes the context]
+    Ministral --> Next[Select the next token]
     Next --> Complete{Finished?}
-    Complete -->|No: append token| Qwen
+    Complete -->|No: append token| Ministral
     Complete -->|Yes| Output[Decode the answer text]
 ```
 
-Qwen generates text by repeatedly predicting and selecting a next token.
+Ministral generates text by repeatedly predicting and selecting a next token.
 
 A **token** can be a word, part of a word, punctuation, or another text fragment. The tokenizer converts text into vocabulary IDs. Those IDs are different from MiniLM's search vectors. See Hugging Face's [tokenizer](https://huggingface.co/docs/transformers/main/en/tokenizer_summary) and [generation](https://huggingface.co/docs/transformers/main/en/llm_tutorial) documentation.
 
-**Parameters** are numerical weights learned during training. Qwen uses a Transformer architecture, whose attention calculations combine information from token positions. These calculations support generation but do not verify scientific claims. The architecture is described in [Attention Is All You Need](https://arxiv.org/html/1706.03762v7).
+**Parameters** are numerical weights learned during training. Ministral uses a Transformer architecture, whose attention calculations combine information from token positions. These calculations support generation but do not verify scientific claims. The architecture is described in [Attention Is All You Need](https://arxiv.org/html/1706.03762v7).
 
 The **context window** is the token capacity available to a request. Instructions, evidence, the question, and output consume that capacity. Each generated answer here uses a fresh prompt. General conversation history and Ollama's returned generation context are not forwarded. One ambiguous ratio question can be retained to interpret a short clarification reply such as “mass”. Changing tabs clears it.
 
 ### Model and generation settings
 
-The default `qwen2.5:3b` uses the instruction-tuned Qwen2.5 model, with approximately 3.09 billion parameters. Instruction tuning prepares a model to respond to requests. Ollama runs it and exposes the HTTP endpoint used by Python. See the [Qwen model card](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct).
+The default `ministral-3:3b` uses the instruction-tuned Ministral 3 model, with a 3.4-billion-parameter language model and a 0.4-billion-parameter vision encoder. The application uses text input only. Instruction tuning prepares a model to respond to requests. Ollama runs it and exposes the HTTP endpoint used by Python. See the [Mistral model card](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512).
 
-The [Ollama listing](https://ollama.com/library/qwen2.5:3b) identifies the distributed artifact as `Q4_K_M`. This is a quantized representation, using lower precision to reduce weight storage. Model file size is not total runtime memory usage.
+The [Ollama listing](https://ollama.com/library/ministral-3:3b) identifies the distributed artifact as `Q4_K_M`. This is a quantized representation, using lower precision to reduce weight storage. Model file size is not total runtime memory usage.
 
 | Setting                         | Current value                                 |
 | ------------------------------- | --------------------------------------------- |
-| Answer model                    | `qwen2.5:3b`                                  |
+| Answer model                    | `ministral-3:3b`                              |
 | Temperature                     | `0`, a low-variability setting                |
 | Output format                   | JSON schema generated by Pydantic             |
 | Streaming                       | Disabled                                      |
@@ -102,7 +102,7 @@ The [Ollama listing](https://ollama.com/library/qwen2.5:3b) identifies the distr
 
 The adapter calls Ollama's [`/api/generate`](https://docs.ollama.com/api/generate) endpoint. A zero temperature does not guarantee correctness or identical results across runtimes.
 
-A larger model may follow instructions and combine evidence more reliably, but that needs measurement on this application's questions. More parameters do not repair missing or incorrect records, and replacing Qwen leaves MiniLM retrieval unchanged. No 7B or 14B answer benchmark has been run for this project.
+A larger model may follow instructions and combine evidence more reliably, but that needs measurement on this application's questions. More parameters do not repair missing or incorrect records, and replacing Ministral leaves MiniLM retrieval unchanged. No 7B or 14B answer benchmark has been run for this project.
 
 ## The encoder: finding related text
 
@@ -122,7 +122,7 @@ The [MiniLM model card](https://huggingface.co/sentence-transformers/all-MiniLM-
 
 Document vectors are computed when an index is built. Each question needs a new vector. Both must use the same encoder. Equal vector dimensions alone do not make different embedding models compatible.
 
-The coordinates are learned representations, not named properties such as temperature or gravity. Python uses them to select records, then sends the original record text to Qwen. Qwen never receives MiniLM's vectors.
+The coordinates are learned representations, not named properties such as temperature or gravity. Python uses them to select records, then sends the original record text to Ministral. Ministral never receives MiniLM's vectors.
 
 ### Similarity and ranking
 
@@ -236,7 +236,7 @@ flowchart TD
     Comparison --> Evidence
 ```
 
-Python routing selects the search collection before Qwen receives a prompt.
+Python routing selects the search collection before Ministral receives a prompt.
 
 Recognized shared topics take priority. Catalog names can select an object's collection from another tab. Ordinary body questions use explicit names before falling back to the active viewer.
 
@@ -266,7 +266,7 @@ sequenceDiagram
     participant API as FastAPI
     participant Service as GroundedAnswerService
     participant Retrieval as ReferenceRetriever
-    participant Qwen as Ollama / Qwen
+    participant Ministral as Ollama / Ministral
     Browser->>API: Question, body, limit, optional clarification context
     alt Ratio lacks a property
         API-->>Browser: Ask which property to compare
@@ -279,12 +279,12 @@ sequenceDiagram
         else Empty evidence
             Service->>Service: Report insufficient evidence
         else Generated answer
-            Service->>Qwen: Instructions, question, evidence, and JSON schema
-            Qwen-->>Service: Generated JSON or request failure
+            Service->>Ministral: Instructions, question, evidence, and JSON schema
+            Ministral-->>Service: Generated JSON or request failure
             Service->>Service: Parse and check answer
             opt Unsupported numbers or missing required qualifier
-                Service->>Qwen: One fresh correction request
-                Qwen-->>Service: Corrected JSON or request failure
+                Service->>Ministral: One fresh correction request
+                Ministral-->>Service: Corrected JSON or request failure
                 Service->>Service: Check again, reject if still unsupported
             end
         end
@@ -312,7 +312,7 @@ Retain qualifiers such as approximate, upper limit, nighttime,
 and variable when they affect the measurement.
 ```
 
-Qwen is asked to return two fields:
+Ministral is asked to return two fields:
 
 ```json
 {
@@ -325,11 +325,11 @@ This is an illustrative response. Pydantic checks its structure. Python then che
 
 Targeted checks also retain minimum-mass qualifiers for `M sin i` mass questions and mean-activity wording for sunspot answers. A failed numeric or qualifier check triggers one fresh correction request with the same question and evidence. Rejected prose is not passed back. If the second answer still fails, it is replaced with an evidence-limitation response.
 
-These checks do not generally verify units, the property assigned to a copied number, or unsupported claims without numbers. Prompt instructions also cannot guarantee that Qwen ignores its pretrained knowledge.
+These checks do not generally verify units, the property assigned to a copied number, or unsupported claims without numbers. Prompt instructions also cannot guarantee that Ministral ignores its pretrained knowledge.
 
-If Qwen reports insufficient evidence, Python replaces its prose with a clear limitation. This prevents a refusal from also presenting unrelated measurements. Ordinary search has no absolute minimum similarity threshold, so nearby records can still leave Qwen with an unanswerable question.
+If Ministral reports insufficient evidence, Python replaces its prose with a clear limitation. This prevents a refusal from also presenting unrelated measurements. Ordinary search has no absolute minimum similarity threshold, so nearby records can still leave Ministral with an unanswerable question.
 
-Python attaches the selected records as citations. Qwen does not choose their URLs. For generated answers, citations include all supplied records, whether used or not. The API returns citations and scores, but the current science-computer panel displays only answer text and status.
+Python attaches the selected records as citations. Ministral does not choose their URLs. For generated answers, citations include all supplied records, whether used or not. The API returns citations and scores, but the current science-computer panel displays only answer text and status.
 
 Connection failures, timeouts, and invalid JSON fail the request. They are not retried, and there is no fallback model. The health endpoint checks that the configured model appears in Ollama's model list, not that a full answer succeeds.
 
@@ -340,7 +340,7 @@ For “What is Mars's mean radius?” while Earth is selected:
 1. FastAPI routes the question to Mars.
 2. MiniLM encodes it and compares it with the 2,143 Mars vectors.
 3. The property rule selects `reference-fact-mars-mean-radius`, containing 3389.5 km.
-4. Qwen receives the question, record, and instructions.
+4. Ministral receives the question, record, and instructions.
 5. Python parses and checks the answer, then returns it with the record attached.
 
 The property rule returns one relevant record even when `limit=3`. A retrieval check returned cosine similarity `0.7341`. That is an observed similarity score, not a fixed expectation or an answer-confidence estimate.
@@ -349,7 +349,7 @@ The property rule returns one relevant record even when `limit=3`. A retrieval c
 
 ### Ratios need a property and baseline
 
-“What is the ratio between the four bodies?” has no single answer. Mass, radius, volume, density, and gravity produce different ratios. The API asks for the property before retrieving evidence or calling Qwen.
+“What is the ratio between the four bodies?” has no single answer. Mass, radius, volume, density, and gravity produce different ratios. The API asks for the property before retrieving evidence or calling Ministral.
 
 A short reply such as “mass” can resolve the saved clarification question. This is limited routing context, not general conversation memory.
 
@@ -370,7 +370,7 @@ Lunar oxide percentages are not whole-Moon elemental percentages. Solar atom-cou
 
 Broad composition retrieval includes the complete recognized group. In one narrow lunar case, Python replaces the generated answer with a complete metadata-based summary after generation. This requires exactly the six expected oxide records, matching body, scope, numeric values, and `wt%` units, and no insufficient-evidence flag. It prevents missing components or core-exclusion wording for that group.
 
-Panel display conversions remain separate. For example, solar temperatures can appear in Celsius while reference records use Kelvin. Display formatting does not rewrite the evidence supplied to Qwen.
+Panel display conversions remain separate. For example, solar temperatures can appear in Celsius while reference records use Kelvin. Display formatting does not rewrite the evidence supplied to Ministral.
 
 ## Evaluation and its limits
 
@@ -384,13 +384,13 @@ Retrieval and answer quality are evaluated separately. When an answer is wrong, 
 
 The retrieval metric named `recall_at_limit` is a case-level hit rate. If one of several expected records appears, that case passes. It is not full document recall for compound questions.
 
-The application suite has 144 passing tests, and all 52 real-encoder retrieval cases passed in the current snapshot. Representative Qwen CPU answers were also checked. A broad real-model answer benchmark has not yet been added, so these results do not establish general factual reliability.
+The application suite has 144 passing tests, and all 52 real-encoder retrieval cases passed in the current snapshot. Seven representative CPU checks passed after switching to Ministral, including direct values, measurement qualifiers, missing evidence, and application-calculated ratios. An additional atmosphere comparison exposed unsupported percentages that the validator rejected. The prompt explicitly forbids adding percentages absent from the evidence, but the comparison still failed after that change. This remains a known limitation of the current model and evidence combination. A broad real-model answer benchmark has not yet been added, so these results do not establish general factual reliability.
 
 ## Running and updating the pipeline
 
 ### Inspect evidence and answers
 
-With the API running, request retrieval without invoking Qwen:
+With the API running, request retrieval without invoking Ministral:
 
 ```bash
 curl --get 'http://127.0.0.1:8000/retrieval/reference' \
@@ -408,7 +408,7 @@ uv run pytest -q
 uv run python scripts/evaluate_reference_retrieval.py
 ```
 
-The first uses controlled test doubles where needed. The second needs cached MiniLM files or an initial download, but does not call Qwen. For manual answer checks, compare the property, value, unit, scope, and evidence status with the returned records.
+The first uses controlled test doubles where needed. The second needs cached MiniLM files or an initial download, but does not call Ministral. For manual answer checks, compare the property, value, unit, scope, and evidence status with the returned records.
 
 ### Update reference data
 
@@ -429,19 +429,19 @@ uv run python scripts/import_reference_corpus.py --refresh
 
 Downloads are cached under ignored `data/downloads/reference-corpus`. The import retains fixed selection ranges and saves file hashes. Upstream changes make a fresh download an update, not an exact historical reproduction. Preserve cached bytes and the `--snapshot-date` for reproduction. Curated NASA explanations are not rewritten by this command.
 
-Indexes record model names but not pinned revisions or per-record content hashes. Existing ID checks cannot detect every stale vector after a text edit. Record the dataset revision, encoder revision, Qwen artifact, Ollama version, prompt, settings, and hardware when comparing experiments.
+Indexes record model names but not pinned revisions or per-record content hashes. Existing ID checks cannot detect every stale vector after a text edit. Record the dataset revision, encoder revision, Ministral artifact, Ollama version, prompt, settings, and hardware when comparing experiments.
 
 The header counts all six collections through `/health/science-computer`, refreshed every ten seconds and on window focus. File modification times and sizes invalidate its count cache. A live count update does not reload cached retrieval resources.
 
 ### CPU performance and availability
 
-“Local” means Qwen runs on the machine hosting Ollama. On EC2, inference happens on that server, not in the browser. `OLLAMA_BASE_URL` selects the Ollama address.
+“Local” means Ministral runs on the machine hosting Ollama. On EC2, inference happens on that server, not in the browser. `OLLAMA_BASE_URL` selects the Ollama address.
 
 CPU inference is supported. The API caches encoders and collection retrievers per process, while document vectors are precomputed. First requests can load or download models. Later requests still encode the question and generate an answer. A GPU can accelerate computation, but does not improve evidence-selection rules or guarantee correctness.
 
 Model memory includes runtime buffers and context storage in addition to downloaded weights. See Ollama's [runtime FAQ](https://docs.ollama.com/faq). The UI's QUERY timer measures the complete request, including retrieval, initialization, generation, transport, or a direct clarification/calculation path.
 
-The viewers and reference panels work independently of Qwen. Map layers and live solar observations still need external services. The static demo build bundles panel facts and selected solar snapshots with the science computer removed. It does not run RAG inference or publish the website.
+The viewers and reference panels work independently of Ministral. Map layers and live solar observations still need external services. The static demo build bundles panel facts and selected solar snapshots with the science computer visible, its record count included, and answer generation disabled. It does not run RAG inference or publish the website.
 
 ## Finding the implementation
 

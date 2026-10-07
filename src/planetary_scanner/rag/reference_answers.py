@@ -18,7 +18,7 @@ from planetary_scanner.rag.reference_retrieval import (
     question_intent_fields,
 )
 
-DEFAULT_ANSWER_MODEL = "qwen2.5:3b"
+DEFAULT_ANSWER_MODEL = "ministral-3:3b"
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip(
     "/"
 )
@@ -122,6 +122,8 @@ If the evidence does not answer the question, set
 insufficient_evidence to true and explain briefly. Do not report unrelated facts or a partial
 numeric answer when the requested property is missing. Never use a boolean as the answer value.
 For comparisons, cover every requested body and compare the same property and compatible units.
+Report a numerical value only when the supplied evidence explicitly gives it. If a record
+names an atmospheric gas without its percentage, name the gas without adding a percentage.
 If the question asks for a ratio without specifying a property, ask which property to compare.
 Return valid JSON only with two fields: "answer" (a human-readable string) and
 "insufficient_evidence" (a boolean).
