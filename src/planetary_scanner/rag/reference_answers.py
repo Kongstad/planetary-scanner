@@ -18,7 +18,7 @@ from planetary_scanner.rag.reference_retrieval import (
     question_intent_fields,
 )
 
-DEFAULT_ANSWER_MODEL = "ministral-3:3b"
+DEFAULT_ANSWER_MODEL = "ministral-3:8b"
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip(
     "/"
 )

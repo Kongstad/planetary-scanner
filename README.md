@@ -2,12 +2,12 @@
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev/)
-[![Local LLM: Ministral 3 3B](https://img.shields.io/badge/Local_LLM-Ministral_3_3B-7C3AED)](docs/ai-pipeline.md#the-llm-generating-an-answer)
+[![Local LLM: Ministral 3 8B](https://img.shields.io/badge/Local_LLM-Ministral_3_8B-7C3AED)](docs/ai-pipeline.md#the-llm-generating-an-answer)
 [![Encoder: MiniLM](https://img.shields.io/badge/Encoder-MiniLM-2563EB)](docs/ai-pipeline.md#the-encoder-finding-related-text)
 
 A learning project in local language models, embeddings, and retrieval-augmented generation (RAG). A fictional planetary scanner provides the interface, with real scientific data for Earth, the Moon, Mars, and the Sun.
 
-The science computer combines a local Ministral language model with MiniLM semantic retrieval and source-backed reference records. React, TypeScript, CesiumJS, and FastAPI connect the interface to the answer pipeline.
+The science computer combines Mistral AI’s Ministral 3 8B model running locally with MiniLM semantic retrieval and source-backed reference records. React, TypeScript, CesiumJS, and FastAPI connect the interface to the answer pipeline.
 
 ## Learning guide
 
@@ -64,10 +64,10 @@ ollama serve
 Download the answer model in another terminal:
 
 ```bash
-ollama pull ministral-3:3b
+ollama pull ministral-3:8b
 ```
 
-The science computer uses Ministral 3 3B with MiniLM reference retrieval. CPU inference is supported. The first query downloads the embedding model if it is not cached. Set `OLLAMA_BASE_URL` on the API process to use an Ollama address other than `http://127.0.0.1:11434`.
+The science computer uses Ministral 3 8B with MiniLM reference retrieval. CPU inference is supported. The first query downloads the embedding model if it is not cached. Set `OLLAMA_BASE_URL` on the API process to use an Ollama address other than `http://127.0.0.1:11434`.
 
 ## Architecture
 
@@ -90,7 +90,7 @@ flowchart LR
     subgraph RAG[RAG]
         Retrieve[Retrieve evidence<br/>MiniLM]
         Prompt[Build prompt]
-        Generate[Generate answer<br/>Ministral / Ollama]
+        Generate[Generate answer<br/>Ministral 3 8B / Ollama]
         Retrieve --> Prompt --> Generate
     end
 
